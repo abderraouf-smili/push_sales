@@ -1,0 +1,57 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:push_sale/models/pricelist.dart';
+import 'package:intl/intl.dart';
+import 'package:push_sale/views/signed/widgets/pricelist/product_to_print.dart';
+
+class PricelistWidget extends StatelessWidget {
+  PricelistWidget(this.pricelist);
+  PriceList pricelist;
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Get.to(() => ProductToPrint(pricelist));
+      },
+      child: ListTile(
+        title: Text(
+          pricelist.description,
+          style: TextStyle(fontSize: 16),
+        ),
+        leading: pricelist.active
+            ? Icon(
+                Icons.check_circle_outline_sharp,
+                color: Colors.green,
+              )
+            : Icon(
+                Icons.stop_circle_outlined,
+                color: Colors.red,
+              ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(pricelist.start_date != null
+                    ? DateFormat("dd/MM/y").format(pricelist.start_date!)
+                    : "-"),
+                SizedBox(
+                  width: 10,
+                ),
+                Text(pricelist.start_date != null
+                    ? DateFormat("dd/MM/y").format(pricelist.end_date!)
+                    : "-"),
+              ],
+            ),
+            Text(
+              pricelist.typePv != null ? pricelist.typePv!.name : "all".tr,
+              style: TextStyle(fontSize: 13),
+            )
+          ],
+        ),
+        trailing: Text("${pricelist.items.length} elements",
+            style: TextStyle(fontSize: 15)),
+      ),
+    );
+  }
+}

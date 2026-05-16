@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "908812739457",
+    "project_id": "pushsale-2ed49",
+    "storage_bucket": "pushsale-2ed49.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:908812739457:android:6de6f7f8e65bec4bd77e80",
+        "android_client_info": {
+          "package_name": "com.softstarter.pushsale"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "908812739457-80fee70c3865lrtovqjtbdld2bu904ed.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.softstarter.pushsale",
+            "certificate_hash": "86eda1838dcb019ccba1b416f511b3e69dd8789a"
+          }
+        },
+        {
+          "client_id": "908812739457-8qno5if0nbqvtn18vcieh74amh0javrd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVRFwJ9fko-vJ9VhYg6TWQ96xU1K7Rraw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "908812739457-52t7poj2cs8dg5k6i4e23c39gej840cc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
