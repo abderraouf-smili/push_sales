@@ -13,3 +13,12 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+
+
+
+# Firebase / Google config
+google-services.json
+GoogleService-Info.plist
+
+# API secrets
+*firebase_api.php

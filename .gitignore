@@ -36,3 +36,12 @@ venv/
 .dart_tool/
 build/
 .pub-cache/
+
+
+
+# Firebase / Google config
+google-services.json
+GoogleService-Info.plist
+
+# API secrets
+*firebase_api.php
