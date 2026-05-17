@@ -15,7 +15,7 @@ Validation locale du 2026-05-17 :
 
 ```text
 C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder : OK
-/api/login : SUCCESS pour les 4 comptes
+/api/login : SUCCESS pour les 4 comptes, tokens non affiches
 /api/isprofiled : hasactor=1 verifie au minimum sur admin
 ```
 

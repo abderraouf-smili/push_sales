@@ -269,7 +269,7 @@ class DemoDataSeeder extends Seeder
 
     private function seedWarehousesAndStock(array $variants, $now): void
     {
-        foreach ($variants as $item) {
+        foreach ($variants as $index => $item) {
             $variant = $item['model'];
             DB::table('stock_quantity')->updateOrInsert(
                 ['emplacement_id' => self::WAREHOUSE_ID, 'is_mobile' => false, 'variant_id' => $variant->id],
@@ -283,11 +283,17 @@ class DemoDataSeeder extends Seeder
             );
 
             foreach ([self::STOCK_LIVREUR_ID, self::STOCK_DEPOT_ID] as $mobileStockId) {
+                $mobileQuantity = $mobileStockId === self::STOCK_LIVREUR_ID
+                    ? [120, 85, 30][$index] ?? 12
+                    : 12;
+                $mobilePrevisionnel = $mobileStockId === self::STOCK_LIVREUR_ID
+                    ? [96, 85, 45][$index] ?? 12
+                    : 12;
                 DB::table('stock_quantity')->updateOrInsert(
                     ['emplacement_id' => $mobileStockId, 'is_mobile' => true, 'variant_id' => $variant->id],
                     $this->stockQuantityPayload([
-                        'quantity' => 12,
-                        'previsionnel' => 12,
+                        'quantity' => $mobileQuantity,
+                        'previsionnel' => $mobilePrevisionnel,
                         'stock_price' => $item['price'] * 0.72,
                         'created_at' => $now,
                         'updated_at' => $now,
@@ -428,6 +434,53 @@ class DemoDataSeeder extends Seeder
             $now
         );
 
+        $this->seedPurchaseOrder(
+            'PO-DEMO-SHIP-002',
+            'BL-DEMO-SHIP-002',
+            $orderId,
+            'ACT-TEST-LIVREUR',
+            $clients[1] ?? $clients[0],
+            'in_way',
+            $variants[1]['model']->id,
+            $variants[1],
+            $now,
+            quantity: 4,
+            amount: $variants[1]['price'] * 4,
+            deliveryPosition: 2
+        );
+
+        $this->seedPurchaseOrder(
+            'PO-DEMO-SHIP-003',
+            'BL-DEMO-SHIP-003',
+            $orderId,
+            'ACT-TEST-LIVREUR',
+            $clients[2] ?? $clients[0],
+            'shipped',
+            $variants[2]['model']->id,
+            $variants[2],
+            $now,
+            quantity: 5,
+            confirmedQuantity: 4,
+            amount: $variants[2]['price'] * 5,
+            deliveryPosition: 3
+        );
+
+        $this->seedPurchaseOrder(
+            'PO-DEMO-SHIP-004',
+            'BL-DEMO-SHIP-004',
+            $orderId,
+            'ACT-TEST-LIVREUR',
+            $clients[0],
+            'paid',
+            $variants[1]['model']->id,
+            $variants[1],
+            $now,
+            quantity: 2,
+            confirmedQuantity: 2,
+            amount: $variants[1]['price'] * 2,
+            deliveryPosition: 4
+        );
+
         DB::table('tracking_orders')->updateOrInsert(
             ['id' => 'TRACK-DEMO-001'],
             [
@@ -469,8 +522,16 @@ class DemoDataSeeder extends Seeder
         string $state,
         int $variantId,
         array $variantData,
-        $now
+        $now,
+        float $quantity = 6,
+        ?float $confirmedQuantity = null,
+        ?float $amount = null,
+        ?int $deliveryPosition = null
     ): void {
+        $totalAmount = $amount ?? 1080;
+        $confirmed = in_array($state, ['shipped', 'paid'], true)
+            ? ($confirmedQuantity ?? $quantity)
+            : $confirmedQuantity;
         DB::table('purchase_order')->updateOrInsert(
             ['id' => $id],
             [
@@ -480,11 +541,11 @@ class DemoDataSeeder extends Seeder
                 'client_id' => $clientId,
                 'type' => 'invoice_out',
                 'warehouse_id' => self::WAREHOUSE_ID,
-                'total_amount' => 1080,
-                'residual' => 1080,
+                'total_amount' => $totalAmount,
+                'residual' => $state === 'paid' ? 0 : $totalAmount,
                 'purchase_date' => $now,
-                'planned_delivery_date' => $state === 'in_way' ? $now : $now->copy()->addDay(),
-                'delivery_date' => null,
+                'planned_delivery_date' => $now,
+                'delivery_date' => in_array($state, ['shipped', 'paid'], true) ? $now : null,
                 'state' => $state,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -507,9 +568,9 @@ class DemoDataSeeder extends Seeder
                 'discount' => 0,
                 'variant_id' => $variantId,
                 'sku' => 'DEMO-EAU-15-' . $variantId,
-                'quantity' => 6,
-                'confirmed_quantity' => null,
-                'cancelled_quantity' => null,
+                'quantity' => $quantity,
+                'confirmed_quantity' => $confirmed,
+                'cancelled_quantity' => $confirmed === null ? null : max(0, $quantity - $confirmed),
                 'package' => $variantData['package'],
                 'price' => $variantData['price'],
                 'created_at' => $now,

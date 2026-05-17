@@ -12,15 +12,30 @@ import 'package:push_sale/widgets/common/app_loading_state.dart';
 import 'package:push_sale/widgets/common/app_page_header.dart';
 // import 'package:push_sale/views/signed/widgets/products/item_big_icon.dart';
 
-class ProductMainPage extends StatelessWidget {
-  final ProductController productController = Get.put(ProductController());
+class ProductMainPage extends StatefulWidget {
+  const ProductMainPage({super.key});
 
-  ProductMainPage({super.key});
+  @override
+  State<ProductMainPage> createState() => _ProductMainPageState();
+}
+
+class _ProductMainPageState extends State<ProductMainPage> {
+  final ProductController productController = Get.put(ProductController());
+  String _productSearch = "";
+
+  @override
+  void initState() {
+    super.initState();
+    productController.client = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        productController.getProducts();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    productController.client = null;
-    productController.getProducts();
     return WillPopScope(
       onWillPop: () async {
         return false;
@@ -41,6 +56,13 @@ class ProductMainPage extends StatelessWidget {
                   if (!productController.loadProductReady.value) {
                     return AppLoadingState(message: "loading".tr);
                   }
+                  final products = productController.listProducts.where((item) {
+                    final locale = Get.deviceLocale?.languageCode ?? "fr";
+                    final text =
+                        item.getLongDescription(locale).toLowerCase().trim();
+                    return _productSearch.isEmpty ||
+                        text.contains(_productSearch.toLowerCase().trim());
+                  }).toList();
                   if (productController.listProducts.isEmpty) {
                     return AppEmptyState(
                       title: "Aucun produit",
@@ -48,7 +70,261 @@ class ProductMainPage extends StatelessWidget {
                       icon: Icons.inventory_2_outlined,
                     );
                   }
-                  return ListView.builder(
+                  return CustomScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            0,
+                            AppSpacing.lg,
+                            AppSpacing.md,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  onChanged: (value) {
+                                    setState(() => _productSearch = value);
+                                  },
+                                  decoration: const InputDecoration(
+                                    hintText:
+                                        "Rechercher un produit, une reference...",
+                                    prefixIcon: Icon(Icons.search_rounded),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              IconButton.filledTonal(
+                                onPressed: productController.getProducts,
+                                icon: const Icon(Icons.tune_rounded),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: 54,
+                          child: ListView(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                            ),
+                            scrollDirection: Axis.horizontal,
+                            children: const [
+                              _ProductCategoryChip(
+                                label: "Tous",
+                                icon: Icons.apps_rounded,
+                                selected: true,
+                              ),
+                              _ProductCategoryChip(
+                                label: "Boissons",
+                                icon: Icons.local_drink_outlined,
+                              ),
+                              _ProductCategoryChip(
+                                label: "Epicerie",
+                                icon: Icons.shopping_bag_outlined,
+                              ),
+                              _ProductCategoryChip(
+                                label: "Hygiene",
+                                icon: Icons.clean_hands_outlined,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            0,
+                            AppSpacing.lg,
+                            AppSpacing.md,
+                          ),
+                          child: AppCard(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            child: Row(
+                              children: [
+                                Text(
+                                  "${products.length} produits",
+                                  style: AppTextStyles.subtitle.copyWith(
+                                    color: AppColors.primaryDark,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  "Trier par : Popularite",
+                                  style: AppTextStyles.caption,
+                                ),
+                                const Icon(Icons.keyboard_arrow_down_rounded),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (products.isEmpty)
+                        const SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: AppEmptyState(
+                            title: "Aucun resultat",
+                            message:
+                                "Essayez un autre nom ou rechargez le catalogue.",
+                            icon: Icons.search_off_rounded,
+                          ),
+                        )
+                      else
+                        SliverList.builder(
+                          itemCount: products.length,
+                          itemBuilder: (context, index) {
+                            var item = products[index];
+                            final variants = item.purchasevariants ?? [];
+                            final firstImage =
+                                variants.isNotEmpty ? variants.first.image : "";
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                0,
+                                AppSpacing.lg,
+                                AppSpacing.md,
+                              ),
+                              child: AppCard(
+                                padding: const EdgeInsets.all(AppSpacing.md),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                        AppSpacing.radiusMd,
+                                      ),
+                                      child: Container(
+                                        width: 96,
+                                        height: 112,
+                                        color: AppColors.canvas,
+                                        child: firstImage.isEmpty
+                                            ? const Icon(
+                                                Icons.inventory_2_outlined,
+                                                color: AppColors.primary,
+                                              )
+                                            : CachedNetworkImage(
+                                                cacheManager: CacheManager(
+                                                  Config(
+                                                    firstImage,
+                                                    stalePeriod:
+                                                        const Duration(days: 7),
+                                                  ),
+                                                ),
+                                                imageUrl: firstImage,
+                                                fit: BoxFit.cover,
+                                                placeholder: (context, url) =>
+                                                    const AppLoadingState(),
+                                                errorWidget: (context, url,
+                                                        error) =>
+                                                    const Icon(Icons
+                                                        .image_not_supported_outlined),
+                                              ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.md),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item.getLongDescription(
+                                              Get.deviceLocale?.languageCode ??
+                                                  "fr",
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppTextStyles.title
+                                                .copyWith(fontSize: 17),
+                                          ),
+                                          const SizedBox(height: AppSpacing.sm),
+                                          Text(
+                                            variants.isEmpty
+                                                ? "Aucune variante"
+                                                : "${variants.length} variantes",
+                                            style: AppTextStyles.subtitle,
+                                          ),
+                                          const SizedBox(height: AppSpacing.md),
+                                          Wrap(
+                                            spacing: AppSpacing.sm,
+                                            runSpacing: AppSpacing.xs,
+                                            children: variants.take(3).map(
+                                              (variant) {
+                                                return Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: AppSpacing.sm,
+                                                    vertical: 6,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.softBlue,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            999),
+                                                  ),
+                                                  child: Text(
+                                                    "${variant.getVariantName1(Get.deviceLocale?.languageCode ?? "fr")} ${variant.getVariantName2(Get.deviceLocale?.languageCode ?? "fr")}",
+                                                    style: AppTextStyles.caption
+                                                        .copyWith(
+                                                      color: AppColors.primary,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ).toList(),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: AppSpacing.sm,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.softGreen,
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                          ),
+                                          child: Text(
+                                            "En stock",
+                                            style:
+                                                AppTextStyles.caption.copyWith(
+                                              color: AppColors.secondary,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: AppSpacing.md),
+                                        OutlinedButton.icon(
+                                          onPressed: () {},
+                                          icon: const Icon(
+                                              Icons.shopping_cart_outlined),
+                                          label: const Text("Voir"),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  );
+                  /*return ListView.builder(
                       padding: const EdgeInsets.fromLTRB(
                         AppSpacing.lg,
                         0,
@@ -147,11 +423,47 @@ class ProductMainPage extends StatelessWidget {
                             ],
                           ),
                         );
-                      });
+                      });*/
                 },
               ),
             )
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductCategoryChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+
+  const _ProductCategoryChip({
+    required this.label,
+    required this.icon,
+    this.selected = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
+      child: ChoiceChip(
+        selected: selected,
+        onSelected: (_) {},
+        avatar: Icon(
+          icon,
+          size: 18,
+          color: selected ? AppColors.primary : AppColors.primaryDark,
+        ),
+        label: Text(label),
+        selectedColor: AppColors.softBlue,
+        backgroundColor: AppColors.surface,
+        side: const BorderSide(color: AppColors.line),
+        labelStyle: AppTextStyles.body.copyWith(
+          color: selected ? AppColors.primary : AppColors.primaryDark,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

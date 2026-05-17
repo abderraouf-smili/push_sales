@@ -10,6 +10,8 @@ import 'package:push_sale/views/signed/comptesetting.dart';
 import 'package:push_sale/views/signed/menu/clients.dart';
 import 'package:push_sale/views/signed/menu/favorite.dart';
 import 'package:push_sale/views/signed/menu/stats_page.dart';
+import 'package:push_sale/views/signed/widgets/delivery/delivery_routes_page.dart';
+import 'package:push_sale/views/signed/widgets/delivery/delivery_stock_mobile_page.dart';
 import 'package:push_sale/views/signed/widgets/delivery/main_delivery_page.dart';
 import 'package:push_sale/views/signed/widgets/products/product_main_page.dart';
 import 'package:push_sale/views/signed/widgets/tracking/main_tracking_page.dart';
@@ -29,16 +31,34 @@ class _HomePageState extends State<HomePage> {
   PermissionsController perm = Get.put(PermissionsController());
   _HomePageState(this._index);
   int _index;
+  String _postedClientId = "0";
+  bool _routeArgumentsConsumed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ensureSessionControllers();
+  }
+
+  void _ensureSessionControllers() {
+    if (!Get.isRegistered<CompteMenuController>()) {
+      Get.put(CompteMenuController());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    _ensureSessionControllers();
     var screen = [];
     final bool useSideBar = MediaQuery.of(context).size.width >= 720;
 
-    if (Get.arguments != null && Get.arguments["client_id"] != "0") {
+    if (!_routeArgumentsConsumed &&
+        Get.arguments is Map &&
+        Get.arguments["client_id"] != null &&
+        Get.arguments["client_id"].toString() != "0") {
+      _postedClientId = Get.arguments["client_id"].toString();
       _index = 1;
-      Get.arguments["client_id"] = "0";
-      setState(() {});
+      _routeArgumentsConsumed = true;
     }
     return SafeArea(
       bottom: false,
@@ -80,11 +100,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       _secondDestination(),
                       _thirdDestination(),
-                      NavigationDestination(
-                        icon: const Icon(Icons.inventory_2_outlined),
-                        selectedIcon: const Icon(Icons.inventory_2_rounded),
-                        label: "products".tr,
-                      ),
+                      _fourthDestination(),
                       NavigationDestination(
                         icon: const Icon(Icons.person_outline_rounded),
                         selectedIcon: const Icon(Icons.person_rounded),
@@ -96,29 +112,36 @@ class _HomePageState extends State<HomePage> {
           ),
           body: Obx(() {
             if (perm.PermissionLoaded.value) {
-              screen = [
-                perm.check(StatsPage(), "HomePage.StatsPage"),
-                perm.check(null, "HomePage.Clients")
-                    //for the prevente/classic profile
-                    ? Clients(Get.arguments != null
-                        ? Get.arguments["client_id"]
-                        : "0")
-                    : perm.check(null, "HomePage.MainTransferPage")
-                        // for delivery profile
-                        ? MainTransferPage()
-                        : const Favorite(),
-                perm.check(null, "HomePage.MainTrackingOrder")
-                    //for the prevente profile
-                    ? MainTrackingOrder()
-                    : perm.check(null, "HomePage.MainDeliveryPage")
-                        // for delivery profile
-                        ? MainDeliveryPage()
-                        : const Favorite(),
-                perm.check(ProductMainPage(), "HomePage.ProductMainPage"),
-                perm.check(CompteSetting(), "HomePage.CompteSetting"),
-              ];
-              final Widget currentScreen = AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
+              final bool deliveryWorkspace = _isDeliveryWorkspace();
+              screen = deliveryWorkspace
+                  ? [
+                      perm.check(StatsPage(), "HomePage.StatsPage"),
+                      const DeliveryStockMobilePage(),
+                      MainDeliveryPage(),
+                      const DeliveryRoutesPage(),
+                      perm.check(CompteSetting(), "HomePage.CompteSetting"),
+                    ]
+                  : [
+                      perm.check(StatsPage(), "HomePage.StatsPage"),
+                      perm.check(null, "HomePage.Clients")
+                          //for the prevente/classic profile
+                          ? Clients(_postedClientId)
+                          : perm.check(null, "HomePage.MainTransferPage")
+                              // for delivery profile
+                              ? MainTransferPage()
+                              : const Favorite(),
+                      perm.check(null, "HomePage.MainTrackingOrder")
+                          //for the prevente profile
+                          ? MainTrackingOrder()
+                          : perm.check(null, "HomePage.MainDeliveryPage")
+                              // for delivery profile
+                              ? MainDeliveryPage()
+                              : const Favorite(),
+                      perm.check(ProductMainPage(), "HomePage.ProductMainPage"),
+                      perm.check(CompteSetting(), "HomePage.CompteSetting"),
+                    ];
+              final Widget currentScreen = KeyedSubtree(
+                key: ValueKey<int>(_index),
                 child: screen[_index] as Widget,
               );
               if (useSideBar) {
@@ -144,11 +167,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         _secondRailDestination(),
                         _thirdRailDestination(),
-                        NavigationRailDestination(
-                          icon: const Icon(Icons.inventory_2_outlined),
-                          selectedIcon: const Icon(Icons.inventory_2_rounded),
-                          label: Text("products".tr),
-                        ),
+                        _fourthRailDestination(),
                         NavigationRailDestination(
                           icon: const Icon(Icons.person_outline_rounded),
                           selectedIcon: const Icon(Icons.person_rounded),
@@ -165,8 +184,8 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   currentScreen,
                   PositionedDirectional(
-                    top: 6,
-                    start: 8,
+                    top: 78,
+                    end: 12,
                     child: Builder(
                       builder: (context) => SafeArea(
                         child: Material(
@@ -196,22 +215,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<_DrawerItem> _drawerItems() {
+    final bool deliveryWorkspace = _isDeliveryWorkspace();
     return [
       _DrawerItem(
         label: "dashboard".tr,
         icon: Icons.dashboard_rounded,
       ),
       _DrawerItem(
-        label: perm.check(null, "HomePage.Clients")
-            ? "clients".tr
-            : perm.check(null, "HomePage.MainTransferPage")
-                ? "transfer".tr
-                : "favorite".tr,
-        icon: perm.check(null, "HomePage.Clients")
-            ? Icons.groups_rounded
-            : perm.check(null, "HomePage.MainTransferPage")
-                ? Icons.local_shipping_rounded
-                : Icons.favorite_rounded,
+        label: deliveryWorkspace
+            ? "Stock"
+            : perm.check(null, "HomePage.Clients")
+                ? "clients".tr
+                : perm.check(null, "HomePage.MainTransferPage")
+                    ? "transfer".tr
+                    : "favorite".tr,
+        icon: deliveryWorkspace
+            ? Icons.view_in_ar_rounded
+            : perm.check(null, "HomePage.Clients")
+                ? Icons.groups_rounded
+                : perm.check(null, "HomePage.MainTransferPage")
+                    ? Icons.local_shipping_rounded
+                    : Icons.favorite_rounded,
       ),
       _DrawerItem(
         label: perm.check(null, "HomePage.MainTrackingOrder")
@@ -225,12 +249,30 @@ class _HomePageState extends State<HomePage> {
                 ? Icons.delivery_dining_rounded
                 : Icons.access_time_filled_rounded,
       ),
-      _DrawerItem(label: "products".tr, icon: Icons.inventory_2_rounded),
+      _DrawerItem(
+        label: deliveryWorkspace ? "Trajets" : "products".tr,
+        icon:
+            deliveryWorkspace ? Icons.route_rounded : Icons.inventory_2_rounded,
+      ),
       _DrawerItem(label: "settings".tr, icon: Icons.person_rounded),
     ];
   }
 
+  bool _isDeliveryWorkspace() {
+    return perm.check(null, "HomePage.MainDeliveryPage") &&
+        !perm.check(null, "HomePage.MainTrackingOrder") &&
+        !perm.check(null, "HomePage.Clients") &&
+        !perm.check(null, "HomePage.MainTransferPage");
+  }
+
   NavigationDestination _secondDestination() {
+    if (_isDeliveryWorkspace()) {
+      return const NavigationDestination(
+        icon: Icon(Icons.view_in_ar_outlined),
+        selectedIcon: Icon(Icons.view_in_ar_rounded),
+        label: "Stock",
+      );
+    }
     if (perm.check(null, "HomePage.Clients")) {
       return NavigationDestination(
         icon: const Icon(Icons.groups_outlined),
@@ -274,7 +316,29 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  NavigationDestination _fourthDestination() {
+    if (_isDeliveryWorkspace()) {
+      return const NavigationDestination(
+        icon: Icon(Icons.route_outlined),
+        selectedIcon: Icon(Icons.route_rounded),
+        label: "Trajets",
+      );
+    }
+    return NavigationDestination(
+      icon: const Icon(Icons.inventory_2_outlined),
+      selectedIcon: const Icon(Icons.inventory_2_rounded),
+      label: "products".tr,
+    );
+  }
+
   NavigationRailDestination _secondRailDestination() {
+    if (_isDeliveryWorkspace()) {
+      return const NavigationRailDestination(
+        icon: Icon(Icons.view_in_ar_outlined),
+        selectedIcon: Icon(Icons.view_in_ar_rounded),
+        label: Text("Stock"),
+      );
+    }
     if (perm.check(null, "HomePage.Clients")) {
       return NavigationRailDestination(
         icon: const Icon(Icons.groups_outlined),
@@ -315,6 +379,21 @@ class _HomePageState extends State<HomePage> {
       icon: const Icon(Icons.access_time_outlined),
       selectedIcon: const Icon(Icons.access_time_filled_rounded),
       label: Text("activity".tr),
+    );
+  }
+
+  NavigationRailDestination _fourthRailDestination() {
+    if (_isDeliveryWorkspace()) {
+      return const NavigationRailDestination(
+        icon: Icon(Icons.route_outlined),
+        selectedIcon: Icon(Icons.route_rounded),
+        label: Text("Trajets"),
+      );
+    }
+    return NavigationRailDestination(
+      icon: const Icon(Icons.inventory_2_outlined),
+      selectedIcon: const Icon(Icons.inventory_2_rounded),
+      label: Text("products".tr),
     );
   }
 }

@@ -242,6 +242,33 @@ APK debug : push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk
 flutter analyze strict : 791 issues historiques restantes
 ```
 
+Validation finale audit UI du 2026-05-17 :
+
+```text
+flutter clean : OK
+flutter pub get : OK
+flutter analyze --no-fatal-infos --no-fatal-warnings : OK
+flutter analyze strict : 751 issues historiques restantes
+flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000 : OK
+flutter devices : OK, SM A165F detecte sur 10.212.134.4:37055
+flutter run -d 10.212.134.4:37055 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000 : OK
+adb logcat apres lancement : aucun Null check operator / Failed assertion / EXCEPTION CAUGHT / RenderFlex overflowed detecte
+C:\tools\php83\php.exe C:\ProgramData\ComposerSetup\bin\composer.phar install --no-interaction : OK
+C:\tools\php83\php.exe artisan route:list --compact : OK
+C:\tools\php83\php.exe artisan config:clear : OK
+C:\tools\php83\php.exe artisan cache:clear : OK
+C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder : OK
+C:\tools\php83\php.exe artisan db:seed --class=DemoDataSeeder : OK
+/api/login : SUCCESS pour les 4 comptes test, tokens non affiches
+APK debug : push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk
+```
+
+Note Windows : `composer` dans le PATH utilise PHP 8.1 sur cette machine et peut echouer avec `composer.lock`. Utiliser PHP 8.3 explicitement :
+
+```bash
+C:\tools\php83\php.exe C:\ProgramData\ComposerSetup\bin\composer.phar install --no-interaction
+```
+
 Correctifs UX recents :
 
 - dashboard modernise avec bandeau KPI terrain;

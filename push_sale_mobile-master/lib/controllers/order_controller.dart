@@ -397,15 +397,17 @@ class OrderController extends GetxController
     shippingOrders = [];
     clients_delivery = [];
     loadshippingOrders.value = false;
+    points_delivery_loaded.value = false;
     ResponseHttpRequest response =
         await CallApi.RequestHttp(global.PurchaseOrdersToShip);
     if (response.status == "SUCCESS") {
       for (var item in response.data) {
         var element = PurchaseOrder.fromMap(item);
         //recuperer les clients pour la maps
-        if (clients_delivery
-            .where((item) => item.id == element.client!.id)
-            .isEmpty) {
+        if (element.client != null &&
+            clients_delivery
+                .where((item) => item.id == element.client!.id)
+                .isEmpty) {
           clients_delivery.add(element.client!);
         }
 
@@ -413,11 +415,18 @@ class OrderController extends GetxController
         shippingOrders.add(element);
       }
       getRestatFromOrders();
-      MyCurrentPosition = await MyLocalisation.getMyLocation();
-      points_delivery = await MyLocalisation.loadPOS(clients_delivery, this);
-      points_delivery_loaded.value = true;
       loadshippingOrders.value = true;
+      try {
+        MyCurrentPosition = await MyLocalisation.getMyLocation();
+        points_delivery = await MyLocalisation.loadPOS(clients_delivery, this);
+        points_delivery_loaded.value = true;
+      } catch (e) {
+        points_delivery = <Marker>{};
+        points_delivery_loaded.value = true;
+        statusLoadRoute.value = "error";
+      }
     } else {
+      loadshippingOrders.value = true;
       print("ERROR API : " + response.message);
     }
   }

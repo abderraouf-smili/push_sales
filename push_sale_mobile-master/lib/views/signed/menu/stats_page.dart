@@ -3,13 +3,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:push_sale/controllers/order_controller.dart';
 import 'package:push_sale/controllers/permissions_controller.dart';
 import 'package:push_sale/controllers/stats_controller.dart';
 import 'package:push_sale/theme/app_colors.dart';
+import 'package:push_sale/theme/app_spacing.dart';
+import 'package:push_sale/theme/app_text_styles.dart';
 import 'package:push_sale/views/signed/customer/promotion_slide.dart';
 import 'package:push_sale/views/signed/widgets/orders/sale_orders_list.dart';
 import 'package:push_sale/views/signed/widgets/tracking/menu_orders.dart';
 import 'package:push_sale/views/signed/widgets/tracking/orders_status_detail.dart';
+import 'package:push_sale/widgets/common/app_card.dart';
 import 'package:push_sale/widgets/common/app_loading_state.dart';
 import 'package:push_sale/widgets/common/app_page_header.dart';
 import 'package:push_sale/widgets/common/app_stat_card.dart';
@@ -22,260 +26,385 @@ class StatsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (statController.pieCharData.isEmpty &&
-        perm.check(null, "StatsPage.TournoverDashboard")) {
-      statController.getStats();
-    }
-    if (perm.check(null, "StatsPage.DeliveryOrdersDashboard")) {
-      statController.getDeliveryStats();
-    }
-    if (perm.check(null, "admin") &&
-        statController.profitChartData.isEmpty &&
-        !statController.profitStatsReady.value &&
-        !statController.profitStatsLoading.value) {
-      statController.getProfitStats();
-    }
-
-    List<Widget> Dashboard = [
-      calenderDashboard(statController),
-      modernSummaryDashboard(statController),
-      perm.check(profitChart(statController, context), "admin"),
-      perm.check(
-          TournoverDashboard(statController), "StatsPage.TournoverDashboard"),
-      perm.check(OrdersStatus(statController), "StatePage.OrdersStatus"),
-      perm.check(DeliveryOrdersDashboard(statController),
-          "StatsPage.DeliveryOrdersDashboard"),
-      perm.check(lineChart(statController), "StatsPage.lineChart"),
-      perm.check(pieChart(statController), "StatsPage.pieChart"),
-      perm.check(barChart(statController), "StatsPage.barChart"),
-      perm.check(PromotionSlide(), "StatsPage.PromotionSlide"),
-    ];
     return Obx(() => perm.PermissionLoaded.value
-        ? Column(
-            children: [
-              //entete DASHBOARD
-              AppPageHeader(
-                title: "dashboard".tr,
-                subtitle: "Indicateurs du jour et suivi activite",
-                icon: Icons.dashboard_outlined,
-              ),
+        ? Builder(
+            builder: (context) {
+              _ensureDashboardData();
+              final bool deliveryWorkspace = _isDeliveryWorkspace();
+              final dashboard = deliveryWorkspace
+                  ? [
+                      calenderDashboard(statController),
+                      DeliveryTruckStateDashboard(),
+                    ]
+                  : [
+                      calenderDashboard(statController),
+                      modernSummaryDashboard(statController),
+                      if (perm.check(null, "admin"))
+                        profitChart(statController, context),
+                      if (perm.check(null, "StatsPage.TournoverDashboard"))
+                        TournoverDashboard(statController),
+                      if (perm.check(null, "StatePage.OrdersStatus"))
+                        OrdersStatus(statController),
+                      if (perm.check(null, "StatsPage.DeliveryOrdersDashboard"))
+                        DeliveryOrdersDashboard(statController),
+                      if (perm.check(null, "StatsPage.lineChart"))
+                        lineChart(statController),
+                      if (perm.check(null, "StatsPage.pieChart"))
+                        pieChart(statController),
+                      if (perm.check(null, "StatsPage.barChart"))
+                        barChart(statController),
+                      if (perm.check(null, "StatsPage.PromotionSlide"))
+                        PromotionSlide(),
+                    ];
 
-              Expanded(
-                child: CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    CupertinoSliverRefreshControl(
-                      refreshTriggerPullDistance: 180,
-                      onRefresh: () async {
-                        await statController.getStats();
-                        if (perm.check(null, "admin")) {
-                          await statController.getProfitStats();
-                        }
-                      },
+              return Column(
+                children: [
+                  AppPageHeader(
+                    title: "dashboard".tr,
+                    subtitle: "Indicateurs du jour et suivi activite",
+                    icon: Icons.dashboard_outlined,
+                  ),
+                  Expanded(
+                    child: CustomScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        CupertinoSliverRefreshControl(
+                          refreshTriggerPullDistance: 180,
+                          onRefresh: () async {
+                            if (_hasSalesDashboard()) {
+                              await statController.getStats();
+                            }
+                            if (perm.check(
+                                null, "StatsPage.DeliveryOrdersDashboard")) {
+                              await statController.getDeliveryStats();
+                            }
+                            if (_isDeliveryWorkspace()) {
+                              await _shippingController()
+                                  .getPurchaseOrdersToShip();
+                            }
+                            if (perm.check(null, "admin")) {
+                              await statController.getProfitStats();
+                            }
+                          },
+                        ),
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) => dashboard[index],
+                            childCount: dashboard.length,
+                          ),
+                        )
+                      ],
                     ),
-                    SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                      (context, index) => Dashboard[index],
-                      childCount: Dashboard.length,
-                    ))
-                  ],
-                ),
-              )
-            ],
+                  )
+                ],
+              );
+            },
           )
         : AppLoadingState(message: "loading".tr));
+  }
+
+  bool _hasSalesDashboard() {
+    return perm.check(null, "StatsPage.TournoverDashboard") ||
+        perm.check(null, "StatePage.OrdersStatus") ||
+        perm.check(null, "StatsPage.lineChart") ||
+        perm.check(null, "StatsPage.pieChart") ||
+        perm.check(null, "StatsPage.barChart") ||
+        perm.check(null, "admin");
+  }
+
+  bool _isDeliveryWorkspace() {
+    return perm.check(null, "HomePage.MainDeliveryPage") &&
+        !perm.check(null, "HomePage.MainTrackingOrder") &&
+        !perm.check(null, "HomePage.Clients") &&
+        !perm.check(null, "HomePage.MainTransferPage");
+  }
+
+  OrderController _shippingController() {
+    return Get.isRegistered<OrderController>()
+        ? Get.find<OrderController>()
+        : Get.put(OrderController(tag: "shipping"));
+  }
+
+  void _ensureDashboardData() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_hasSalesDashboard() &&
+          !statController.statsReady.value &&
+          !statController.statsLoading.value) {
+        statController.getStats();
+      }
+      if (perm.check(null, "StatsPage.DeliveryOrdersDashboard") &&
+          !statController.deliveryStatsReady.value &&
+          !statController.deliveryStatsLoading.value) {
+        statController.getDeliveryStats();
+      }
+      if (_isDeliveryWorkspace()) {
+        final orderController = _shippingController();
+        if (!orderController.loadshippingOrders.value &&
+            orderController.shippingOrders.isEmpty) {
+          orderController.getPurchaseOrdersToShip();
+        }
+      }
+      if (perm.check(null, "admin") &&
+          statController.profitChartData.isEmpty &&
+          !statController.profitStatsReady.value &&
+          !statController.profitStatsLoading.value) {
+        statController.getProfitStats();
+      }
+    });
   }
 
   Widget modernSummaryDashboard(StatController statController) {
     var formatter = NumberFormat("#,##0.00", "fr_FR");
     return Obx(() {
-      if (!statController.statsReady.value) {
-        return const SizedBox.shrink();
+      final salesReady = statController.statsReady.value;
+      final deliveryReady = statController.deliveryStatsReady.value;
+      final salesLoading = statController.statsLoading.value;
+      final deliveryLoading = statController.deliveryStatsLoading.value;
+      final sales = statController.stats_day;
+      final delivery = statController.delivery_stats_day;
+      if ((!salesReady || sales == null) &&
+          (!deliveryReady || delivery == null)) {
+        if (!salesLoading && !deliveryLoading) return const SizedBox.shrink();
+        return const Padding(
+          padding: EdgeInsets.all(12),
+          child: AppLoadingState(message: "Chargement des indicateurs..."),
+        );
       }
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final bool wide = constraints.maxWidth >= 560;
-            final double cardWidth =
-                wide ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth;
-            return Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                SizedBox(
-                  width: cardWidth,
-                  child: AppStatCard(
-                    label: "Chiffre du jour",
-                    value: formatter.format(statController.stats_day!.total),
-                    icon: Icons.payments_outlined,
-                    color: Colors.green,
-                    onTap: statController.stats_day!.total != 0
-                        ? () => Get.to(() => SaleOrderList())
-                        : null,
-                  ),
-                ),
-                SizedBox(
-                  width: cardWidth,
-                  child: AppStatCard(
-                    label: "Clients visites",
-                    value:
-                        "${statController.stats_day!.visited}/${statController.stats_day!.client_count}",
-                    icon: Icons.groups_2_outlined,
-                    color: Colors.blue,
-                  ),
-                ),
-                SizedBox(
-                  width: cardWidth,
-                  child: AppStatCard(
-                    label: "Panier moyen",
-                    value: formatter.format(statController.stats_day!.average),
-                    icon: Icons.receipt_long_outlined,
-                    color: Colors.orange,
-                  ),
-                ),
-                SizedBox(
-                  width: cardWidth,
-                  child: AppStatCard(
-                    label: "Restants",
-                    value: statController.stats_day!.rest.toString(),
-                    icon: Icons.person_off_outlined,
-                    color: Colors.red,
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      );
+      if (salesReady && sales != null) {
+        return _summaryCards(formatter: formatter, sales: sales);
+      }
+      if (deliveryReady && delivery != null) {
+        return _summaryCards(formatter: formatter, delivery: delivery);
+      }
+      return const SizedBox.shrink();
     });
   }
 
-  Widget calenderDashboard(StatController statController) {
-    DateTime? date;
-    String? dayName;
-    String? month;
-    String? day;
-    String? year;
-    return Obx(() {
-      if (statController.statsReady.value) {
-        date = statController.ServerTime!;
-        dayName = DateFormat('EEE', Get.locale!.languageCode).format(date!);
-        dayName = dayName!.toUpperCase().replaceAll('.', '');
-        month = DateFormat('MMM', Get.locale!.languageCode)
-            .format(date!)
-            .toUpperCase()
-            .replaceAll('.', '');
-        day = DateFormat('dd').format(date!);
-        year = DateFormat('y').format(date!);
-      }
-      return !statController.statsReady.value
-          ? const SizedBox.shrink()
-          : Container(
-              margin: const EdgeInsets.fromLTRB(12, 0, 12, 14),
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFF185ADB),
-                    Color(0xFF00A676),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.22),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Center(
-                          child: Text(
-                            day!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 30,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "$dayName - $month $year",
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Pilotage terrain en temps reel",
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.82),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      _HeroMetric(
-                        label: "CA",
-                        value: NumberFormat("#,##0.00", "fr_FR")
-                            .format(statController.stats_day!.total),
+  Widget _summaryCards({
+    required NumberFormat formatter,
+    dynamic sales,
+    dynamic delivery,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool wide = constraints.maxWidth >= 560;
+          final double cardWidth =
+              wide ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth;
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              SizedBox(
+                width: cardWidth,
+                child: sales != null
+                    ? AppStatCard(
+                        label: "Chiffre du jour",
+                        value: formatter.format(sales.total),
                         icon: Icons.payments_outlined,
+                        color: Colors.green,
+                        onTap: sales.total != 0
+                            ? () => Get.to(() => SaleOrderList())
+                            : null,
+                      )
+                    : AppStatCard(
+                        label: "Cash livraison",
+                        value: formatter.format(delivery!.total_cash),
+                        icon: Icons.payments_outlined,
+                        color: Colors.green,
                       ),
-                      _HeroMetric(
-                        label: "Clients",
-                        value:
-                            statController.stats_day!.client_count.toString(),
+              ),
+              SizedBox(
+                width: cardWidth,
+                child: sales != null
+                    ? AppStatCard(
+                        label: "Clients visites",
+                        value: "${sales.visited}/${sales.client_count}",
                         icon: Icons.groups_2_outlined,
+                        color: Colors.blue,
+                      )
+                    : AppStatCard(
+                        label: "Livraisons restantes",
+                        value: delivery!.orders_restant_delivery.toString(),
+                        icon: Icons.local_shipping_outlined,
+                        color: Colors.blue,
                       ),
-                      _HeroMetric(
-                        label: "Visites",
-                        value: statController.stats_day!.visited.toString(),
-                        icon: Icons.route_outlined,
+              ),
+              SizedBox(
+                width: cardWidth,
+                child: sales != null
+                    ? AppStatCard(
+                        label: "Panier moyen",
+                        value: formatter.format(sales.average),
+                        icon: Icons.receipt_long_outlined,
+                        color: Colors.orange,
+                      )
+                    : AppStatCard(
+                        label: "Residuel",
+                        value: formatter.format(delivery!.residual_amount),
+                        icon: Icons.account_balance_wallet_outlined,
+                        color: Colors.orange,
                       ),
-                      _HeroMetric(
+              ),
+              SizedBox(
+                width: cardWidth,
+                child: sales != null
+                    ? AppStatCard(
                         label: "Restants",
-                        value: statController.stats_day!.rest.toString(),
-                        icon: Icons.warning_amber_rounded,
+                        value: sales.rest.toString(),
+                        icon: Icons.person_off_outlined,
+                        color: Colors.red,
+                      )
+                    : AppStatCard(
+                        label: "Total livraisons",
+                        value: delivery!.orders_total_delivery.toString(),
+                        icon: Icons.inventory_2_outlined,
+                        color: Colors.red,
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget calenderDashboard(StatController statController) {
+    return Obx(() {
+      final salesReady = statController.statsReady.value;
+      final deliveryReady = statController.deliveryStatsReady.value;
+      if (!salesReady && !deliveryReady) {
+        return const SizedBox.shrink();
+      }
+      final date = statController.ServerTime;
+      final sales = statController.stats_day;
+      final delivery = statController.delivery_stats_day;
+      if (date == null || (sales == null && delivery == null)) {
+        return const SizedBox.shrink();
+      }
+      final locale = Get.locale?.languageCode ?? "fr";
+      final dayName = DateFormat('EEE', locale)
+          .format(date)
+          .toUpperCase()
+          .replaceAll('.', '');
+      final month = DateFormat('MMM', locale)
+          .format(date)
+          .toUpperCase()
+          .replaceAll('.', '');
+      final day = DateFormat('dd').format(date);
+      final year = DateFormat('y').format(date);
+      return Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 14),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF185ADB),
+              Color(0xFF00A676),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.22),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Center(
+                    child: Text(
+                      day,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "$dayName - $month $year",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Pilotage terrain en temps reel",
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.82),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            );
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _HeroMetric(
+                  label: sales != null ? "CA" : "Cash",
+                  value: NumberFormat("#,##0.00", "fr_FR").format(
+                    sales?.total ?? delivery!.total_cash,
+                  ),
+                  icon: Icons.payments_outlined,
+                ),
+                _HeroMetric(
+                  label: sales != null ? "Clients" : "Livraisons",
+                  value:
+                      (sales?.client_count ?? delivery!.orders_total_delivery)
+                          .toString(),
+                  icon: Icons.groups_2_outlined,
+                ),
+                _HeroMetric(
+                  label: sales != null ? "Visites" : "Restantes",
+                  value: (sales?.visited ?? delivery!.orders_restant_delivery)
+                      .toString(),
+                  icon: Icons.route_outlined,
+                ),
+                _HeroMetric(
+                  label: sales != null ? "Restants" : "Residuel",
+                  value: sales != null
+                      ? sales.rest.toString()
+                      : NumberFormat("#,##0.00", "fr_FR")
+                          .format(delivery!.residual_amount),
+                  icon: Icons.warning_amber_rounded,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
     });
   }
 
@@ -328,13 +457,161 @@ class StatsPage extends StatelessWidget {
     );
   }
 
+  Widget DeliveryTruckStateDashboard() {
+    final orderController = _shippingController();
+    return Obx(() {
+      final loaded = orderController.loadshippingOrders.value;
+      if (!loaded) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: AppLoadingState(message: "Chargement etat camion..."),
+        );
+      }
+
+      double toDeliver = 0;
+      double delivered = 0;
+      double returns = 0;
+      for (final order in orderController.shippingOrders) {
+        for (final item in order.orderitems) {
+          final qty = item.quantity;
+          final confirmed = item.confirmed_quantity ?? 0;
+          if (order.state == "in_way") {
+            toDeliver += qty;
+          } else if (order.state == "shipped" || order.state == "paid") {
+            delivered += confirmed;
+            final diff = qty - confirmed;
+            if (diff > 0) {
+              returns += diff;
+            }
+          }
+        }
+      }
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          AppSpacing.lg,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Etat stock camion",
+              style: AppTextStyles.display.copyWith(fontSize: 24),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cardWidth = constraints.maxWidth >= 540
+                    ? (constraints.maxWidth - AppSpacing.md) / 2
+                    : constraints.maxWidth;
+                return Wrap(
+                  spacing: AppSpacing.md,
+                  runSpacing: AppSpacing.md,
+                  children: [
+                    SizedBox(
+                      width: cardWidth,
+                      child: _TruckStateCard(
+                        label: "A livrer",
+                        value: toDeliver.toStringAsFixed(0),
+                        icon: Icons.inventory_2_outlined,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: _TruckStateCard(
+                        label: "En retour",
+                        value: returns.toStringAsFixed(0),
+                        icon: Icons.keyboard_return_rounded,
+                        color: Colors.purple,
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: _TruckStateCard(
+                        label: "Livre",
+                        value: delivered.toStringAsFixed(0),
+                        icon: Icons.check_circle_outline_rounded,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: _TruckStateCard(
+                        label: "Demandes",
+                        value: orderController.shippingOrders.length.toString(),
+                        icon: Icons.local_shipping_outlined,
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _TruckStateCard({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            ),
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTextStyles.subtitle),
+                Text(
+                  "$value unites",
+                  style: AppTextStyles.title.copyWith(fontSize: 22),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: value == "0" ? 0.04 : 0.72,
+                    minHeight: 6,
+                    color: color,
+                    backgroundColor: color.withValues(alpha: 0.12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget OrdersStatus(StatController statController) {
     return SizedBox(
       width: Get.width,
       child: Column(
         children: [
           TitleDashboard("status.orders".tr),
-          Obx(() => !statController.statsReady.value
+          Obx(() => !statController.statsReady.value ||
+                  statController.statsOrders.isEmpty
               ? const SizedBox.shrink()
               : Container(
                   margin: const EdgeInsets.symmetric(horizontal: 10),
@@ -369,11 +646,12 @@ class StatsPage extends StatelessWidget {
   Widget TournoverDashboard(StatController statController) {
     var formatter = NumberFormat("#,##0.00", "fr_FR");
     return Obx(() {
-      return !statController.statsReady.value
+      final sales = statController.stats_day;
+      return !statController.statsReady.value || sales == null
           ? const SizedBox.shrink()
           : GestureDetector(
               onTap: () {
-                if (statController.stats_day!.total != 0) {
+                if (sales.total != 0) {
                   Get.to(() => SaleOrderList());
                 }
               },
@@ -399,7 +677,7 @@ class StatsPage extends StatelessWidget {
                               width: 10,
                             ),
                             Text(
-                              formatter.format(statController.stats_day!.total),
+                              formatter.format(sales.total),
                               style: TextStyle(
                                 fontSize: Get.height / 14 - 20,
                                 fontWeight: FontWeight.bold,
@@ -418,7 +696,7 @@ class StatsPage extends StatelessWidget {
                               width: 10,
                             ),
                             Text(
-                              statController.stats_day!.client_count.toString(),
+                              sales.client_count.toString(),
                               style: TextStyle(
                                 fontSize: Get.height / 18 - 20,
                                 fontWeight: FontWeight.bold,
@@ -442,8 +720,7 @@ class StatsPage extends StatelessWidget {
                               width: 10,
                             ),
                             Text(
-                              formatter
-                                  .format(statController.stats_day!.average),
+                              formatter.format(sales.average),
                               style: TextStyle(
                                 fontSize: Get.height / 18 - 20,
                                 fontWeight: FontWeight.bold,
@@ -458,7 +735,7 @@ class StatsPage extends StatelessWidget {
                             const SizedBox(
                               width: 10,
                             ),
-                            Text(statController.stats_day!.visited.toString(),
+                            Text(sales.visited.toString(),
                                 style: TextStyle(
                                   fontSize: Get.height / 20 - 20,
                                   fontWeight: FontWeight.bold,
@@ -473,7 +750,7 @@ class StatsPage extends StatelessWidget {
                             const SizedBox(
                               width: 10,
                             ),
-                            Text(statController.stats_day!.rest.toString(),
+                            Text(sales.rest.toString(),
                                 style: TextStyle(
                                   fontSize: Get.height / 20 - 20,
                                   fontWeight: FontWeight.bold,
@@ -494,7 +771,8 @@ class StatsPage extends StatelessWidget {
   Widget DeliveryOrdersDashboard(StatController statController) {
     var formatter = NumberFormat("#,##0.00", "fr_FR");
     return Obx(() {
-      return !statController.statsReady.value
+      final delivery = statController.delivery_stats_day;
+      return !statController.deliveryStatsReady.value || delivery == null
           ? const SizedBox.shrink()
           : GestureDetector(
               onTap: () {},
@@ -520,8 +798,7 @@ class StatsPage extends StatelessWidget {
                               width: 10,
                             ),
                             Text(
-                              formatter.format(statController
-                                  .delivery_stats_day!.total_cash),
+                              formatter.format(delivery.total_cash),
                               style: TextStyle(
                                 fontSize: Get.height / 14 - 20,
                                 fontWeight: FontWeight.bold,
@@ -540,9 +817,7 @@ class StatsPage extends StatelessWidget {
                               width: 10,
                             ),
                             Text(
-                              statController
-                                  .delivery_stats_day!.orders_restant_delivery
-                                  .toString(),
+                              delivery.orders_restant_delivery.toString(),
                               style: TextStyle(
                                 fontSize: Get.height / 20 - 20,
                                 fontWeight: FontWeight.bold,
@@ -566,8 +841,7 @@ class StatsPage extends StatelessWidget {
                               width: 10,
                             ),
                             Text(
-                              formatter.format(statController
-                                  .delivery_stats_day!.residual_amount),
+                              formatter.format(delivery.residual_amount),
                               style: TextStyle(
                                 fontSize: Get.height / 16 - 20,
                                 fontWeight: FontWeight.bold,
@@ -582,10 +856,7 @@ class StatsPage extends StatelessWidget {
                             const SizedBox(
                               width: 10,
                             ),
-                            Text(
-                                statController
-                                    .delivery_stats_day!.orders_total_delivery
-                                    .toString(),
+                            Text(delivery.orders_total_delivery.toString(),
                                 style: TextStyle(
                                   fontSize: Get.height / 20 - 20,
                                   fontWeight: FontWeight.bold,
@@ -608,7 +879,8 @@ class StatsPage extends StatelessWidget {
       children: [
         TitleDashboard("Benefice livre"),
         Obx(() {
-          if (!statController.profitStatsReady.value) {
+          final summary = statController.profitStatsSummary;
+          if (!statController.profitStatsReady.value || summary == null) {
             return const SizedBox.shrink();
           }
 
@@ -626,7 +898,7 @@ class StatsPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      DateFormat("MMMM y", Get.locale!.languageCode)
+                      DateFormat("MMMM y", Get.locale?.languageCode ?? "fr")
                           .format(statController.profitMonth)
                           .capitalizeFirst!,
                       style: const TextStyle(
@@ -656,29 +928,24 @@ class StatsPage extends StatelessWidget {
                   children: [
                     _profitSummaryItem(
                       "Ventes",
-                      formatter
-                          .format(statController.profitStatsSummary!.sales),
+                      formatter.format(summary.sales),
                       Colors.blue,
                     ),
                     _profitSummaryItem(
                       "Achats",
-                      formatter
-                          .format(statController.profitStatsSummary!.purchases),
+                      formatter.format(summary.purchases),
                       Colors.orange,
                     ),
                     _profitSummaryItem(
                       "Benefice",
-                      formatter
-                          .format(statController.profitStatsSummary!.profit),
-                      statController.profitStatsSummary!.profit >= 0
-                          ? Colors.green
-                          : Colors.red,
+                      formatter.format(summary.profit),
+                      summary.profit >= 0 ? Colors.green : Colors.red,
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "Montant encaisse: ${formatter.format(statController.profitStatsSummary!.cashed)}",
+                  "Montant encaisse: ${formatter.format(summary.cashed)}",
                   style: const TextStyle(
                     color: Color.fromARGB(255, 92, 92, 92),
                     fontSize: 12,
@@ -949,7 +1216,8 @@ class StatsPage extends StatelessWidget {
                             var item = statController.pieCharData[index];
                             return Indicator(
                               color: item.color,
-                              text: item.getTitle(Get.locale!.languageCode),
+                              text: item
+                                  .getTitle(Get.locale?.languageCode ?? "fr"),
                               isSquare: false,
                             );
                           }))
@@ -996,7 +1264,8 @@ class StatsPage extends StatelessWidget {
                                 space: 4,
                                 child: Text(
                                   statController.barCharData[x.toInt() - 1]
-                                      .getTitle(Get.locale!.languageCode),
+                                      .getTitle(
+                                          Get.locale?.languageCode ?? "fr"),
                                   style: const TextStyle(
                                       fontFamily: "alata",
                                       color:

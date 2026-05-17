@@ -135,11 +135,13 @@ class OrderToTrack extends StatelessWidget {
                         padding: const EdgeInsets.all(AppSpacing.md),
                         onTap: () {
                           orderController.orderToTrack = item;
-                          pageController.animateToPage(
-                            1,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.ease,
-                          );
+                          if (pageController.hasClients) {
+                            pageController.animateToPage(
+                              1,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.ease,
+                            );
+                          }
                         },
                         child: Row(
                           children: [

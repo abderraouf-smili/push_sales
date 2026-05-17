@@ -1,5 +1,68 @@
 # PROJECT_HISTORY
 
+## 2026-05-17 - Parcours livreur moderne stock, delivery et trajets
+
+- Zone modifiee : Flutter mobile, navigation HomePage et ecrans livreur.
+- Objectif : adapter l'application au role livreur avec une interface utile terrain : stock mobile, demandes de livraison et trajets, au lieu de favoris/produits generiques.
+- Resume : ajout de `DeliveryStockMobilePage`, `DeliveryRequestsPage` et `DeliveryRoutesPage`; la navigation livreur affiche maintenant Accueil, Stock, Delivery, Trajets, Profil. Le stock mobile reutilise `getCurrentStockMobile`, les livraisons reutilisent `getPurchaseOrdersToShip`, et les trajets reutilisent `getOptimizedRoute` quand la localisation est disponible.
+- UX : cartes modernes, filtres par etat, recherche stock, details produit en bottom sheet, compteurs livraison, actions visibles pour bon de reception/details et trajet optimise.
+- Risque : moyen-faible, car les changements sont limites a l'UI/navigation du role livreur et reutilisent les controllers/endpoints existants.
+- Impact logique metier : aucun changement de routes API, JSON, calcul stock/prix/commande/livraison/paiement ou authentification.
+- Tests effectues : `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK apres un retry lie a un verrou Windows temporaire sur un asset.
+- Tests a faire : reconnecter le smartphone ADB, installer l'APK, valider le compte livreur sur dashboard, stock mobile, delivery, detail livraison et trajets.
+- Prochaine etape : moderniser le detail livraison/encaissement avec le meme design et tester l'impression Bluetooth sur appareil physique.
+
+## 2026-05-17 - GUI style maquettes et durcissement Obx/PageController
+
+- Zone modifiee : Flutter header commun, HomePage, produits, credits, tracking, livraison, depot detail.
+- Objectif : rapprocher l'interface des maquettes blanches/bleues fournies et continuer la chasse aux ecrans rouges GetX/PageController.
+- Resume : `AppPageHeader` affiche maintenant une entete type maquette avec logo Push Sales, actions notification/message et titre large; le menu drawer flottant est deplace pour ne plus couvrir le logo; le catalogue produits gagne recherche, chips categorie, compteur et cartes produits modernes; la page credits gagne fond clair, KPI encaissement et rendu par periodes; les navigations PageController tracking/livraison/depot sont protegees par `hasClients`; scan ciblé des `Obx` effectue pour verifier les usages sans variable observable evidente.
+- Risque : moyen-faible, car les changements sont UI et defensifs; aucune route API, aucun format JSON et aucun calcul metier n'a ete modifie.
+- Impact logique metier : aucun changement de logique metier.
+- Tests effectues : `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK.
+- Tests non termines : lancement sur `10.212.134.5:44217` impossible car `adb connect` termine en timeout et `flutter devices` ne detecte aucun smartphone Android.
+- Prochaine etape : reconnecter ADB wireless puis lancer `flutter run -d 10.212.134.5:44217 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` et valider visuellement les pages.
+
+## 2026-05-17 - Correctif dashboard GetX et PageController
+
+- Zone modifiee : Flutter dashboard, slider promotion, filtres clients.
+- Objectif : corriger l'ecran rouge `GetX improper use` signale sur la page d'accueil et l'assertion `PageController is not attached to a PageView` vue pendant le test device.
+- Resume : les blocs `Obx` du dashboard lisent maintenant toujours des flags observables (`statsReady`, `deliveryStatsReady`, `statsLoading`, `deliveryStatsLoading`) avant d'afficher les donnees simples; le slider promotion ne cree plus de timer dans `build`, annule son timer au `dispose` et verifie `hasClients`; les boutons Liste/Grille/Carte clients ne pilotent plus un `PageController` non attache.
+- Risque : faible, car les changements sont UI/runtime defensifs et ne modifient aucune route API, aucun format JSON et aucun calcul metier.
+- Impact logique metier : aucun changement de logique metier.
+- Tests effectues : `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, `flutter run -d 10.212.134.5:41605 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, redemarrage ADB propre et `logcat` sans `improper use of a GetX`, `PageController is not attached`, `Failed assertion`, `Null check operator` ou overflow filtre.
+- Tests a faire : validation visuelle manuelle sur scrcpy apres navigation dashboard -> clients -> produits -> livraison.
+- Prochaine etape : continuer le nettoyage des warnings historiques et la verification page par page.
+
+## 2026-05-17 - Audit UI global et correctifs crash dashboard
+
+- Zone modifiee : Flutter dashboard, navigation HomePage, documentation audit UI.
+- Objectif : traiter les erreurs visibles sur smartphone (`Null check operator used on a null value` et assertion Flutter) et demarrer l'audit global des pages demande avant nouvelle modernisation massive.
+- Resume : creation de `UI_AUDIT.md` avec inventaire des pages principales; separation des etats statistiques ventes et livraison dans `StatController`; protection du dashboard contre `stats_day` null pour les roles livraison; suppression de l'appel API repete dans `build`; suppression du `setState()` pendant `build()` dans `HomePage`; ajout d'une cle stable autour de l'ecran courant pour `AnimatedSwitcher`.
+- Risque : moyen-faible, car les changements sont defensifs/UI et ne changent ni routes API, ni JSON, ni calculs metier.
+- Impact logique metier : aucun changement de logique metier; les stats restent fournies par les endpoints Laravel existants.
+- Tests effectues : `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, `flutter devices` OK, `flutter run -d 10.212.134.4:37055 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, `adb logcat` sans `Null check operator`, `Failed assertion` ou `EXCEPTION CAUGHT` apres lancement.
+- Tests a faire : validation visuelle manuelle sur scrcpy du dashboard pour admin/commercial/livreur/depot, puis poursuite des ecrans commande/livraison/stock.
+- Prochaine etape : moderniser le detail commande et le flux livraison/encaissement avec le style des maquettes.
+
+## 2026-05-17 - Validation finale audit UI et donnees demo
+
+- Zone modifiee : validation Flutter/Laravel, documentation.
+- Resume : validation complete apres `flutter clean`, regeneration APK, lancement sur SM A165F, execution des seeders de comptes et donnees demo, verification des 4 logins de test sans afficher les tokens.
+- Backend : `composer install` OK avec PHP 8.3 explicite. Le `composer` du PATH utilise encore PHP 8.1 et echoue; utiliser `C:\tools\php83\php.exe C:\ProgramData\ComposerSetup\bin\composer.phar install --no-interaction`.
+- API : `api/configuration` retourne `401` avec `Accept: application/json` si non authentifie; l'appel sans en-tete JSON peut produire une redirection Laravel vers `login` inexistante.
+- Tests effectues : `flutter clean`, `flutter pub get`, `flutter analyze --no-fatal-infos --no-fatal-warnings`, `flutter analyze` strict, `flutter build apk --debug`, `flutter devices`, `flutter run -d 10.212.134.4:37055 --debug --no-resident`, `composer install` PHP 8.3, `route:list`, `config:clear`, `cache:clear`, seeders `TestUsersByRoleSeeder` et `DemoDataSeeder`.
+- Resultats : APK debug OK, app lancee sur smartphone, comptes `admin/commercial/livreur/depot.test@pushsales.local` connectes avec `Test@123456`.
+- Risque : moyen-faible; aucune logique metier existante modifiee.
+
+## 2026-05-17 - Correctifs runtime GetX smartphone
+
+- Zone modifiee : Flutter HomePage, CompteSetting, fiche client, produits, edition profil.
+- Probleme : ecrans rouges signales sur smartphone (`GetX improper use`, `CompteMenuController not found`, assertion Flutter `framework.dart` pendant navigation).
+- Resume : reinjection defensive de `CompteMenuController` apres logout/session reset, suppression de l'`AnimatedSwitcher` autour des pages principales pour eviter les assertions de reparentage, correction d'un `Obx` fiche client qui ne lisait pas toujours d'observable, deplacement du chargement produits hors de `build()`.
+- Risque : faible, car changements UI/runtime uniquement; aucune route API, aucun JSON et aucun calcul metier modifies.
+- Tests effectues : `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, `flutter run -d 10.212.134.5:37055 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, `adb logcat` sans les erreurs rouges signalees apres lancement.
+
 ## 2026-05-17 - Modernisation fiche client et liste clients terrain
 
 - Zone modifiee : Flutter clients, liste clients, grille clients, fiche client detail.
@@ -82,6 +145,18 @@
 - Tests effectues : `composer install` via PHP 8.3 OK, `route:list` OK, `config:clear` OK, `cache:clear` OK, seeders OK, endpoints demo OK, `flutter clean/pub get/analyze --no-fatal.../build apk` OK, `flutter run` sur SM A165F OK.
 - Warnings restants : `flutter analyze` strict signale 840 issues historiques, surtout style, deprecations, `print`, champs non final et dependances transitives.
 - Prochaine etape : nettoyer les warnings par module et valider manuellement impression Bluetooth, notifications Firebase et cartes avec cles restreintes.
+
+## 2026-05-17 - Fonctionnalisation espace livreur stock, delivery et trajets
+
+- Zone modifiee : Flutter livreur (`StatsPage`, `OrderController`, stock mobile) et donnees demo Laravel (`DemoDataSeeder`).
+- Objectif : garder la nouvelle UI livreur moderne mais la brancher sur les donnees backend afin d'eviter les pages blanches et les chiffres dupliques.
+- Resume : le dashboard livreur conserve le grand cadre de pilotage et ajoute un second cadre `Etat stock camion` calcule depuis les commandes a livrer; la page stock mobile affiche maintenant uniquement la liste produits/detail avec filtres; le chargement delivery n'attend plus la geolocalisation/carte pour afficher les commandes; les erreurs GPS/maps passent en etat degrade au lieu de laisser l'ecran blanc.
+- Backend demo : ajout de commandes livreur supplementaires (`in_way`, `shipped`, `paid`) et de quantites stock camion variees pour tester `a livrer`, `retour` et `livre`.
+- Risque : moyen-faible, car les changements restent UI/donnees demo/defensifs; aucune route API, aucun format JSON et aucun calcul metier existant n'ont ete modifies.
+- Impact logique metier : aucun changement de logique metier; les nouveaux indicateurs lisent les etats existants Laravel.
+- Tests effectues : `php -l DemoDataSeeder.php` OK, seeders `TestUsersByRoleSeeder` et `DemoDataSeeder` OK, endpoints login/currentstock/toshiporders OK, `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK.
+- Blocage device : `10.212.134.3:35079` ne repond pas au ping/TCP/ADB; `flutter devices` ne liste aucun smartphone Android.
+- Prochaine etape : reconnecter le telephone en debogage sans fil, installer l'APK genere et valider visuellement les trois onglets livreur.
 
 ## 2026-05-17 - Mobile UI modernization and role test pack
 

@@ -4,16 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/controllers/customer_homepage_controller.dart';
 
-class PromotionSlide extends StatelessWidget {
-  CustomerHomepageController customerController =
+class PromotionSlide extends StatefulWidget {
+  const PromotionSlide({super.key});
+
+  @override
+  State<PromotionSlide> createState() => _PromotionSlideState();
+}
+
+class _PromotionSlideState extends State<PromotionSlide> {
+  final CustomerHomepageController customerController =
       Get.put(CustomerHomepageController());
   final PageController _pageController = PageController(initialPage: 0);
   Timer? _timer;
 
-  PromotionSlide({super.key});
-
-  void reload() {
+  @override
+  void initState() {
+    super.initState();
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (!mounted || !_pageController.hasClients) {
+        return;
+      }
       if (customerController.currentPageIndex.value < 2) {
         customerController.currentPageIndex.value++;
       } else {
@@ -28,8 +38,14 @@ class PromotionSlide extends StatelessWidget {
   }
 
   @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    reload();
     return Center(
       child: SizedBox(
         height: 200,

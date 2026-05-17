@@ -1,5 +1,30 @@
 # MAINTENANCE_HISTORY
 
+## 2026-05-17 - Parcours livreur stock mobile, delivery et trajets
+
+Objectif :
+- Remplacer les pages peu pertinentes du role livreur par une navigation terrain claire : stock mobile, demandes de livraison et trajets.
+
+Resume technique :
+- HomePage detecte maintenant le workspace livreur via les permissions existantes et affiche Accueil, Stock, Delivery, Trajets, Profil.
+- Ajout `DeliveryStockMobilePage` avec recherche, groupement par produit/etat/client, KPI stock camion/retours/anomalies et detail produit.
+- Ajout `DeliveryRequestsPage` avec filtres multi-etats, compteurs et actions detail/bon reception sur les commandes `in_way`.
+- Ajout `DeliveryRoutesPage` avec ordre de passage recommande et bouton d'optimisation reutilisant `OrderController.getOptimizedRoute()`.
+- `MainDeliveryPage` utilise la nouvelle liste moderne sans changer `ShippingOrderDetail`.
+
+Commandes executees :
+- `dart format lib\views\signed\homepage.dart lib\views\signed\widgets\delivery\*.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter devices`
+- `adb devices`
+
+Resultats :
+- Analyse non fatale OK.
+- APK debug genere apres retry; un premier build a ete bloque par un verrou Windows temporaire sur `assets/images/firebase_api.php`.
+- Aucun smartphone ADB detecte au moment du test, donc installation/scrcpy non executes dans ce lot.
+- Warnings stricts restants : historiques (`depend_on_referenced_packages`, deprecated, style), sans erreur bloquante.
+
 ## 2026-05-17 - Navigation drawer, clients et tracking
 
 Objectif :
@@ -397,3 +422,180 @@ Resultats :
 
 Risque :
 - Moyen-faible; aucune route API, aucun JSON et aucune logique metier n'ont ete changes.
+
+# 2026-05-17 - Audit UI global et correctifs dashboard runtime
+
+Fichiers modifies :
+- `UI_AUDIT.md`
+- `push_sale_mobile-master/lib/controllers/stats_controller.dart`
+- `push_sale_mobile-master/lib/views/signed/menu/stats_page.dart`
+- `push_sale_mobile-master/lib/views/signed/homepage.dart`
+- `PROJECT_HISTORY.md`
+- `MAINTENANCE_HISTORY.md`
+- `CHANGELOG.md`
+
+Commandes executees :
+- `rg --files lib/views lib/widgets`
+- `rg "class .* extends (StatelessWidget|StatefulWidget|GetView|GetWidget)" lib/views lib/widgets`
+- `dart format lib/controllers/stats_controller.dart lib/views/signed/menu/stats_page.dart lib/views/signed/homepage.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter devices`
+- `flutter run -d 10.212.134.4:37055 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb -s 10.212.134.4:37055 logcat -d`
+
+Resultats :
+- Inventaire des pages Flutter principales documente dans `UI_AUDIT.md`.
+- Crash dashboard livraison corrige en separant `statsReady` et `deliveryStatsReady`.
+- Dashboard rendu tolerant aux valeurs nulles selon le role connecte.
+- Navigation HomePage rendue plus stable en retirant `setState()` de `build()`.
+- Aucun log runtime `Null check operator`, `Failed assertion` ou `EXCEPTION CAUGHT` detecte apres lancement.
+
+Risque :
+- Moyen-faible; correctifs UI/etat sans changement de logique metier.
+
+# 2026-05-17 - Validation finale audit UI
+
+Commandes executees :
+- `flutter clean`
+- `flutter pub get`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter analyze`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter devices`
+- `flutter run -d 10.212.134.4:37055 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb -s 10.212.134.4:37055 logcat -d`
+- `C:\tools\php83\php.exe C:\ProgramData\ComposerSetup\bin\composer.phar install --no-interaction`
+- `C:\tools\php83\php.exe artisan route:list --compact`
+- `C:\tools\php83\php.exe artisan config:clear`
+- `C:\tools\php83\php.exe artisan cache:clear`
+- `C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder`
+- `C:\tools\php83\php.exe artisan db:seed --class=DemoDataSeeder`
+
+Resultats :
+- `flutter analyze --no-fatal-infos --no-fatal-warnings` : OK.
+- `flutter analyze` strict : KO non bloquant, 751 issues historiques restantes.
+- APK debug : OK, `build/app/outputs/flutter-apk/app-debug.apk`.
+- Device : SM A165F detecte sur `10.212.134.4:37055`.
+- Lancement smartphone : OK, app installee et ouverte.
+- Logcat apres lancement : aucune trace `Null check operator`, `Failed assertion`, `EXCEPTION CAUGHT`, `RenderFlex overflowed` ou `BOTTOM OVERFLOWED`.
+- Composer : OK avec PHP 8.3 explicite; KO avec `composer` du PATH car il utilise PHP 8.1.
+- Laravel routes/cache/config : OK.
+- Seeders comptes et demo : OK.
+- Login API comptes test : SUCCESS pour admin, commercial, livreur et depot; tokens non affiches.
+
+Points restants :
+- Poursuivre le nettoyage des 751 warnings stricts par modules.
+- Valider visuellement sur scrcpy les flux profonds : commande, livraison/encaissement, reception depot, prix, chat et notifications FCM reelles.
+
+# 2026-05-17 - Correctifs runtime GetX smartphone
+
+Fichiers modifies :
+- `push_sale_mobile-master/lib/views/signed/homepage.dart`
+- `push_sale_mobile-master/lib/views/signed/comptesetting.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/clients/ficheclient.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/products/product_main_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/account/edit_personal_data.dart`
+
+Commandes executees :
+- `dart format ...`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `adb connect 10.212.134.5:37055`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter run -d 10.212.134.5:37055 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb -s 10.212.134.5:37055 logcat -d`
+
+Resultats :
+- `CompteMenuController not found` corrige par reinjection defensive.
+- `GetX improper use` fiche client corrige en observant explicitement `current_orders_ready`.
+- Assertion Flutter de navigation reduite en retirant l'`AnimatedSwitcher` des pages principales.
+- Chargement produits deplace hors de `build()` pour eviter les appels repetes.
+- Logcat apres lancement : aucune trace des erreurs rouges signalees.
+
+# 2026-05-17 - Correctif accueil GetX et PageController
+
+Fichiers modifies :
+- `push_sale_mobile-master/lib/views/signed/menu/stats_page.dart`
+- `push_sale_mobile-master/lib/views/signed/customer/promotion_slide.dart`
+- `push_sale_mobile-master/lib/views/signed/menu/clients.dart`
+
+Commandes executees :
+- `dart format lib\views\signed\menu\stats_page.dart lib\views\signed\menu\clients.dart lib\views\signed\customer\promotion_slide.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.5:41605`
+- `flutter run -d 10.212.134.5:41605 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb -s 10.212.134.5:41605 shell am force-stop com.softstarter.pushsale`
+- `adb -s 10.212.134.5:41605 logcat -c`
+- `adb -s 10.212.134.5:41605 shell monkey -p com.softstarter.pushsale -c android.intent.category.LAUNCHER 1`
+- `adb -s 10.212.134.5:41605 logcat -d`
+
+Resultats :
+- L'accueil observe maintenant des variables GetX dans les blocs `Obx` avant d'utiliser les donnees dashboard non Rx.
+- Le slider promotion ne demarre plus de timers dans `build()` et verifie `PageController.hasClients`.
+- Les filtres clients evitent `jumpToPage` quand le `PageView` n'est pas encore attache.
+- APK debug genere et installe sur SM A165F.
+- Logcat filtre apres redemarrage propre : aucune trace `improper use of a GetX`, `PageController is not attached`, `Failed assertion`, `Null check operator`, `RenderFlex overflowed`.
+
+Risque :
+- Faible; correctifs UI defensifs sans changement de logique metier.
+
+# 2026-05-17 - GUI style maquettes et protections runtime
+
+Fichiers modifies :
+- `push_sale_mobile-master/lib/widgets/common/app_page_header.dart`
+- `push_sale_mobile-master/lib/views/signed/homepage.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/products/product_main_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/credit/main_credit_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/tracking/main_tracking_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/tracking/orders_to_track.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/delivery/orders_to_ship.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/warehouses/show_detail_warehouse.dart`
+
+Commandes executees :
+- `dart format ...`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.5:44217`
+- `flutter devices`
+
+Resultats :
+- Header commun rapproche des maquettes : logo Push Sales, actions hautes, titre grand format.
+- Catalogue produits plus proche de la reference : recherche, categories, compteur, cartes modernes, badges.
+- Page credits modernisee avec KPI et rendu clair.
+- Protections `PageController.hasClients` ajoutees sur depot detail, tracking et livraison.
+- Analyse no-fatal OK et APK debug genere.
+- Lancement smartphone non effectue : `10.212.134.5:44217` ne repond pas a ADB et aucun device Android n'est liste par `flutter devices`.
+
+Risque :
+- Moyen-faible; UI et protections runtime sans changement de logique metier.
+
+# 2026-05-17 - Espace livreur connecte aux donnees backend
+
+Fichiers modifies :
+- `push_sale_mobile-master/lib/controllers/order_controller.dart`
+- `push_sale_mobile-master/lib/views/signed/menu/stats_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/delivery/delivery_stock_mobile_page.dart`
+- `push_sale-master/database/seeders/DemoDataSeeder.php`
+
+Commandes executees :
+- `dart format lib\controllers\order_controller.dart lib\views\signed\menu\stats_page.dart lib\views\signed\widgets\delivery\delivery_stock_mobile_page.dart`
+- `php -l database\seeders\DemoDataSeeder.php`
+- `php artisan db:seed --class=TestUsersByRoleSeeder`
+- `php artisan db:seed --class=DemoDataSeeder`
+- Verification API dev `login`, `currentstock`, `toshiporders`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.3:35079`
+- `flutter devices`
+
+Resultats :
+- Dashboard livreur simplifie : un cadre principal + un cadre `Etat stock camion` calcule depuis les commandes backend.
+- Delivery ne depend plus du succes GPS/maps pour afficher les demandes; les commandes sont marquees chargees avant la carte.
+- Stock mobile recentre sur liste produits + detail + filtres, sans duplication de KPI.
+- Donnees demo ajoutees pour tester commandes `in_way`, `shipped`, `paid`, retours et stock camion.
+- APK debug genere avec succes.
+- Installation smartphone non effectuee : `10.212.134.3:35079` ne repond pas et aucun device Android n'est visible dans `flutter devices`.
+
+Risque :
+- Moyen-faible; correction UI, robustesse de chargement et donnees demo sans changement de routes API ni logique metier.

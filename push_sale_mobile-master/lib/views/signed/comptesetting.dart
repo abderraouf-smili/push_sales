@@ -19,7 +19,9 @@ import 'package:push_sale/const/globals.dart' as global;
 
 class CompteSetting extends StatelessWidget {
   final CompteMenuController compteController =
-      Get.find<CompteMenuController>();
+      Get.isRegistered<CompteMenuController>()
+          ? Get.find<CompteMenuController>()
+          : Get.put(CompteMenuController());
   final PermissionsController perm = Get.find();
 
   CompteSetting({super.key});

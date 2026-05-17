@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/controllers/order_controller.dart';
-import 'package:push_sale/views/signed/widgets/delivery/orders_to_ship.dart';
+import 'package:push_sale/views/signed/widgets/delivery/delivery_requests_page.dart';
 import 'package:push_sale/views/signed/widgets/delivery/shipping_order_detail.dart';
 
 class MainDeliveryPage extends StatelessWidget {
   final PageController pageController = PageController();
-  final OrderController orderController =
-      Get.put(OrderController(tag: "shipping"));
+  final OrderController orderController = Get.isRegistered<OrderController>()
+      ? Get.find<OrderController>()
+      : Get.put(OrderController(tag: "shipping"));
 
   MainDeliveryPage({super.key});
 
@@ -23,7 +24,7 @@ class MainDeliveryPage extends StatelessWidget {
               orderController.page.value = value;
             },
             children: [
-              OrdersToShip(pageController),
+              DeliveryRequestsPage(pageController),
               ShippingOrderDetail(pageController),
             ],
           ),

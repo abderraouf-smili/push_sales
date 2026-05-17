@@ -210,6 +210,13 @@ class _SearchAndFilters extends StatelessWidget {
     required this.countBuilder,
   });
 
+  void _goToClientPage(int page) {
+    clientController.page.value = page;
+    if (pageController.hasClients) {
+      pageController.jumpToPage(page);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -328,8 +335,7 @@ class _SearchAndFilters extends StatelessWidget {
                           icon: Icons.view_headline_rounded,
                           selected: clientController.page.value == 0,
                           onTap: () {
-                            clientController.page.value = 0;
-                            pageController.jumpToPage(0);
+                            _goToClientPage(0);
                           },
                         ),
                         _ClientModeChip(
@@ -337,8 +343,7 @@ class _SearchAndFilters extends StatelessWidget {
                           icon: Icons.grid_view_rounded,
                           selected: clientController.page.value == 1,
                           onTap: () {
-                            clientController.page.value = 1;
-                            pageController.jumpToPage(1);
+                            _goToClientPage(1);
                           },
                         ),
                         _ClientModeChip(
@@ -346,8 +351,7 @@ class _SearchAndFilters extends StatelessWidget {
                           icon: Icons.language_rounded,
                           selected: clientController.page.value == 2,
                           onTap: () {
-                            clientController.page.value = 2;
-                            pageController.jumpToPage(2);
+                            _goToClientPage(2);
                           },
                         ),
                         IconButton(

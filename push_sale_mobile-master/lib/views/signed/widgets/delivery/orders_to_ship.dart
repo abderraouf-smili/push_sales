@@ -286,9 +286,11 @@ class ListPurchaseOrders extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
                 onTap: () {
                   orderController.selectedPO = item;
-                  pageController.animateToPage(1,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.linear);
+                  if (pageController.hasClients) {
+                    pageController.animateToPage(1,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.linear);
+                  }
                 },
                 title: Container(child: Text(item.client!.name)),
                 subtitle: Column(

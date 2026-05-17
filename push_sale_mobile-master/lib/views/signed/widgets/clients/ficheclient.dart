@@ -244,8 +244,11 @@ class _InfoTab extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         Obx(
           () {
-            final controller = Get.find<ClientController>();
-            final currentOrders = controller.current_orders;
+            final isReady =
+                Get.find<ClientController>().current_orders_ready.value;
+            final currentOrders = isReady
+                ? Get.find<ClientController>().current_orders
+                : <Order>[];
             return _SummaryGrid(
               client: client,
               formatter: formatter,

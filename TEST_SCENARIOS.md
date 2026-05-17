@@ -267,3 +267,27 @@ Resultat attendu :
 - Aucun token FCM complet n'est imprime dans les logs.
 
 Statut manuel : OK / KO
+
+## Scenario Dashboard par role
+
+Role : Admin / Commercial / Livreur / Depot
+
+Preconditions :
+- `TestUsersByRoleSeeder` execute.
+- `DemoDataSeeder` execute.
+- Backend Laravel disponible sur l'URL configuree par Flutter.
+
+Etapes :
+1. Se connecter avec chaque compte de test.
+2. Ouvrir le tableau de bord.
+3. Attendre le chargement des statistiques.
+4. Changer d'onglet principal puis revenir au dashboard.
+5. Verifier les logs Flutter/Android si un ecran rouge apparait.
+
+Resultat attendu :
+- Pas de `Null check operator used on a null value`.
+- Pas d'assertion Flutter pendant la navigation.
+- Les roles livraison/depot affichent uniquement les indicateurs disponibles pour leur role.
+- Les donnees absentes affichent un etat vide/loading au lieu de crasher.
+
+Statut manuel : OK / KO

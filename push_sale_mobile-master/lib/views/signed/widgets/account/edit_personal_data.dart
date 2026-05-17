@@ -10,7 +10,10 @@ import 'package:push_sale/views/signed/homepage.dart';
 import 'package:push_sale/views/signed/widgets/clients/dropdown.dart';
 
 class EditPerosnalData extends StatelessWidget {
-  CompteMenuController compteController = Get.find<CompteMenuController>();
+  CompteMenuController compteController =
+      Get.isRegistered<CompteMenuController>()
+          ? Get.find<CompteMenuController>()
+          : Get.put(CompteMenuController());
   DropDownController dropController =
       Get.put(DropDownController("settingProfile"));
   TextEditingController lastNameController = TextEditingController();

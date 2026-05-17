@@ -25,6 +25,13 @@ class ShowDetailWarehouse extends StatelessWidget {
   final PageController _pageController = PageController();
   ShowDetailWarehouse(this.pageController, {super.key});
 
+  void _goToStockPage(int page) {
+    warehouseController.page.value = page;
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(page);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     warehouseController.adjustedPrice = [];
@@ -33,7 +40,9 @@ class ShowDetailWarehouse extends StatelessWidget {
     warehouseController.outOfStock.value = [];
     return WillPopScope(
       onWillPop: () async {
-        pageController.jumpToPage(0);
+        if (pageController.hasClients) {
+          pageController.jumpToPage(0);
+        }
         return false;
       },
       child: Scaffold(
@@ -84,22 +93,22 @@ class ShowDetailWarehouse extends StatelessWidget {
                       _FilterChip(
                         label: "all".tr,
                         selected: warehouseController.page.value == 0,
-                        onTap: () => _pageController.jumpToPage(0),
+                        onTap: () => _goToStockPage(0),
                       ),
                       _FilterChip(
                         label: "dispo.only".tr,
                         selected: warehouseController.page.value == 1,
-                        onTap: () => _pageController.jumpToPage(1),
+                        onTap: () => _goToStockPage(1),
                       ),
                       _FilterChip(
                         label: "alert.only".tr,
                         selected: warehouseController.page.value == 2,
-                        onTap: () => _pageController.jumpToPage(2),
+                        onTap: () => _goToStockPage(2),
                       ),
                       _FilterChip(
                         label: "empty.only".tr,
                         selected: warehouseController.page.value == 3,
-                        onTap: () => _pageController.jumpToPage(3),
+                        onTap: () => _goToStockPage(3),
                       ),
                     ],
                   ),

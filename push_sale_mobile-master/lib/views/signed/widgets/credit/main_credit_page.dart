@@ -8,7 +8,14 @@ import 'package:push_sale/controllers/credit_controller.dart';
 import 'package:push_sale/models/credit_client.dart';
 import 'package:intl/intl.dart';
 import 'package:push_sale/models/receivable.dart';
+import 'package:push_sale/theme/app_colors.dart';
+import 'package:push_sale/theme/app_spacing.dart';
+import 'package:push_sale/theme/app_text_styles.dart';
 import 'package:push_sale/views/signed/widgets/credit/confirm_diag.dart';
+import 'package:push_sale/widgets/common/app_card.dart';
+import 'package:push_sale/widgets/common/app_empty_state.dart';
+import 'package:push_sale/widgets/common/app_loading_state.dart';
+import 'package:push_sale/widgets/common/app_page_header.dart';
 
 class MainCreditPage extends StatelessWidget {
   const MainCreditPage({super.key});
@@ -19,35 +26,169 @@ class MainCreditPage extends StatelessWidget {
     final CreditController controller = Get.put(CreditController());
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text("customers_credit".tr),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        centerTitle: true,
-      ),
+      backgroundColor: AppColors.canvas,
       body: Obx(() {
         // Observer les changements d'état
-        if (controller.isLoading.value) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text('${'loading'.tr}...'),
-              ],
-            ),
-          );
+        final isLoading = controller.isLoading.value;
+        final totalCount = controller.credits.length;
+        final periodCount = controller.tree.length;
+
+        if (isLoading) {
+          return AppLoadingState(message: "${'loading'.tr}...");
         }
 
         if (controller.tree.isEmpty) {
-          return const Center(
+          return Center(
             child: Text('Aucune donnée disponible'),
           );
         }
 
-        return TreeViewWidget();
+        final formatter = NumberFormat("#,##0.00", "fr_FR");
+        final totalSolde = controller.credits.fold<double>(
+          0,
+          (sum, item) => sum + (item.solde as num).toDouble(),
+        );
+        final totalAmount = controller.credits.fold<double>(
+          0,
+          (sum, item) => sum + (item.totalAmount as num).toDouble(),
+        );
+
+        return RefreshIndicator(
+          onRefresh: controller.loadData,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              SliverToBoxAdapter(
+                child: AppPageHeader(
+                  title: "customers_credit".tr,
+                  subtitle: "Encaissements clients et soldes restants",
+                  icon: Icons.account_balance_wallet_outlined,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                  ),
+                  child: Wrap(
+                    spacing: AppSpacing.md,
+                    runSpacing: AppSpacing.md,
+                    children: [
+                      _CreditMetric(
+                        label: "Solde a encaisser",
+                        value: formatter.format(totalSolde),
+                        icon: Icons.payments_rounded,
+                        color: AppColors.secondary,
+                      ),
+                      _CreditMetric(
+                        label: "Montant commandes",
+                        value: formatter.format(totalAmount),
+                        icon: Icons.receipt_long_rounded,
+                        color: AppColors.primary,
+                      ),
+                      _CreditMetric(
+                        label: "Lignes",
+                        value: "$totalCount",
+                        icon: Icons.groups_rounded,
+                        color: AppColors.warning,
+                      ),
+                      _CreditMetric(
+                        label: "Periodes",
+                        value: "$periodCount",
+                        icon: Icons.calendar_month_rounded,
+                        color: AppColors.info,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final sortedYears = controller.getSortedYears();
+                      final year = sortedYears[index];
+                      return YearWidget(yearNode: controller.tree[year]!);
+                    },
+                    childCount: controller.getSortedYears().length,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
       }),
+    );
+  }
+}
+
+class _CreditMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _CreditMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final width = screenWidth >= 620
+        ? (screenWidth - (AppSpacing.lg * 2) - AppSpacing.md) / 2
+        : screenWidth - (AppSpacing.lg * 2);
+    return SizedBox(
+      width: width,
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              ),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: AppTextStyles.subtitle),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.title.copyWith(
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -87,18 +228,21 @@ class YearWidget extends StatelessWidget {
     double totalSolde = controller.getYearTotalSolde(yearNode);
     var formatter = NumberFormat("#,##0.0", "fr_FR");
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      elevation: 2,
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: EdgeInsets.zero,
       child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 5, vertical: 0),
+        tilePadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
         leading: Container(
           padding: const EdgeInsets.all(0),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: AppColors.softBlue,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           ),
-          child: const Icon(Icons.calendar_today, color: Colors.blue),
+          child: const Icon(Icons.calendar_today, color: AppColors.primary),
         ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -109,7 +253,7 @@ class YearWidget extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  color: AppColors.primaryDark,
                 ),
               ),
             ),
@@ -133,7 +277,7 @@ class YearWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.2),
+                color: AppColors.softBlue,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -141,7 +285,7 @@ class YearWidget extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  color: AppColors.primary,
                 ),
               ),
             ),

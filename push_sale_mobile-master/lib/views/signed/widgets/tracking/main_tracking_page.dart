@@ -16,8 +16,11 @@ class MainTrackingOrder extends StatelessWidget {
       onWillPop: () async {
         if (orderController.page.value != 0) {
           orderController.page.value = orderController.page.value - 1;
-          pageController.animateToPage(orderController.page.value,
-              duration: const Duration(milliseconds: 300), curve: Curves.ease);
+          if (pageController.hasClients) {
+            pageController.animateToPage(orderController.page.value,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.ease);
+          }
         }
         return false;
       },

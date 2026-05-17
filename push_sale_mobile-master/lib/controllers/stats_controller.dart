@@ -19,6 +19,11 @@ class StatController extends GetxController {
   DateTime? ServerTime;
   DateTime profitMonth = DateTime(DateTime.now().year, DateTime.now().month);
   RxBool statsReady = false.obs;
+  RxBool statsLoading = false.obs;
+  RxString statsError = "".obs;
+  RxBool deliveryStatsReady = false.obs;
+  RxBool deliveryStatsLoading = false.obs;
+  RxString deliveryStatsError = "".obs;
   RxBool profitStatsReady = false.obs;
   RxBool profitStatsLoading = false.obs;
 
@@ -58,22 +63,38 @@ class StatController extends GetxController {
   // cash_stats_day = StatsDay.fromMap(response.data["cash_stats_day"]);
 
   Future<void> getDeliveryStats() async {
-    statsReady.value = false;
-    ResponseHttpRequest response =
-        await CallApi.RequestHttp(global.DeliveryStatsDay);
-    if (response.status == "SUCCESS") {
-      delivery_stats_day =
-          StatsDeliveryDay.fromMap(response.data["today_stats"]);
-
-      ServerTime = DateTime.parse(response.data["server_time"]);
-      statsReady.value = true;
-    } else {
-      print(response.message);
+    if (deliveryStatsLoading.value) {
+      return;
+    }
+    deliveryStatsLoading.value = true;
+    deliveryStatsReady.value = false;
+    deliveryStatsError.value = "";
+    try {
+      ResponseHttpRequest response =
+          await CallApi.RequestHttp(global.DeliveryStatsDay);
+      if (response.status == "SUCCESS") {
+        delivery_stats_day =
+            StatsDeliveryDay.fromMap(response.data["today_stats"]);
+        ServerTime = DateTime.tryParse(response.data["server_time"].toString());
+        deliveryStatsReady.value = true;
+      } else {
+        deliveryStatsError.value = response.message.toString();
+        print(response.message);
+      }
+    } catch (e) {
+      deliveryStatsError.value = e.toString();
+    } finally {
+      deliveryStatsLoading.value = false;
     }
   }
 
   Future<void> getStats() async {
+    if (statsLoading.value) {
+      return;
+    }
+    statsLoading.value = true;
     statsReady.value = false;
+    statsError.value = "";
 
     lineChartData = [];
     pieCharData = [];
@@ -84,56 +105,63 @@ class StatController extends GetxController {
     int i = 0;
 
     // Get turn over by category
-    ResponseHttpRequest response =
-        await CallApi.RequestHttp(global.statscategory);
-    if (response.status == "SUCCESS") {
-      for (var item in response.data["categ"]) {
-        pieCharData.add(PieChartPushSaleData(
-            title_fr: item["short_description_fr"],
-            title_ar: item["short_description_ar"],
-            value: double.parse(item["total"].toString()),
-            color: _color[i]));
-        i++;
-      }
-      i = 0;
-      double val;
-      for (var item in response.data["line"]) {
-        val = double.parse(item["total"].toString());
-        if (i == 0) {
-          lineChartData.add(LineChartPushSaleData(i * 1.00, 0));
+    try {
+      ResponseHttpRequest response =
+          await CallApi.RequestHttp(global.statscategory);
+      if (response.status == "SUCCESS") {
+        for (var item in response.data["categ"]) {
+          pieCharData.add(PieChartPushSaleData(
+              title_fr: item["short_description_fr"],
+              title_ar: item["short_description_ar"],
+              value: double.parse(item["total"].toString()),
+              color: _color[i]));
           i++;
         }
-        if (val >= maxLineY) {
-          maxLineY = val;
+        i = 0;
+        double val;
+        for (var item in response.data["line"]) {
+          val = double.parse(item["total"].toString());
+          if (i == 0) {
+            lineChartData.add(LineChartPushSaleData(i * 1.00, 0));
+            i++;
+          }
+          if (val >= maxLineY) {
+            maxLineY = val;
+          }
+          lineChartData.add(LineChartPushSaleData(i * 1.00, val));
+          i++;
         }
-        lineChartData.add(LineChartPushSaleData(i * 1.00, val));
-        i++;
-      }
 
-      for (var item in response.data["client_stats"]) {
-        if (double.parse(item["count"].toString()) > maxYbar) {
-          maxYbar = double.parse(item["count"].toString());
-        }
-        barCharData.add(
-          BarChartPushSaleData(
-            item["name_ar"],
-            item["name"],
-            double.parse(
-              item["count"].toString(),
+        for (var item in response.data["client_stats"]) {
+          if (double.parse(item["count"].toString()) > maxYbar) {
+            maxYbar = double.parse(item["count"].toString());
+          }
+          barCharData.add(
+            BarChartPushSaleData(
+              item["name_ar"],
+              item["name"],
+              double.parse(
+                item["count"].toString(),
+              ),
             ),
-          ),
-        );
-      }
+          );
+        }
 
-      for (var item in response.data["today_stats"]["orders_status"]) {
-        statsOrders.add(StatsOrder.fromMap(item));
-      }
+        for (var item in response.data["today_stats"]["orders_status"]) {
+          statsOrders.add(StatsOrder.fromMap(item));
+        }
 
-      stats_day = StatsDay.fromMap(response.data["today_stats"]);
-      ServerTime = DateTime.parse(response.data["server_time"]);
-      statsReady.value = true;
-    } else {
-      print(response.message);
+        stats_day = StatsDay.fromMap(response.data["today_stats"]);
+        ServerTime = DateTime.tryParse(response.data["server_time"].toString());
+        statsReady.value = true;
+      } else {
+        statsError.value = response.message.toString();
+        print(response.message);
+      }
+    } catch (e) {
+      statsError.value = e.toString();
+    } finally {
+      statsLoading.value = false;
     }
   }
 

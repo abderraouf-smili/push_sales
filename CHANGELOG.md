@@ -2,6 +2,10 @@
 
 ## 2026-05-17
 
+- Audit UI : ajout de `UI_AUDIT.md` avec inventaire des pages Flutter principales et priorites restantes.
+- Dashboard : correction du crash `Null check operator used on a null value` pour les roles livraison.
+- Dashboard : separation des etats de chargement ventes/livraison et protection contre les appels API repétés dans `build()`.
+- HomePage : suppression d'un `setState()` pendant `build()` et stabilisation de l'`AnimatedSwitcher`.
 - Navigation : ajout d'une sidebar/drawer mobile avec navigation par role et deconnexion.
 - Session : logout nettoie maintenant preferences, Firebase Auth et controllers GetX pour eviter le profil precedent.
 - Clients : page principale modernisee, affichage tous clients par defaut, etats vide/erreur/loading et filtres plus lisibles.
@@ -54,3 +58,14 @@
 - Ajout d'une compatibilite Gradle pour le plugin legacy `blue_thermal_printer`.
 - Suppression d'un ancien token Bearer commente dans le client API Flutter.
 - Validation : `flutter pub get` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug` OK.
+- Validation finale audit UI : `flutter clean`, `flutter pub get`, analyse no-fatal, APK debug VPN, `flutter devices`, lancement sur SM A165F et logcat sans crash dashboard.
+- Backend validation : Composer OK avec PHP 8.3 explicite, routes/cache/config OK, seeders comptes/demo OK.
+- Comptes test : login API SUCCESS pour admin, commercial, livreur et depot sans afficher les tokens.
+- Dette restante : `flutter analyze` strict conserve 751 issues historiques a nettoyer module par module.
+- Correctifs smartphone : suppression des ecrans rouges `GetX improper use`, `CompteMenuController not found` et assertion Flutter de navigation observes sur fiche client/produits.
+- Accueil : correction du `GetX improper use` du dashboard en observant explicitement les flags Rx avant les donnees non observables.
+- Slider promotion et clients : protection des `PageController` non attaches pour eviter les assertions rouges pendant navigation/chargement.
+- UI maquettes : header commun Push Sales avec logo, actions notification/message et titres larges.
+- Produits : catalogue modernise avec recherche, categories, compteur et cartes produit visuelles.
+- Credits : page encaissements modernisee avec KPI, fond clair et navigation par periodes.
+- Stabilite : protections `PageController.hasClients` ajoutees sur tracking, livraison et detail depot.
