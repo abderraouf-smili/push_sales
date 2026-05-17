@@ -1,8 +1,6 @@
 // ignore_for_file: prefer_interpolation_to_compose_strings, non_constant_identifier_names
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -20,7 +18,6 @@ import 'package:push_sale/models/orderitem.dart';
 import 'package:push_sale/models/purchase_order.dart';
 import 'package:push_sale/models/purchase_orderitem.dart';
 import 'package:push_sale/models/route_maps.dart';
-import 'package:push_sale/models/stats_order.dart';
 import 'package:push_sale/models/variant.dart';
 import 'package:push_sale/const/globals.dart' as global;
 import 'package:uuid/uuid.dart';

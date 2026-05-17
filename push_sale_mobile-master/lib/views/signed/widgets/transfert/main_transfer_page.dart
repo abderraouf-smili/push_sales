@@ -112,18 +112,17 @@ class MainTransferPage extends StatelessWidget {
                                 // stock actuel
                                 warehouseController.prepareToPrintStock();
                                 await printerController.ScanPrinter();
-                                String response =
-                                    await printerController.StartPrinting(
-                                        warehouseController.textPrint);
+                                await printerController.StartPrinting(
+                                    warehouseController.textPrint);
                                 break;
                               case 3:
                                 // detail du bon de transfert
                                 stockController.PrepareToTransferPrint();
                                 await printerController.ScanPrinter();
-                                String response =
+                                final printResponse =
                                     await printerController.StartPrinting(
                                         stockController.textPrint);
-                                switch (response) {
+                                switch (printResponse) {
                                   case "ok":
                                     Flushbar(
                                       title: "print".tr,

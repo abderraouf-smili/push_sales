@@ -1,4 +1,3 @@
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -34,12 +33,12 @@ class SaleOrderList extends StatelessWidget {
                 switch (value) {
                   case 0:
                     orderController.PrepareRecapInvoice();
-                    String response = await printerController.StartPrinting(
+                    await printerController.StartPrinting(
                         orderController.textPrint);
                     break;
                   case 1:
                     orderController.PrepareRecapGoods();
-                    String response = await printerController.StartPrinting(
+                    await printerController.StartPrinting(
                         orderController.textPrint);
                     break;
                   case 2:

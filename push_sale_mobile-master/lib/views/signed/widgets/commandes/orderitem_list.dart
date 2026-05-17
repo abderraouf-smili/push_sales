@@ -32,15 +32,13 @@ class OrderitemList extends StatelessWidget {
   Widget build(BuildContext context) {
     int diff = 1;
     for (var element in global.weekend) {
-      int i = 0;
-      for (var item in global.weekend) {
+      for (var i = 0; i < global.weekend.length; i++) {
         if (element ==
             DateFormat("EEEE")
                 .format(DateTime.now().add(Duration(days: i + 1)))
                 .toLowerCase()) {
           diff++;
         }
-        i++;
       }
     }
     DateTime today = DateTime.now().add(Duration(days: diff));
@@ -408,7 +406,7 @@ class OrderitemList extends StatelessWidget {
                           title: Text(
                             _item.product_name,
                             style: TextStyle(
-                                color: orderController.out_of_stock.value
+                                color: orderController.out_of_stock
                                         .where((element) =>
                                             element["id"] == _item.variant_id)
                                         .isNotEmpty
@@ -419,7 +417,7 @@ class OrderitemList extends StatelessWidget {
                             "${_item.variant_name_1}  ${_item.variant_name_2} ",
                             style: TextStyle(
                                 fontSize: 12,
-                                color: orderController.out_of_stock.value
+                                color: orderController.out_of_stock
                                         .where((element) =>
                                             element["id"] == _item.variant_id)
                                         .isNotEmpty
@@ -469,8 +467,7 @@ class OrderitemList extends StatelessWidget {
                                             : 0),
                                         style: TextStyle(
                                           fontFamily: 'alata',
-                                          color: orderController
-                                                  .out_of_stock.value
+                                          color: orderController.out_of_stock
                                                   .where((element) =>
                                                       element["id"] ==
                                                       _item.variant_id)
@@ -488,8 +485,7 @@ class OrderitemList extends StatelessWidget {
                                     Text(
                                       "${_item.quantity.toStringAsFixed(0)} ${_item.unite.tr}",
                                       style: TextStyle(
-                                          color: orderController
-                                                  .out_of_stock.value
+                                          color: orderController.out_of_stock
                                                   .where((element) =>
                                                       element["id"] ==
                                                       _item.variant_id)
@@ -666,7 +662,6 @@ showCouponWindow(BuildContext context, OrderController orderController) {
     context: context,
     builder: (BuildContext context) {
       TextEditingController moneyTextController = TextEditingController();
-      var formatter = NumberFormat("#,##0.00", "fr_FR");
       return AlertDialog(
         contentPadding: EdgeInsets.only(left: 30, right: 30, top: 40),
         titlePadding: EdgeInsets.zero,

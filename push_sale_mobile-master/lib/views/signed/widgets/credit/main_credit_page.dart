@@ -326,7 +326,7 @@ class ClientCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      padding: EdgeInsets.all(controller.credits.value.isNotEmpty ? 0 : 1),
+      padding: EdgeInsets.all(controller.credits.isNotEmpty ? 0 : 1),
       child: ListTile(
         leading: SizedBox(
           width: 50,

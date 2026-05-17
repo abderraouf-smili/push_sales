@@ -28,6 +28,9 @@ if (flutterVersionName == null) {
     flutterVersionName = "1.0"
 }
 
+def googleMapsApiKey = localProperties.getProperty("GOOGLE_MAPS_API_KEY", "")
+def firebaseApiKey = localProperties.getProperty("FIREBASE_API_KEY", "")
+
 android {
     namespace = "com.softstarter.pushsale"
     compileSdk = flutter.compileSdkVersion
@@ -47,6 +50,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
+        manifestPlaceholders = [
+                applicationName: "android.app.Application",
+                googleMapsApiKey: googleMapsApiKey,
+                firebaseApiKey   : firebaseApiKey
+        ]
     }
 
     buildTypes {

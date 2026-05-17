@@ -1,8 +1,10 @@
-﻿library push_sale.globals;
+library push_sale.globals;
+
+import 'package:push_sale/config/app_config.dart';
 
 // String urlAPI = "https://softstarter.dz/api/push_sale/public";
 // String urlAPI = "https://google.com/api/push_sale/public";
-String urlAPI = "http://192.168.1.20:8000";
+String urlAPI = AppConfig.apiBaseUrl;
 
 String version = "2.0.0";
 String build = "18/05/2026";
@@ -12,10 +14,10 @@ String team = "Soft-Starter";
 bool force_cash_before_print = false;
 bool PackingWithBox = false;
 int alertQuantity = 1;
-Duration timeOut = Duration(seconds: 300);
+Duration timeOut = const Duration(seconds: 300);
 bool delivery_proof = false;
 List<String> weekend = ["friday"];
-String maps_key = "AIzaSyBVg0crwaJsnoXdvFezNGt4TOIelt9Rovo";
+String maps_key = AppConfig.googleMapsApiKey;
 /*------------------ */
 String getTime = "timenow";
 
@@ -110,11 +112,3 @@ List<String> weekdays = [
   "wednesday",
   "friday"
 ];
-
-
-
-
-
-
-
-

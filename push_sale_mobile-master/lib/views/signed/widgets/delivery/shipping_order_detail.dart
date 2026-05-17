@@ -1,6 +1,5 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:another_flushbar/flushbar.dart';
@@ -11,7 +10,6 @@ import 'package:intl/intl.dart';
 import 'package:push_sale/api/my_image_picker.dart';
 import 'package:push_sale/controllers/order_controller.dart';
 import 'package:push_sale/api/printer_controller.dart';
-import 'package:push_sale/models/order.dart';
 import 'package:push_sale/models/purchase_orderitem.dart';
 import 'package:push_sale/views/signed/widgets/settings/printer_config.dart';
 import 'package:push_sale/const/globals.dart' as global;
@@ -515,8 +513,7 @@ class ShippingOrderDetail extends StatelessWidget {
                                     icon: const Icon(Icons.refresh,
                                         color: Colors.red),
                                     onPressed: () async {
-                                      var response =
-                                          await orderController.sendCash();
+                                      await orderController.sendCash();
                                     },
                                   )
                                 : const SizedBox.shrink()
@@ -933,8 +930,6 @@ showModificationWindow(BuildContext context, PurchaseOrderitem item,
       quantityCartTextController.text = qtyCaisse.toStringAsFixed(0);
       quantityPcsTextController.text = qtyPcs.toStringAsFixed(0);
       orderController.uniteOption.value = item.unite;
-      double quantity = 0.0;
-      String unite = item.unite;
       return AlertDialog(
         contentPadding: const EdgeInsets.only(left: 30, right: 30, top: 15),
         titlePadding: EdgeInsets.zero,
@@ -1033,9 +1028,7 @@ showModificationWindow(BuildContext context, PurchaseOrderitem item,
                                           ),
                                           labelText: "Cart".tr,
                                         ),
-                                        onSaved: (value) {
-                                          quantity = double.parse(value!);
-                                        },
+                                        onSaved: (_) {},
                                       ),
                                     ),
                                   ],
@@ -1092,9 +1085,7 @@ showModificationWindow(BuildContext context, PurchaseOrderitem item,
                                           ),
                                           labelText: "Pcs".tr,
                                         ),
-                                        onSaved: (value) {
-                                          quantity = double.parse(value!);
-                                        },
+                                        onSaved: (_) {},
                                       ),
                                     ),
                                   ],

@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:push_sale/config/app_config.dart';
 import 'package:push_sale/models/client.dart';
 
 class PositionController extends GetxController {
@@ -28,7 +29,7 @@ class PositionController extends GetxController {
     PointLatLng source =
         PointLatLng(mycurrentPosition!.latitude, mycurrentPosition!.longitude);
     PolylineResult result = await PolylinePoints().getRouteBetweenCoordinates(
-        googleApiKey: "AIzaSyDPXVs2cyNHYOP-CXCS_SzcLWXgAzkb6GM",
+        googleApiKey: AppConfig.googleMapsApiKey,
         request: PolylineRequest(
             mode: TravelMode.driving, origin: source, destination: dest));
     if (result.status == "OK") {

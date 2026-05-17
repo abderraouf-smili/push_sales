@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:push_sale/config/app_config.dart';
 import 'package:push_sale/const/globals.dart' as global;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,7 +20,7 @@ class CallApi {
       connectTimeout: global.timeOut,
       sendTimeout: global.timeOut,
       receiveTimeout: global.timeOut,
-      baseUrl: "${global.urlAPI}/api", // localhost server
+      baseUrl: AppConfig.apiRootUrl,
       responseType: ResponseType.json,
       contentType: ContentType.json.toString(),
     ));
@@ -88,11 +89,11 @@ class CallApi {
     // }
   }
 
-  static _useSavedToken() async {
-    SharedPreferences Prefs = await SharedPreferences.getInstance();
+  static Future<void> _useSavedToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    if (Prefs.getString("userToken") != null) {
-      _token = Prefs.getString("userToken");
+    if (prefs.getString("userToken") != null) {
+      _token = prefs.getString("userToken");
     }
   }
 }

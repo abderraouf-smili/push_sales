@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/controllers/warehouse_controller.dart';
-import 'package:push_sale/models/warehouse.dart';
 
 class StockLocationPage extends StatelessWidget {
-  WarehouseController warehouseController = Get.find();
+  final WarehouseController warehouseController = Get.find();
 
   StockLocationPage({super.key});
   @override

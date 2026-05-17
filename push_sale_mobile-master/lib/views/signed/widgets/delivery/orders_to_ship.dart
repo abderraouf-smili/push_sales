@@ -5,8 +5,6 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/order_controller.dart';
-import 'package:push_sale/models/purchase_orderitem.dart';
-import 'package:push_sale/models/variant.dart';
 
 class OrdersToShip extends StatelessWidget {
   PageController pageController;
@@ -59,10 +57,9 @@ class OrdersToShip extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text("optimize.route".tr,
-                              style: const TextStyle(
-                                  color: !true ? Colors.grey : Colors.black)),
+                              style: const TextStyle(color: Colors.black)),
                           const Icon(Icons.share_location_outlined,
-                              color: !true ? Colors.grey : Colors.blue),
+                              color: Colors.blue),
                         ],
                       ),
                     ),

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/client_controller.dart';
-import 'package:push_sale/controllers/order_controller.dart';
 import 'package:push_sale/controllers/permissions_controller.dart';
 import 'package:push_sale/controllers/product_controller.dart';
 import 'package:push_sale/controllers/reason_controller.dart';
@@ -14,7 +13,6 @@ import 'package:push_sale/views/signed/widgets/clients/editclient.dart';
 import 'package:push_sale/views/signed/widgets/orders/show_order_detail.dart';
 import 'package:push_sale/views/signed/widgets/commandes/products.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:push_sale/const/globals.dart' as global;
 
 class FicheClient extends StatelessWidget {
   Client _client;

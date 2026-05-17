@@ -2,6 +2,17 @@
 
 ## 2026-05-17
 
+- Durcissement depots/stock : empty state depot, cartes depot plus flexibles, onglets stock responsives.
+- Nettoyage warnings ciblés : variables mortes, imports inutiles, dead code, acces RxList proteges.
+- Notifications backend : retrait d'une ancienne configuration Firebase commentee, validation `FCM_SERVER_KEY`, suppression des logs de token FCM complet.
+- Nouvelle validation : `flutter clean`, `flutter pub get`, `flutter analyze --no-fatal-infos --no-fatal-warnings`, `flutter build apk --debug`, `flutter run` sur SM A165F OK.
+- Finalisation demo : comptes test verifies, donnees demo ajoutees, endpoints principaux alimentes.
+- Ajout de `DemoDataSeeder` pour produits, clients, depot, stock mobile, commandes, tracking et transactions de test.
+- Centralisation de la configuration API Flutter via `AppConfig`, `APP_ENV` et `API_BASE_URL`.
+- Ajout d'une couche responsive commune Flutter et de widgets communs complementaires.
+- Externalisation partielle des cles Google/Firebase via `--dart-define` et placeholders Android.
+- Correction du packaging Android apres externalisation des placeholders manifest.
+- Validation device : APK installe/lance sur SM A165F via ADB wireless.
 - Modernisation UI/UX mobile progressive : theme global, composants communs, login/signup, navigation HomePage, clients, produits, commandes, menus compte/commercial et erreur Internet.
 - Ajout de confirmations UI pour creation commande et chargement/transfert.
 - Ajout de composants reutilisables Flutter : boutons, cartes, headers, list tiles, statuts, loading, empty, error, confirmations et snackbars.

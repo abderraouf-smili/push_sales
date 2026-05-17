@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -58,7 +58,6 @@ class AuthentificationController extends GetxController {
   static Future<String> checkInternet() async {
     String initialPage = "/";
     SharedPreferences Prefs = await SharedPreferences.getInstance();
-    Map<String, dynamic> userinfo = {};
     if (Prefs.getString("userToken") != null &&
         Prefs.getString("userToken") != "") {
       if (await checkDomain()) {
@@ -252,6 +251,11 @@ class AuthentificationController extends GetxController {
         }
       }
     } on FirebaseAuthException catch (e) {
+      if (_isLocalTestAccount() &&
+          ['user-not-found', 'invalid-credential', 'wrong-password']
+              .contains(e.code)) {
+        return await _signinWithLaravelTestAccount();
+      }
       if (e.code == 'user-not-found') {
         return {
           "response": "error",
@@ -277,6 +281,67 @@ class AuthentificationController extends GetxController {
       "code": "unknown-error",
       "message": "Unknown Error",
     };
+  }
+
+  bool _isLocalTestAccount() {
+    return kDebugMode &&
+        email != null &&
+        email!.trim().toLowerCase().endsWith('@pushsales.local');
+  }
+
+  Future<Map<String, dynamic>> _signinWithLaravelTestAccount() async {
+    final ResponseHttpRequest responseToken = await CallApi.RequestHttp(
+      global.login,
+      data: {
+        "email": email!.trim(),
+        "password": password!,
+      },
+    );
+
+    if (responseToken.status != "SUCCESS") {
+      return {
+        "response": responseToken.status,
+        "code": responseToken.code,
+        "message": responseToken.message,
+      };
+    }
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString("userToken", responseToken.data);
+
+    final ResponseHttpRequest profileResponse =
+        await CallApi.RequestHttp(global.isActorProfiled);
+
+    if (profileResponse.status != "SUCCESS" || profileResponse.data == null) {
+      return {
+        "response": profileResponse.status,
+        "code": profileResponse.code,
+        "message": profileResponse.message,
+      };
+    }
+
+    final Map<String, dynamic> data =
+        Map<String, dynamic>.from(profileResponse.data);
+    final Map<String, dynamic> userInfo =
+        Map<String, dynamic>.from(data["userinfo"] ?? {});
+    final String fullName = (userInfo["name"] ?? email!).toString();
+
+    _setGlobalName(fullName);
+    global.deviceId = (userInfo["device_id"] ?? "").toString();
+
+    return {
+      "response": "logged",
+      "provider": "email",
+      "hasactor": data["hasactor"] == 1,
+      "name": fullName,
+      "email": email,
+    };
+  }
+
+  void _setGlobalName(String fullName) {
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    global.lastName = parts.isNotEmpty ? parts.first : fullName;
+    global.firstName = parts.length > 1 ? parts.skip(1).join(' ') : "";
   }
 
   Future<Map<String, dynamic>> SignInWithGoogle() async {
@@ -455,7 +520,7 @@ class AuthentificationController extends GetxController {
 
   Future<Map<String, dynamic>> SignInWithFacebook() async {
     try {
-      var con = await FacebookAuth.i.login();
+      await FacebookAuth.i.login();
       final LoginResult loginResult = await FacebookAuth.instance.login();
 
       // Create a credential from the access token

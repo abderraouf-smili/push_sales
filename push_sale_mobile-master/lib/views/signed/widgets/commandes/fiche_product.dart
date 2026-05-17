@@ -10,7 +10,6 @@ import 'package:push_sale/controllers/order_controller.dart';
 import 'package:push_sale/controllers/product_controller.dart';
 import 'package:push_sale/models/product.dart';
 import 'package:push_sale/models/variant.dart';
-import 'dart:math';
 
 class FicheProduct extends StatelessWidget {
   PageController pageController;

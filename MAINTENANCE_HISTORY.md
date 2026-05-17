@@ -1,5 +1,25 @@
 # MAINTENANCE_HISTORY
 
+## 2026-05-17 - Correction login comptes de test
+
+Objectif :
+- Permettre aux comptes `@pushsales.local` documentes de fonctionner dans l'application debug sans creer manuellement les comptes Firebase.
+
+Resume technique :
+- Ajout d'un fallback dans `SigninWithMail()` uniquement pour les emails `@pushsales.local` en mode debug.
+- Si Firebase Auth retourne compte introuvable/identifiants invalides pour ces comptes, l'app appelle `login` Laravel, sauvegarde le token Passport, puis appelle `isprofiled`.
+- Documentation `README_DEV.md`, `TEST_ACCOUNTS.md` et `PROJECT_HISTORY.md` mise a jour.
+
+Point important :
+- Le seeder `TestUsersByRoleSeeder` doit etre execute sur la base Laravel reellement consommee par l'API mobile.
+- Sur cette machine, `composer install` reste bloque car seul PHP 8.1.32 est disponible alors que le lock backend exige PHP >= 8.2.
+- Verification reseau : `Test-NetConnection 192.168.1.20 -Port 8000` echoue avec connexion refusee; aucun processus PHP Laravel n'est visible localement au moment du test.
+- L'application debug corrigee a ete reinstallee sur le telephone `10.212.134.2:38587`.
+- Apres demarrage Laravel via PHP 8.3 : `Test-NetConnection 192.168.1.20 -Port 8000` OK.
+- Seeder execute avec `C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder` : OK.
+- Correction environnement dev : `passport:keys --force` puis `key:generate --force`, `config:clear`, `cache:clear`.
+- Verification API : les 4 comptes `@pushsales.local` retournent `SUCCESS` sur `/api/login`; `/api/isprofiled` retourne `hasactor=1` pour `admin.test@pushsales.local`.
+
 ## 2026-05-17 - Modernisation UI/UX mobile et pack de validation
 
 Objectif :
@@ -118,3 +138,108 @@ Recommandations futures :
 - Centraliser la configuration API par environnement simple.
 - Deplacer les cles Google/API hors code source et restreindre leurs usages cote consoles Google/Firebase.
 - Mettre a jour les dependances majeures par petits lots avec tests manuels.
+# 2026-05-17 - Durcissement depots, notifications et warnings ciblés
+
+Objectif :
+- Continuer la finition sans changer la logique metier : depot/stock plus robuste, notifications plus sures, warnings importants reduits.
+
+Fichiers principaux modifies :
+- `push_sale-master/app/Http/Controllers/NotificationController.php`
+- `push_sale_mobile-master/lib/controllers/client_controller.dart`
+- `push_sale_mobile-master/lib/controllers/purchaseorder_controller.dart`
+- `push_sale_mobile-master/lib/views/signed/menu/my_warehouses.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/warehouses/show_my_warehouses.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/warehouses/show_detail_warehouse.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/transfert/orders_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/transfert/stock_location_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/delivery/orders_to_ship.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/delivery/shipping_order_detail.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/commandes/orderitem_list.dart`
+
+Commandes executees :
+- `C:\tools\php83\php.exe -l app\Http\Controllers\NotificationController.php`
+- `C:\tools\php83\php.exe C:\ProgramData\ComposerSetup\bin\composer.phar install --no-interaction`
+- `C:\tools\php83\php.exe artisan route:list --compact`
+- `C:\tools\php83\php.exe artisan config:clear`
+- `C:\tools\php83\php.exe artisan cache:clear`
+- `C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder`
+- `C:\tools\php83\php.exe artisan db:seed --class=DemoDataSeeder`
+- `flutter clean`
+- `flutter pub get`
+- `flutter pub outdated`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter analyze`
+- `flutter build apk --debug`
+- `flutter run -d 10.212.134.2:38587 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- NotificationController syntax OK.
+- Laravel routes/cache/seeders OK.
+- APK debug regenere OK.
+- Lancement SM A165F OK avec appels `isprofiled`, `actorinfo`, `permissions`.
+- `flutter analyze --no-fatal-infos --no-fatal-warnings` OK.
+- `flutter analyze` strict : 802 issues restantes, contre 840 avant cette passe.
+
+Points restants :
+- Warnings historiques surtout `must_be_immutable`, noms non camelCase, `print`, `WillPopScope`, deprecations Flutter et dependances transitives.
+- Tester notification push reelle avec `FCM_SERVER_KEY` configuree et cle Firebase restreinte.
+
+Risque :
+- Moyen-faible.
+
+# 2026-05-17 - Finalisation demo Push Sales
+
+Objectif :
+- Finaliser une passe professionnelle non destructive : comptes test reels, donnees demo, configuration API par environnement, build APK et lancement device.
+
+Fichiers principaux modifies :
+- `push_sale_mobile-master/lib/config/app_config.dart`
+- `push_sale_mobile-master/lib/config/app_environment.dart`
+- `push_sale_mobile-master/lib/api/call_api.dart`
+- `push_sale_mobile-master/lib/const/globals.dart`
+- `push_sale_mobile-master/lib/main.dart`
+- `push_sale_mobile-master/lib/controllers/position_controller.dart`
+- `push_sale_mobile-master/android/app/build.gradle`
+- `push_sale_mobile-master/android/app/src/main/AndroidManifest.xml`
+- `push_sale_mobile-master/lib/core/responsive/*`
+- `push_sale_mobile-master/lib/widgets/common/app_responsive_container.dart`
+- `push_sale_mobile-master/lib/widgets/common/app_section_title.dart`
+- `push_sale_mobile-master/lib/widgets/common/app_list_item.dart`
+- `push_sale-master/database/seeders/DemoDataSeeder.php`
+- Documentation racine.
+
+Commandes executees :
+- `C:\tools\php83\php.exe C:\ProgramData\ComposerSetup\bin\composer.phar install --no-interaction`
+- `C:\tools\php83\php.exe artisan route:list --compact`
+- `C:\tools\php83\php.exe artisan config:clear`
+- `C:\tools\php83\php.exe artisan cache:clear`
+- `C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder`
+- `C:\tools\php83\php.exe artisan db:seed --class=DemoDataSeeder`
+- `flutter clean`
+- `flutter pub get`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter analyze`
+- `flutter build apk --debug`
+- `flutter devices`
+- `flutter run -d 10.212.134.2:38587 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- Composer OK avec PHP 8.3 explicite.
+- Routes API listees OK.
+- Caches Laravel nettoyes OK.
+- Seeders comptes et donnees demo OK.
+- `/api/login` OK pour admin, commercial, livreur et depot.
+- Endpoints demo verifies : produits, clients, depots, stock mobile, commandes a preparer/livrer.
+- `flutter analyze --no-fatal-infos --no-fatal-warnings` OK.
+- `flutter analyze` strict : 840 issues historiques restantes.
+- APK debug genere : `push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk`.
+- Lancement sur SM A165F OK.
+
+Points restants :
+- Nettoyer `flutter analyze` strict par lots.
+- Tester impression Bluetooth avec imprimante physique.
+- Tester notifications Firebase avec configuration projet reelle.
+- Restreindre/rotater les cles Google/Firebase exposees historiquement.
+
+Risque :
+- Moyen pour la partie demo DB, faible pour UI/config Flutter.

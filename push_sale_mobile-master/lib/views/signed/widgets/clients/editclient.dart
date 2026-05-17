@@ -195,9 +195,8 @@ class EditClient extends StatelessWidget {
                                         AwesomeDialog(
                                                 btnCancelOnPress: () {},
                                                 btnOkOnPress: () async {
-                                                  var permission =
-                                                      await Geolocator
-                                                          .requestPermission();
+                                                  await Geolocator
+                                                      .requestPermission();
                                                 },
                                                 context: Get.context!,
                                                 dialogType: DialogType.error,

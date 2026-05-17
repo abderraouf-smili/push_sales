@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:push_sale/api/call_api.dart';
 import 'package:push_sale/models/line_text_printer.dart';
 import 'package:push_sale/models/purchase_order.dart';
@@ -199,7 +198,7 @@ class PurchaseOrderController extends GetxController {
       operation_date: DateTime.now(),
       force_package: global.PackingWithBox,
       items: productsTransfer,
-      purchase_ids: BLs.value,
+      purchase_ids: BLs.toList(),
     );
     var data = BonTransfert!.toMap();
     data["track_id"] = trackId!;
@@ -210,7 +209,7 @@ class PurchaseOrderController extends GetxController {
       data: data,
     );
     if (response.status == "SUCCESS") {
-      BLs.value = [];
+      BLs.clear();
       selectedOrders = [];
       productsTransfer = [];
       await getOrderReadyToPack();
@@ -228,8 +227,6 @@ class PurchaseOrderController extends GetxController {
 
   PrepareToPrint() {
     textPrint = [];
-    var formatter = NumberFormat("#,##0.00", "fr_FR");
-
     textPrint.add(LineTextPrinter(
       type: LineTextPrinter.TYPE_TEXT,
       align: LineTextPrinter.CENTER,

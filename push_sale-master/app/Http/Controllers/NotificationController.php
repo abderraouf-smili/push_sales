@@ -13,69 +13,50 @@ use App\Support\TenantGuard;
 
 class NotificationController extends Controller
  {
-    // public function ssend()
-    // {
-    //     try {
-    //         $user = Auth::user();
-    //         if ( $user ) {
-    //             // $actor = Actor::where( 'user_id', $user->id )->first();
-    //             $firebaseConfig = [
-    //                 'apiKey' => 'AIzaSyBJMebqSmc0sxl7vgviZiG2gel3n9pIq_c',
-    //                 'authDomain' => 'pushsale-2ed49.firebaseapp.com',
-    //                 'projectId' => 'pushsale-2ed49',
-    //                 'storageBucket' => 'pushsale-2ed49.appspot.com',
-    //                 'messagingSenderId' => '908812739457',
-    //                 'appId' => '1:908812739457:android:41aedb056bab5d79d77e80',
-    //                 'type' => 'service_account',
-    //                 'client_email'=> 'shini20fr@gmail.com',
-    //                 // 'private_key'=> 'uV_bZqsqAkVjt_sO6bFwlz2Re3cCRkwjNM0ccj0E4cI',
-    // ];
-
-    //             $firebase = ( new Factory )->withServiceAccount( json_encode( $firebaseConfig ) );
-
-    //             $messaging = $firebase->createMessaging();
-    //             $notification = Notification::create( 'Titre de la notification', 'Contenu de la notification' );
-    //             $message = CloudMessage::withTarget( 'token', $user->fcmtoken )
-    //                 ->withNotification( $notification );
-    //             $messaging->send( $message );
-    //             return response()->json( [ 'status' => 'SUCCESS', 'data' => $message ] );
-    //         } else {
-    //             return response()->json( [ 'status' => 'FAIL', 'message' => 'User is not authentified' ] );
-    //         }
-    //     } catch ( \Exception $e ) {
-    //         return response()->json( [ 'status' => 'FAIL', 'message' => $e->getMessage() ] );
-    //     }
-    // }
-
     public function ssend(Request $request)
     {
-        return $this->send((object) $request->all());
+        return $this->send($request);
     }
 
-    public function send( Object $value )
+    public function send( $value )
  {
         try {
+            $payload = $value instanceof Request ? (object) $value->all() : (object) $value;
+            if (empty($payload->user_id) || empty($payload->title) || empty($payload->body)) {
+                return response()->json([ 'status' => 'FAIL', 'message' => 'Missing notification payload' ]);
+            }
+
+            $serverKey = env('FCM_SERVER_KEY');
+            if (empty($serverKey)) {
+                return response()->json([ 'status' => 'FAIL', 'message' => 'FCM is not configured' ]);
+            }
+
             $url = 'https://fcm.googleapis.com/fcm/send';
-            $user = User::where( 'id', $value->user_id )->first();
+            $user = User::where( 'id', $payload->user_id )->first();
             if ( $user ) {
+                if (empty($user->fcmtoken)) {
+                    return response()->json([ 'status' => 'FAIL', 'message' => 'User has no FCM token' ]);
+                }
+
                 $currentActor = TenantGuard::actor(Auth::user());
                 $targetActor = Actor::where("user_id", $user->id)->first();
                 if ($currentActor && (!$targetActor || $currentActor->distributor_id != $targetActor->distributor_id)) {
                     return TenantGuard::forbiddenResponse();
                 }
-                Log::info("fcmToken : " . $user->fcmtoken);
-                Log::info("title : " . $value->title);
-                Log::info("body  : " . $value->body);
+                Log::info("FCM notification requested", [
+                    'user_id' => $user->id,
+                    'title' => $payload->title,
+                ]);
                 $data = [
                     'registration_ids' => [ $user->fcmtoken ],
                     'notification' => [
-                        'title' => $value->title,
-                        'body' => $value->body,
+                        'title' => $payload->title,
+                        'body' => $payload->body,
                     ]
                 ];
                 $encodedData = json_encode( $data );
                 $headers = [
-                    'Authorization:key=' . env( 'FCM_SERVER_KEY' ),
+                    'Authorization:key=' . $serverKey,
                     'Content-Type: application/json',
                 ];
                 $ch = curl_init();
@@ -84,19 +65,17 @@ class NotificationController extends Controller
                 curl_setopt( $ch, CURLOPT_POST, true );
                 curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
                 curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-                curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 0 );
+                curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 2 );
                 curl_setopt( $ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1 );
-                // Disabling SSL Certificate support temporarly
-                curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
+                curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, true );
                 curl_setopt( $ch, CURLOPT_POSTFIELDS, $encodedData );
-                // Execute post
                 $result = curl_exec( $ch );
                 if ( $result === FALSE ) {
-                    die( 'Curl failed: ' . curl_error( $ch ) );
+                    Log::warning('FCM request failed', ['error' => curl_error($ch)]);
+                    curl_close( $ch );
+                    return response()->json([ 'status' => 'FAIL', 'message' => 'FCM request failed' ]);
                 }
-                // Close connection
                 curl_close( $ch );
-                // FCM response
                 return response()->json( [ 'status' => 'SUCCESS', 'message' => $result ] );
 
             } else {

@@ -5,8 +5,9 @@ import 'package:push_sale/views/signed/widgets/warehouses/show_detail_warehouse.
 import 'package:push_sale/views/signed/widgets/warehouses/show_my_warehouses.dart';
 
 class MyWarehouses extends StatelessWidget {
-  WarehouseController warehouseController = Get.put(WarehouseController());
-  PageController pageController = PageController();
+  final WarehouseController warehouseController =
+      Get.put(WarehouseController());
+  final PageController pageController = PageController();
 
   MyWarehouses({super.key});
   @override

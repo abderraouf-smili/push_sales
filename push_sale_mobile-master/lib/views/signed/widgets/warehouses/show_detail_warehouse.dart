@@ -11,8 +11,8 @@ import 'package:push_sale/views/signed/widgets/warehouses/product_reception.dart
 import 'package:push_sale/const/globals.dart' as global;
 
 class ShowDetailWarehouse extends StatelessWidget {
-  WarehouseController warehouseController = Get.find();
-  PageController pageController;
+  final WarehouseController warehouseController = Get.find();
+  final PageController pageController;
   final PageController _pageController = PageController();
   ShowDetailWarehouse(this.pageController, {super.key});
 
@@ -164,12 +164,11 @@ class ShowDetailWarehouse extends StatelessWidget {
               ),
               const Divider(height: 5),
               Obx(
-                () => Container(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: Get.width / 4 - 2,
+                () => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Container(
                         height: 50,
                         decoration: BoxDecoration(
                           color: bgColor(0, warehouseController.page.value),
@@ -182,10 +181,17 @@ class ShowDetailWarehouse extends StatelessWidget {
                             ),
                           ),
                         ),
-                        child: Center(child: Text("all".tr)),
+                        child: Center(
+                          child: Text(
+                            "all".tr,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
-                      Container(
-                        width: Get.width / 4 - 2,
+                    ),
+                    Expanded(
+                      child: Container(
                         height: 50,
                         decoration: BoxDecoration(
                           color: bgColor(1, warehouseController.page.value),
@@ -198,10 +204,17 @@ class ShowDetailWarehouse extends StatelessWidget {
                             ),
                           ),
                         ),
-                        child: Center(child: Text("dispo.only".tr)),
+                        child: Center(
+                          child: Text(
+                            "dispo.only".tr,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
-                      Container(
-                        width: Get.width / 4 - 2,
+                    ),
+                    Expanded(
+                      child: Container(
                         height: 50,
                         decoration: BoxDecoration(
                           color: bgColor(2, warehouseController.page.value),
@@ -214,10 +227,17 @@ class ShowDetailWarehouse extends StatelessWidget {
                             ),
                           ),
                         ),
-                        child: Center(child: Text("alert.only".tr)),
+                        child: Center(
+                          child: Text(
+                            "alert.only".tr,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
-                      Container(
-                        width: Get.width / 4 - 2,
+                    ),
+                    Expanded(
+                      child: Container(
                         height: 50,
                         decoration: BoxDecoration(
                           color: bgColor(3, warehouseController.page.value),
@@ -230,10 +250,16 @@ class ShowDetailWarehouse extends StatelessWidget {
                             ),
                           ),
                         ),
-                        child: Center(child: Text("empty.only".tr)),
+                        child: Center(
+                          child: Text(
+                            "empty.only".tr,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -259,10 +285,10 @@ class ShowDetailWarehouse extends StatelessWidget {
 }
 
 class PageVariantDetail extends StatelessWidget {
-  String filter;
+  final String filter;
   PageVariantDetail({super.key, required this.filter});
-  WarehouseController warehouseController = Get.find();
-  var formatter = NumberFormat("#,##0.00", "fr_FR");
+  final WarehouseController warehouseController = Get.find();
+  final formatter = NumberFormat("#,##0.00", "fr_FR");
   @override
   Widget build(BuildContext context) {
     List<ItemStock> list = [];
@@ -408,7 +434,6 @@ class PageVariantDetail extends StatelessWidget {
                                                 return "zero.not.allowed".tr;
                                               }
                                               return null;
-                                              return "error".tr;
                                             },
                                             controller: priceController,
                                             decoration: InputDecoration(
@@ -499,7 +524,6 @@ class PageVariantDetail extends StatelessWidget {
                                                 return "zero.not.allowed".tr;
                                               }
                                               return null;
-                                              return "error".tr;
                                             },
                                             controller: quantityController,
                                             decoration: InputDecoration(

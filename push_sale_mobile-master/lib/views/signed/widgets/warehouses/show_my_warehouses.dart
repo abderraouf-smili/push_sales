@@ -4,11 +4,12 @@ import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/warehouse_controller.dart';
 import 'package:push_sale/models/warehouse.dart';
 import 'package:push_sale/const/globals.dart' as global;
+import 'package:push_sale/widgets/common/app_empty_state.dart';
 
 class ShowMyWarehouses extends StatelessWidget {
   ShowMyWarehouses(this.pageController, {super.key});
-  WarehouseController warehouseController = Get.find();
-  PageController pageController;
+  final WarehouseController warehouseController = Get.find();
+  final PageController pageController;
 
   @override
   Widget build(BuildContext context) {
@@ -18,33 +19,45 @@ class ShowMyWarehouses extends StatelessWidget {
         title: Text("mywarehouses".tr),
         centerTitle: true,
       ),
-      body: Obx(() => warehouseController.ready.value
-          ? ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              itemCount: warehouseController.warehouses.length,
-              itemBuilder: (context, index) {
-                var item = warehouseController.warehouses[index];
-                return GestureDetector(
-                    onTap: () {
-                      warehouseController.warehouse = item;
-                      pageController.jumpToPage(1);
-                    },
-                    child: warehouseLine(item));
-              })
-          : const Center(
-              child: SizedBox(
-                width: 60,
-                height: 60,
-                child: CircularProgressIndicator(),
-              ),
-            )),
+      body: Obx(() {
+        if (!warehouseController.ready.value) {
+          return const Center(
+            child: SizedBox(
+              width: 60,
+              height: 60,
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (warehouseController.warehouses.isEmpty) {
+          return AppEmptyState(
+            icon: Icons.warehouse_outlined,
+            title: "mywarehouses".tr,
+            message: "Aucun depot de test disponible.",
+          );
+        }
+
+        return ListView.builder(
+            physics: const BouncingScrollPhysics(),
+            itemCount: warehouseController.warehouses.length,
+            itemBuilder: (context, index) {
+              var item = warehouseController.warehouses[index];
+              return GestureDetector(
+                  onTap: () {
+                    warehouseController.warehouse = item;
+                    pageController.jumpToPage(1);
+                  },
+                  child: WarehouseLine(item));
+            });
+      }),
     );
   }
 }
 
-class warehouseLine extends StatelessWidget {
-  Warehouse warehouse;
-  warehouseLine(this.warehouse, {super.key});
+class WarehouseLine extends StatelessWidget {
+  final Warehouse warehouse;
+  const WarehouseLine(this.warehouse, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +67,6 @@ class warehouseLine extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 3),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       width: double.infinity,
-      height: Get.height / 6,
       decoration: BoxDecoration(
           border: Border.all(
             width: 0.5,
@@ -69,9 +81,13 @@ class warehouseLine extends StatelessWidget {
             children: [
               Text(
                 warehouse.address.city.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 18, fontFamily: 'alata'),
               ),
               Text(warehouse.address.wilaya.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 18, fontFamily: 'alata')),
             ],
           ),

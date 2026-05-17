@@ -131,6 +131,16 @@ CheckLoginSign(Map<String, dynamic> result) {
                   .show();
             }
             break;
+          default:
+            {
+              AwesomeDialog(
+                      btnOkOnPress: () {},
+                      context: Get.context!,
+                      dialogType: DialogType.error,
+                      title: "error".tr,
+                      desc: result["message"]?.toString() ?? "unknown.error".tr)
+                  .show();
+            }
         }
       }
       break;

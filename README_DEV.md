@@ -63,27 +63,38 @@ APK debug :
 push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk
 ```
 
-## Configuration API
+## Configuration API par environnement
 
-L'URL API actuelle est definie dans :
-
-```text
-push_sale_mobile-master/lib/const/globals.dart
-```
-
-Valeur smartphone/VPN actuelle :
+La configuration API Flutter est centralisee dans :
 
 ```text
-http://192.168.1.20:8000
+push_sale_mobile-master/lib/config/app_config.dart
+push_sale_mobile-master/lib/config/app_environment.dart
 ```
 
-Pour un emulateur Android local, utiliser :
+L'application accepte les options suivantes :
+
+```bash
+flutter run --dart-define=APP_ENV=vpn
+flutter run --dart-define=APP_ENV=emulator
+flutter run --dart-define=API_BASE_URL=http://192.168.1.20:8000
+```
+
+Valeurs par defaut :
 
 ```text
-http://10.0.2.2:8000
+vpn       -> http://192.168.1.20:8000
+emulator  -> http://10.0.2.2:8000
+production-> https://example.com
 ```
 
-Changer cette URL prudemment sans modifier les routes API existantes.
+`CallApi` ajoute `/api` une seule fois. Ne pas mettre `/api` en double dans `API_BASE_URL`.
+
+Exemple smartphone VPN :
+
+```bash
+flutter run -d <device> --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000
+```
 
 ## ADB wireless
 
@@ -108,7 +119,7 @@ flutter run -d 10.212.134.2:45303
 Le port ADB wireless peut changer a chaque reconnexion. Le 2026-05-17, le device SM A165F a ete detecte sur :
 
 ```bash
-flutter run -d 10.212.134.2:37143
+flutter run -d 10.212.134.2:38587
 ```
 
 ## Comptes de test par role
@@ -121,6 +132,11 @@ php artisan db:seed --class=TestUsersByRoleSeeder
 ```
 
 Prevoir PHP >= 8.2 pour installer les dependances backend actuelles du `composer.lock`.
+Sur cette machine, utiliser PHP 8.3 explicitement si la commande `php` pointe encore vers PHP 8.1 :
+
+```bash
+C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder
+```
 
 Comptes crees :
 
@@ -132,6 +148,44 @@ depot.test@pushsales.local / Test@123456
 ```
 
 Ces comptes sont uniquement pour local/dev/test. Voir `TEST_ACCOUNTS.md`.
+
+En mode debug Flutter, les emails `@pushsales.local` peuvent se connecter via Laravel directement si Firebase Auth ne possede pas ces comptes. Le seeder doit quand meme etre execute sur la base Laravel pointee par `http://192.168.1.20:8000`.
+
+## Donnees demo
+
+Pour alimenter produits, clients, depots, stock, transactions et commandes de test :
+
+```bash
+cd push_sale-master
+C:\tools\php83\php.exe artisan db:seed --class=DemoDataSeeder
+```
+
+Le seeder est bloque en environnement `production`. Il cree aussi, si elles sont absentes, des vues de compatibilite dev utilisees par les controllers existants : `stock_warehouse`, `purchase_variants`, `full_variant`.
+
+## Cles Google/Firebase
+
+Les cles mobiles peuvent etre surchargees en debug :
+
+```bash
+flutter run --dart-define=GOOGLE_MAPS_API_KEY=xxx --dart-define=FIREBASE_API_KEY=xxx
+```
+
+Pour Android native manifest, ajouter en local seulement dans `push_sale_mobile-master/android/local.properties` :
+
+```text
+GOOGLE_MAPS_API_KEY=xxx
+FIREBASE_API_KEY=xxx
+```
+
+Ne pas versionner de vraies cles. Les cles deja exposees dans une app mobile doivent etre considerees comme publiques, puis restreintes par package Android, SHA-1/SHA-256 et API autorisees dans les consoles Google/Firebase.
+
+Pour l'envoi push cote Laravel, definir uniquement dans `.env` local/dev :
+
+```text
+FCM_SERVER_KEY=...
+```
+
+Sans cette valeur, l'endpoint notification retourne une erreur JSON claire au lieu de logger ou exposer un secret.
 
 ## Scenarios de validation
 
@@ -168,6 +222,23 @@ Flutter :
 flutter pub get
 flutter analyze --no-fatal-infos --no-fatal-warnings
 flutter build apk --debug
+```
+
+Build APK avec configuration VPN :
+
+```bash
+flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000
+```
+
+Derniere validation du 2026-05-17 :
+
+```text
+flutter clean : OK
+flutter pub get : OK
+flutter analyze --no-fatal-infos --no-fatal-warnings : OK
+flutter analyze strict : 802 issues historiques restantes
+flutter build apk --debug : OK
+flutter run -d 10.212.134.2:38587 --debug --no-resident : OK
 ```
 
 ## Securite

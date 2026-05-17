@@ -1,11 +1,7 @@
-import 'dart:io';
-
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:dio/dio.dart';
-import 'package:dio/io.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:push_sale/config/app_config.dart';
 import 'package:push_sale/controllers/authentification_controller.dart';
 import 'package:push_sale/controllers/compte_menu_controller.dart';
 import 'package:push_sale/theme/app_theme.dart';
@@ -25,11 +21,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: const FirebaseOptions(
-      apiKey: "AIzaSyCVRFwJ9fko-vJ9VhYg6TWQ96xU1K7Rraw",
-      appId: "1:908812739457:android:b40dbd59692694c9d77e80",
-      messagingSenderId: "908812739457",
-      projectId: "pushsale-2ed49",
-      storageBucket: "pushsale-2ed49.firebasestorage.app",
+      apiKey: AppConfig.firebaseApiKey,
+      appId: AppConfig.firebaseAppId,
+      messagingSenderId: AppConfig.firebaseMessagingSenderId,
+      projectId: AppConfig.firebaseProjectId,
+      storageBucket: AppConfig.firebaseStorageBucket,
     ),
   );
   String initialPage = await AuthentificationController.checkInternet();

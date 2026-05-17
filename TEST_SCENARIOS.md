@@ -14,6 +14,19 @@ APK debug :
 push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk
 ```
 
+Donnees demo recommandees :
+
+```bash
+C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder
+C:\tools\php83\php.exe artisan db:seed --class=DemoDataSeeder
+```
+
+Etat API verifie le 2026-05-17 :
+- `/api/login` fonctionne pour admin, commercial, livreur et depot.
+- `/api/products`, `/api/warehouses`, `/api/topackorders` retournent des donnees demo.
+- `/api/currentstock` retourne du stock pour livreur et depot.
+- `/api/toshiporders` retourne une commande demo pour livreur.
+
 ## Scenario Admin
 
 Role : Admin
@@ -187,5 +200,70 @@ Etapes :
 Resultat attendu :
 - HomePage affiche uniquement les modules autorises.
 - Les permissions viennent de l'API `permissions`.
+
+Statut manuel : OK / KO
+
+## Scenario Depots / produits / transactions
+
+Role : Admin / Depot
+
+Preconditions :
+- `DemoDataSeeder` execute.
+- Depot demo `WH-DEMO-CENTRAL` et stocks mobiles demo presents.
+
+Etapes :
+1. Se connecter avec `depot.test@pushsales.local`.
+2. Ouvrir transfert / chargement.
+3. Verifier commande a preparer.
+4. Ouvrir stock mobile.
+5. Ouvrir produits et variantes.
+6. Verifier qu'une transaction demo existe via les ecrans de suivi disponibles.
+
+Resultat attendu :
+- Depot, produits et stock demo visibles.
+- Aucune page importante ne reste vide faute de donnees.
+- Les mouvements restent calcules par Laravel.
+
+Statut manuel : OK / KO
+
+## Scenario Responsive
+
+Role : Tous
+
+Etapes :
+1. Tester petit smartphone.
+2. Tester smartphone normal.
+3. Tester grand smartphone.
+4. Tester tablette ou fenetre large si disponible.
+5. Tourner en paysage sur les ecrans de liste.
+
+Resultat attendu :
+- Pas d'overflow bloquant.
+- Boutons lisibles et faciles a toucher.
+- Listes et cartes restent exploitables.
+
+Statut manuel : OK / KO
+
+## Scenario Notifications
+
+Role : Admin / Livreur
+
+Preconditions :
+- Firebase configure pour l'environnement.
+- Autorisation notification accordee sur Android.
+- `FCM_SERVER_KEY` configure dans `.env` Laravel local/dev.
+- L'utilisateur cible possede un `fcmtoken` non vide.
+
+Etapes :
+1. Se connecter.
+2. Verifier que l'app demande/obtient les permissions necessaires.
+3. Appeler l'ecran ou endpoint de notification existant si disponible.
+4. Verifier affichage ou absence de crash.
+
+Resultat attendu :
+- Aucun crash si Firebase Messaging n'est pas configure en dev.
+- Si `FCM_SERVER_KEY` manque, Laravel retourne `status=FAIL` avec message de configuration.
+- Les cles de production ne sont pas exposees dans les logs.
+- Aucun token FCM complet n'est imprime dans les logs.
 
 Statut manuel : OK / KO

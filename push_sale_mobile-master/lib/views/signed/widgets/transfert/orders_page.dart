@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/purchaseorder_controller.dart';
 
 class OrdersPage extends StatelessWidget {
-  PurchaseOrderController purchaseController = Get.find();
+  final PurchaseOrderController purchaseController = Get.find();
 
   OrdersPage({super.key});
 
@@ -29,9 +29,8 @@ class OrdersPage extends StatelessWidget {
                     return Container(
                       margin: const EdgeInsets.symmetric(
                           horizontal: 2, vertical: 0.5),
-                      decoration: purchaseController.BLs.value
-                              .where((element) => element == item.id)
-                              .isNotEmpty
+                      decoration: purchaseController.BLs.where(
+                              (element) => element == item.id).isNotEmpty
                           ? BoxDecoration(
                               border: Border.all(
                                   width: 1,
@@ -58,10 +57,11 @@ class OrdersPage extends StatelessWidget {
                             purchaseController.selectedOrders.removeWhere(
                                 (element) => element.id == item.id);
                           }
-                          purchaseController.BLs.value = List.from(
-                              purchaseController.selectedOrders
-                                  .map((e) => e.id)
-                                  .toList());
+                          purchaseController.BLs.assignAll(
+                            purchaseController.selectedOrders
+                                .map((e) => e.id)
+                                .toList(),
+                          );
                         },
                         title: Container(child: Text(item.client!.name)),
                         subtitle: Column(
@@ -186,7 +186,7 @@ class OrdersPage extends StatelessWidget {
                       const SizedBox(
                         width: 10,
                       ),
-                      Text(purchaseController.BLs.value.length.toString(),
+                      Text(purchaseController.BLs.length.toString(),
                           style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold)),
                     ],

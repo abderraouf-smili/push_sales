@@ -88,7 +88,6 @@ class ClientController extends GetxController {
     List<Placemark> placemarks =
         await placemarkFromCoordinates(position.latitude, position.longitude);
 
-    Placemark place = placemarks[0];
     Map<String, dynamic> add = {
       "country": placemarks.first.isoCountryCode,
       "country_name": placemarks.first.country,

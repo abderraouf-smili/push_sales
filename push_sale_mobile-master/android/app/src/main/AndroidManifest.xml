@@ -15,10 +15,10 @@ package="com.softstarter.pushsale">
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <meta-data android:name="com.google.android.geo.API_KEY"
-        android:value="AIzaSyDPXVs2cyNHYOP-CXCS_SzcLWXgAzkb6GM"/>
+        android:value="${googleMapsApiKey}"/>
         <meta-data
         android:name="com.google.firebase.API_KEY"
-        android:value="AIzaSyCVRFwJ9fko-vJ9VhYg6TWQ96xU1K7Rraw" />
+        android:value="${firebaseApiKey}" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
