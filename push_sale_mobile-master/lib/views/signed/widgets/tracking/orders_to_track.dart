@@ -7,11 +7,11 @@ import 'package:push_sale/controllers/order_controller.dart';
 class OrderToTrack extends StatelessWidget {
   OrderController orderController = Get.find();
 
-  OrderToTrack(this.pageController);
+  OrderToTrack(this.pageController, {super.key});
   PageController pageController;
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     return Column(
       children: [
         Container(
@@ -20,15 +20,15 @@ class OrderToTrack extends StatelessWidget {
           color: Colors.blue,
           child: Row(
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 50,
               ),
-              Container(
+              SizedBox(
                 width: Get.width - 100,
                 child: Center(
                   child: Text(
                     "orders.to.track".tr,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                     ),
@@ -37,20 +37,21 @@ class OrderToTrack extends StatelessWidget {
               ),
               IconButton(
                   onPressed: () async {
-                    var _date = await showDatePicker(
-                      locale: Locale('fr'),
+                    var date = await showDatePicker(
+                      locale: const Locale('fr'),
                       context: context,
                       initialDate: DateTime.now(),
-                      firstDate: DateTime.now().subtract(Duration(days: 90)),
-                      lastDate: DateTime.now().add(Duration(days: 1)),
+                      firstDate:
+                          DateTime.now().subtract(const Duration(days: 90)),
+                      lastDate: DateTime.now().add(const Duration(days: 1)),
                     );
-                    if (_date != null) {
-                      orderController.selectedDate = _date;
+                    if (date != null) {
+                      orderController.selectedDate = date;
                       orderController.getOrdersToTrack(
                           date: orderController.selectedDate);
                     }
                   },
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.calendar_month_outlined,
                     color: Colors.white,
                   ))
@@ -59,118 +60,118 @@ class OrderToTrack extends StatelessWidget {
         ),
         Obx(() {
           double total = 0.0;
-          double amount_shipped = 0.0;
-          double amount_cash = 0.0;
-          double amount_diff = 122110.0;
+          double amountShipped = 0.0;
+          double amountCash = 0.0;
+          double amountDiff = 122110.0;
           if (orderController.loadordersToTrack.value) {
-            orderController.ordersToTrack.forEach((element) {
-              element.tracking!.forEach((item) {
+            for (var element in orderController.ordersToTrack) {
+              for (var item in element.tracking!) {
                 total += item.state == "new" ? item.amount! : 0;
-                amount_shipped += item.state == "shipped" ? item.amount! : 0;
-                amount_cash +=
+                amountShipped += item.state == "shipped" ? item.amount! : 0;
+                amountCash +=
                     item.state == "paid" || item.state == "partially_paid"
                         ? item.amount!
                         : 0;
-              });
-            });
+              }
+            }
           }
-          amount_diff = amount_shipped - amount_cash;
+          amountDiff = amountShipped - amountCash;
           return orderController.loadordersToTrack.value
-              ? Container(
+              ? SizedBox(
                   width: Get.width,
                   height: 45,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      SizedBox(
+                      const SizedBox(
                         width: 5,
                       ),
-                      Container(
+                      SizedBox(
                         width: Get.width / 4.25,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Icon(
+                            const Icon(
                               size: 18,
                               Icons.local_grocery_store_rounded,
                               color: Color.fromARGB(255, 179, 180, 90),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 2,
                             ),
                             Text(
                               formatter.format(total),
-                              style:
-                                  TextStyle(fontFamily: "alata", fontSize: 13),
+                              style: const TextStyle(
+                                  fontFamily: "alata", fontSize: 13),
                             ),
                           ],
                         ),
                       ),
-                      Container(
+                      SizedBox(
                         width: Get.width / 4.25,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Icon(
+                            const Icon(
                               size: 18,
                               Icons.local_shipping,
                               color: Color.fromARGB(255, 221, 100, 205),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 2,
                             ),
                             Text(
-                              formatter.format(amount_shipped),
-                              style:
-                                  TextStyle(fontFamily: "alata", fontSize: 13),
+                              formatter.format(amountShipped),
+                              style: const TextStyle(
+                                  fontFamily: "alata", fontSize: 13),
                             ),
                           ],
                         ),
                       ),
-                      Container(
+                      SizedBox(
                         width: Get.width / 4.25,
                         child: Row(children: [
-                          Icon(
+                          const Icon(
                             size: 18,
                             Icons.real_estate_agent_outlined,
                             color: Colors.green,
                           ),
-                          SizedBox(
+                          const SizedBox(
                             width: 2,
                           ),
-                          Text(formatter.format(amount_cash),
-                              style:
-                                  TextStyle(fontFamily: "alata", fontSize: 13)),
+                          Text(formatter.format(amountCash),
+                              style: const TextStyle(
+                                  fontFamily: "alata", fontSize: 13)),
                         ]),
                       ),
-                      Container(
+                      SizedBox(
                         width: Get.width / 4.25,
                         child: Row(children: [
-                          Icon(
+                          const Icon(
                             size: 18,
                             Icons.money_rounded,
                             color: Color.fromARGB(255, 240, 170, 114),
                           ),
-                          SizedBox(
+                          const SizedBox(
                             width: 2,
                           ),
-                          Text(formatter.format(amount_diff),
-                              style:
-                                  TextStyle(fontFamily: "alata", fontSize: 13)),
+                          Text(formatter.format(amountDiff),
+                              style: const TextStyle(
+                                  fontFamily: "alata", fontSize: 13)),
                         ]),
                       ),
                     ],
                   ),
                 )
-              : SizedBox(
+              : const SizedBox(
                   height: 45,
                 );
         }),
-        Divider(
+        const Divider(
           height: 1,
           color: Colors.grey,
         ),
-        Container(
+        SizedBox(
           width: Get.width,
           height: Get.height - 187,
           child: Obx(
@@ -186,16 +187,18 @@ class OrderToTrack extends StatelessWidget {
                       onTap: () {
                         orderController.orderToTrack = item;
                         pageController.animateToPage(2,
-                            duration: Duration(milliseconds: 300),
+                            duration: const Duration(milliseconds: 300),
                             curve: Curves.ease);
                       },
                       child: ListTile(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 5),
-                          title: Container(
+                          contentPadding:
+                              const EdgeInsets.symmetric(horizontal: 5),
+                          title: SizedBox(
                             width: Get.width / 2.5,
                             child: Text(
                               item.client!.name,
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
                           subtitle: Row(
@@ -205,17 +208,15 @@ class OrderToTrack extends StatelessWidget {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(item.client!.address!.city.name +
-                                      " (" +
-                                      item.client!.address!.wilaya.code +
-                                      ")"),
+                                  Text(
+                                      "${item.client!.address!.city.name} (${item.client!.address!.wilaya.code})"),
                                   Text(DateFormat("dd/MM/y HH:mm")
                                       .format(item.planned_delivery_date))
                                 ],
                               ),
                               item.tracking!.isNotEmpty
                                   ? item.tracking!.last.getIcon()
-                                  : SizedBox.shrink()
+                                  : const SizedBox.shrink()
                             ],
                           ),
                           leading: Container(
@@ -231,7 +232,7 @@ class OrderToTrack extends StatelessWidget {
                                   ),
                                 )),
                           ),
-                          trailing: Container(
+                          trailing: SizedBox(
                             width: Get.width / 6,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
@@ -239,16 +240,16 @@ class OrderToTrack extends StatelessWidget {
                               children: [
                                 Text(
                                   formatter.format(item.delivery_amount),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14),
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   height: 5,
                                 ),
                                 Text(
-                                  ("state." + item.tracking!.last.state).tr,
-                                  style: TextStyle(fontSize: 11),
+                                  ("state.${item.tracking!.last.state}").tr,
+                                  style: const TextStyle(fontSize: 11),
                                 ),
                               ],
                             ),

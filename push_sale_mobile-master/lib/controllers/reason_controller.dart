@@ -43,7 +43,7 @@ class ReasoController extends GetxController {
     }
   }
 
-  Future<void> submit(String client_id) async {
+  Future<void> submit(String clientId) async {
     submittig.value = "submit";
     if (visit_id == null) {
       generateId();
@@ -51,11 +51,11 @@ class ReasoController extends GetxController {
     ResponseHttpRequest response =
         await CallApi.RequestHttp(global.saveVisit, data: {
       "visit_id": visit_id,
-      "client_id": client_id,
+      "client_id": clientId,
       "reason_id": selectedId.value,
     });
     if (response.status == "SUCCESS") {
-      await Future.delayed(Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 500));
       submittig.value = "success";
     } else {
       print(response.message);

@@ -15,7 +15,7 @@ class ProductPurchaseList extends StatelessWidget {
   PurchaseOrderController purchaseController =
       Get.put(PurchaseOrderController());
   ProductController productController = Get.find();
-  ProductPurchaseList(this.pageController);
+  ProductPurchaseList(this.pageController, {super.key});
   PageController pageController;
 
   TextEditingController searchController = TextEditingController();
@@ -45,8 +45,7 @@ class ProductPurchaseList extends StatelessWidget {
                       btnOkOnPress: () {
                         purchaseController.saved.value = false;
                         Get.back();
-                      })
-                    ..show();
+                      }).show();
                 } else {
                   AwesomeDialog(
                       dialogType: DialogType.question,
@@ -57,8 +56,7 @@ class ProductPurchaseList extends StatelessWidget {
                       btnOkOnPress: () {
                         purchaseController.saved.value = false;
                         Get.back();
-                      })
-                    ..show();
+                      }).show();
                 }
               } else {
                 purchaseController.saved.value = false;
@@ -102,7 +100,7 @@ class ProductPurchaseList extends StatelessWidget {
                 child: Column(
                   children: [
                     Container(
-                      margin: EdgeInsets.symmetric(horizontal: 10),
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -186,7 +184,7 @@ class ProductPurchaseList extends StatelessWidget {
                                             ? 1
                                             : 0);
                                   },
-                                  icon: Icon(Icons.arrow_back),
+                                  icon: const Icon(Icons.arrow_back),
                                 ),
                                 Container(
                                   width: Get.width / 1.3,
@@ -274,11 +272,11 @@ class ProductPurchaseList extends StatelessWidget {
                     ),
                     Container(
                       child: Obx(() => productController.loadProductReady.value
-                          ? Container(
+                          ? SizedBox(
                               height: Get.height - 200,
                               child: Obx(
                                 () => ListView.builder(
-                                    physics: BouncingScrollPhysics(),
+                                    physics: const BouncingScrollPhysics(),
                                     itemCount: productController.ready.value
                                         ? productController.listProducts
                                             .where((element) => element
@@ -312,7 +310,7 @@ class ProductPurchaseList extends StatelessWidget {
                               padding: EdgeInsets.symmetric(
                                   horizontal: Get.width / 2 - 20,
                                   vertical: (Get.height / 2) - 80),
-                              child: CircularProgressIndicator(),
+                              child: const CircularProgressIndicator(),
                             )),
                     ),
                   ],
@@ -331,13 +329,13 @@ class PurchaseProductListWidget extends StatelessWidget {
 
   Product product;
   PageController pageController;
-  PurchaseProductListWidget(this.product, this.pageController);
+  PurchaseProductListWidget(this.product, this.pageController, {super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 5),
       height: 60,
       child: GestureDetector(
         onTap: () {
@@ -348,7 +346,7 @@ class PurchaseProductListWidget extends StatelessWidget {
           pageController.jumpToPage(2);
         },
         child: ListTile(
-          leading: Container(
+          leading: SizedBox(
             width: 40,
             height: 40,
             child: CachedNetworkImage(
@@ -360,9 +358,10 @@ class PurchaseProductListWidget extends StatelessWidget {
               ),
               imageUrl: product.image,
               placeholder: (context, url) => Container(
-                  padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                  child: CircularProgressIndicator()),
-              errorWidget: (context, url, error) => Icon(Icons.error),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                  child: const CircularProgressIndicator()),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
             ),
           ),
           title: Text(product.getShortDescription(Get.locale!.languageCode)),

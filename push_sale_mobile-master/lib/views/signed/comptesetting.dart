@@ -15,6 +15,8 @@ class CompteSetting extends StatelessWidget {
   CompteMenuController compteController = Get.find<CompteMenuController>();
   PermissionsController perm = Get.find();
 
+  CompteSetting({super.key});
+
   @override
   Widget build(BuildContext context) {
     if (compteController.actor == null) {
@@ -26,7 +28,7 @@ class CompteSetting extends StatelessWidget {
         "title": "Language".tr,
         "subtitle": "Language_system".tr,
         "icon": Icons.language,
-        "color": Color.fromARGB(255, 102, 28, 124),
+        "color": const Color.fromARGB(255, 102, 28, 124),
         "onTap": () {
           showDialogueLanguages(context);
         }
@@ -43,7 +45,7 @@ class CompteSetting extends StatelessWidget {
         "icon": Icons.message,
         "color": Colors.blue,
         "onTap": () {
-          Get.to(() => MessageChat());
+          Get.to(() => const MessageChat());
         }
       },
       {
@@ -53,7 +55,7 @@ class CompteSetting extends StatelessWidget {
         "title": "commercial".tr,
         "subtitle": "commercial.sub".tr,
         "icon": Icons.groups_rounded,
-        "color": Color.fromARGB(255, 224, 89, 202),
+        "color": const Color.fromARGB(255, 224, 89, 202),
         "onTap": () {
           Get.to(() => CommercialMenu());
         }
@@ -88,7 +90,7 @@ class CompteSetting extends StatelessWidget {
         "title": "printer.settings".tr,
         "subtitle": "bluetooth".tr,
         "icon": Icons.print,
-        "color": Color.fromARGB(255, 116, 116, 116),
+        "color": const Color.fromARGB(255, 116, 116, 116),
         "onTap": () {
           ShowButtomSheetPrinterConfig(context: context);
         }
@@ -121,12 +123,12 @@ class CompteSetting extends StatelessWidget {
       },
       child: Column(children: [
         Container(
-          margin: EdgeInsets.only(top: 25, left: 20),
+          margin: const EdgeInsets.only(top: 25, left: 20),
           child: Align(
             alignment: Alignment.bottomLeft,
             child: Text(
               "settings".tr,
-              style: TextStyle(
+              style: const TextStyle(
                   color: Color.fromARGB(255, 19, 21, 121),
                   fontSize: 25,
                   fontWeight: FontWeight.bold),
@@ -140,8 +142,8 @@ class CompteSetting extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       Container(
-                        margin:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
                         width: 70,
                         height: 70,
                         decoration: BoxDecoration(
@@ -158,7 +160,7 @@ class CompteSetting extends StatelessWidget {
                         onTap: () {
                           Get.to(() => EditPerosnalData());
                         },
-                        child: Container(
+                        child: SizedBox(
                           width: Get.width / 2,
                           height: 45,
                           child: Column(
@@ -168,13 +170,13 @@ class CompteSetting extends StatelessWidget {
                                 alignment: Alignment.bottomLeft,
                                 child: Text(
                                   "${compteController.actor!.firstname} ${compteController.actor!.lastname}",
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       color: Colors.black,
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold),
                                 ),
                               ),
-                              Align(
+                              const Align(
                                 alignment: Alignment.bottomLeft,
                                 child: Text(
                                   "Edit personal details",
@@ -188,7 +190,7 @@ class CompteSetting extends StatelessWidget {
                       ),
                       IconButton(
                           onPressed: () {},
-                          icon: Icon(Icons.arrow_forward_ios_outlined))
+                          icon: const Icon(Icons.arrow_forward_ios_outlined))
                     ],
                   ),
                 )
@@ -197,8 +199,8 @@ class CompteSetting extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       Container(
-                        margin:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
                         width: 70,
                         height: 70,
                         decoration: BoxDecoration(
@@ -211,10 +213,10 @@ class CompteSetting extends StatelessWidget {
                         onTap: () {
                           Get.to(() => EditPerosnalData());
                         },
-                        child: Container(
+                        child: SizedBox(
                           width: Get.width / 2,
                           height: 45,
-                          child: Column(
+                          child: const Column(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Align(
@@ -234,21 +236,21 @@ class CompteSetting extends StatelessWidget {
                       ),
                       IconButton(
                           onPressed: () {},
-                          icon: Icon(Icons.arrow_forward_ios_outlined))
+                          icon: const Icon(Icons.arrow_forward_ios_outlined))
                     ],
                   ),
                 ),
         ),
         Container(
-          margin: EdgeInsets.symmetric(horizontal: 10),
+          margin: const EdgeInsets.symmetric(horizontal: 10),
           height: Get.height - 204,
           child: ListView.builder(
-              physics: BouncingScrollPhysics(),
+              physics: const BouncingScrollPhysics(),
               itemCount: menu.length,
               itemBuilder: (context, index) {
                 return menu[index] != null
                     ? menu[index]["divider"] != null
-                        ? Divider(
+                        ? const Divider(
                             height: 10,
                             thickness: 1,
                             endIndent: 50,
@@ -263,13 +265,15 @@ class CompteSetting extends StatelessWidget {
                               ),
                               title: Text(
                                 menu[index]["title"],
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               ),
                               subtitle: Text(menu[index]["subtitle"]),
-                              trailing: Icon(Icons.arrow_forward_ios_outlined),
+                              trailing:
+                                  const Icon(Icons.arrow_forward_ios_outlined),
                             ),
                           )
-                    : SizedBox.shrink();
+                    : const SizedBox.shrink();
               }),
         )
       ]),
@@ -286,14 +290,14 @@ class CompteSetting extends StatelessWidget {
           child: child,
         );
       },
-      transitionDuration: Duration(milliseconds: 250),
+      transitionDuration: const Duration(milliseconds: 250),
       pageBuilder: (BuildContext context, Animation animation,
           Animation secondaryAnimation) {
         return AlertDialog(
           contentPadding: EdgeInsets.zero,
           titlePadding: EdgeInsets.zero,
           title: Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Color.fromARGB(255, 43, 87, 124),
             ),
             width: double.infinity,
@@ -301,28 +305,28 @@ class CompteSetting extends StatelessWidget {
             child: Center(
               child: Text(
                 'Language'.tr,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                 ),
               ),
             ),
           ),
-          content: Container(
+          content: SizedBox(
               width: Get.width,
               height: Get.height / 4,
               child: Obx(
                 () => ListView(
-                  padding: EdgeInsets.only(top: 20),
-                  physics: NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(top: 20),
+                  physics: const NeverScrollableScrollPhysics(),
                   children: [
                     GestureDetector(
                       onTap: (() {
                         compteController.changeLanguage("ar");
                       }),
                       child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 5),
                         width: Get.width,
                         height: 60,
                         decoration: BoxDecoration(
@@ -333,7 +337,7 @@ class CompteSetting extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("العربية"),
+                            const Text("العربية"),
                             Image.asset(
                               "assets/images/lang_ar.png",
                               width: 50,
@@ -347,8 +351,8 @@ class CompteSetting extends StatelessWidget {
                         compteController.changeLanguage("fr");
                       }),
                       child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 5),
                         width: Get.width,
                         height: 60,
                         decoration: BoxDecoration(
@@ -359,7 +363,7 @@ class CompteSetting extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("Français"),
+                            const Text("Français"),
                             Image.asset(
                               "assets/images/lang_fr.png",
                               width: 50,
@@ -373,8 +377,8 @@ class CompteSetting extends StatelessWidget {
                         compteController.changeLanguage("en");
                       }),
                       child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 5),
                         width: Get.width,
                         height: 60,
                         decoration: BoxDecoration(
@@ -385,7 +389,7 @@ class CompteSetting extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("English"),
+                            const Text("English"),
                             Image.asset(
                               "assets/images/lang_en.png",
                               width: 50,
@@ -394,7 +398,7 @@ class CompteSetting extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 10,
                     ),
                   ],
@@ -405,7 +409,7 @@ class CompteSetting extends StatelessWidget {
               height: 50,
               minWidth: double.infinity,
               color: Colors.blue,
-              child: Text(
+              child: const Text(
                 'OK',
                 style: TextStyle(color: Colors.white),
               ),
@@ -424,24 +428,24 @@ class CompteSetting extends StatelessWidget {
 void ShowButtomSheetVersion({required BuildContext context}) {
   showModalBottomSheet<void>(
       isScrollControlled: true,
-      anchorPoint: Offset(10, 1),
+      anchorPoint: const Offset(10, 1),
       backgroundColor: Colors.black.withOpacity(0.60),
       context: context,
       builder: (context) {
         return Container(
           height: Get.height / 3,
           width: double.infinity,
-          color: Color.fromARGB(255, 250, 254, 255),
+          color: const Color.fromARGB(255, 250, 254, 255),
           child: Column(
             children: [
               Container(
                   width: double.infinity,
                   height: 40,
-                  color: Color.fromARGB(255, 230, 230, 230),
+                  color: const Color.fromARGB(255, 230, 230, 230),
                   child: Center(
                       child: Text(
                     "about".tr,
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ))),
               Image.asset(
                 "assets/images/icon_transp.png",
@@ -450,8 +454,8 @@ void ShowButtomSheetVersion({required BuildContext context}) {
               ),
               Container(
                 child: Text(
-                  "Version " + global.version,
-                  style: TextStyle(
+                  "Version ${global.version}",
+                  style: const TextStyle(
                       fontFamily: "alata",
                       fontSize: 20,
                       color: Color.fromARGB(255, 107, 107, 107)),
@@ -459,28 +463,20 @@ void ShowButtomSheetVersion({required BuildContext context}) {
               ),
               Container(
                 child: Text(
-                  "build " +
-                      global.build +
-                      " serv : " +
-                      global.urlAPI
-                          .replaceAll("https://", "")
-                          .replaceAll("http://", "")
-                          .replaceAll("/push_sale", "")
-                          .replaceAll("/api", "")
-                          .replaceAll("/public", ""),
-                  style: TextStyle(
+                  "build ${global.build} serv : ${global.urlAPI.replaceAll("https://", "").replaceAll("http://", "").replaceAll("/push_sale", "").replaceAll("/api", "").replaceAll("/public", "")}",
+                  style: const TextStyle(
                     fontFamily: "alata",
                     fontSize: 14,
                     color: Colors.grey,
                   ),
                 ),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 30,
               ),
               Container(
                 child: Text(global.team,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: "kodchasan",
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

@@ -1,5 +1,3 @@
-import 'package:push_sale/models/order.dart';
-
 class PurchaseOrderitem {
   final String id;
   final String purchaseorder_id;
@@ -97,11 +95,11 @@ class PurchaseOrderitem {
   }
 
   static List<PurchaseOrderitem> fromListMapToList(List<dynamic> value) {
-    List<PurchaseOrderitem> _list = [];
+    List<PurchaseOrderitem> list = [];
     for (var item in value) {
-      _list.add(PurchaseOrderitem.fromMap(item));
+      list.add(PurchaseOrderitem.fromMap(item));
     }
-    return _list;
+    return list;
   }
 
   confirmQuantity() {
@@ -116,26 +114,26 @@ class PurchaseOrderitem {
     modified = true;
   }
 
-  setConfirmQuantity(_quantity) {
-    if (_quantity == 0) {
+  setConfirmQuantity(quantity) {
+    if (quantity == 0) {
       cancelQuantity();
-    } else if (_quantity == quantity) {
+    } else if (quantity == quantity) {
       confirmQuantity();
     } else {
-      confirmed_quantity = _quantity;
+      confirmed_quantity = quantity;
       modified = true;
     }
   }
 
-  addRestant(double _quantity) {
-    restant = restant + _quantity;
+  addRestant(double quantity) {
+    restant = restant + quantity;
   }
 
   resetRestant() {
     restant = 0;
   }
 
-  setUnite(String _unite) {
+  setUnite(String unite) {
     if (unite == "Cart") {
       quantity = quantity * package;
       price = price / package;
@@ -143,6 +141,6 @@ class PurchaseOrderitem {
       quantity = quantity / package;
       price = price * package;
     }
-    unite = _unite;
+    unite = unite;
   }
 }

@@ -15,6 +15,8 @@ class ProductReception extends StatelessWidget {
   ProductController productController = Get.put(ProductController());
   PageController pageController = PageController(initialPage: 1);
 
+  ProductReception({super.key});
+
   @override
   Widget build(BuildContext context) {
     productController.client = null;
@@ -29,7 +31,7 @@ class ProductReception extends StatelessWidget {
           },
           child: Scaffold(
             body: PageView(
-              physics: NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               controller: pageController,
               children: [
                 PurchaseItemsList(pageController),

@@ -24,43 +24,43 @@ class TrackingOrder {
   Icon getIcon() {
     switch (state) {
       case "new":
-        return Icon(
+        return const Icon(
           Icons.shopping_cart_outlined,
           color: Color.fromARGB(255, 208, 211, 41),
         );
       case "taken":
-        return Icon(
+        return const Icon(
           Icons.delivery_dining_sharp,
           color: Colors.orange,
         );
 
       case "taken_partial":
-        return Icon(
+        return const Icon(
           Icons.delivery_dining_sharp,
           color: Colors.orange,
         );
       case "in_way":
-        return Icon(
+        return const Icon(
           Icons.local_shipping_outlined,
           color: Colors.blue,
         );
       case "shipped":
-        return Icon(
+        return const Icon(
           Icons.child_friendly_outlined,
           color: Color.fromARGB(255, 239, 133, 253),
         );
       case "paid":
-        return Icon(
+        return const Icon(
           Icons.check_circle,
           color: Colors.green,
         );
       case "partially_paid":
-        return Icon(
+        return const Icon(
           Icons.local_pharmacy_outlined,
           color: Color.fromARGB(255, 73, 151, 145),
         );
       default:
-        return Icon(Icons.radio_button_unchecked_rounded);
+        return const Icon(Icons.radio_button_unchecked_rounded);
     }
   }
 
@@ -80,11 +80,11 @@ class TrackingOrder {
   }
 
   static List<TrackingOrder> fromListMapToList(List<dynamic> value) {
-    List<TrackingOrder> _list = [];
+    List<TrackingOrder> list = [];
     for (var item in value) {
-      _list.add(TrackingOrder.fromMap(item));
+      list.add(TrackingOrder.fromMap(item));
     }
-    return _list;
+    return list;
   }
 
   String getDescription() {

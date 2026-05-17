@@ -11,14 +11,14 @@ class StyledConfirmDialog extends StatelessWidget {
   final String cancelText;
 
   const StyledConfirmDialog({
-    Key? key,
+    super.key,
     required this.message,
     required this.details,
     required this.color,
     required this.icon,
     this.confirmText = "CONFIRMER",
     this.cancelText = "ANNULER",
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

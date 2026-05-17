@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:get/get.dart';
@@ -20,7 +18,7 @@ class PositionController extends GetxController {
   RxBool showHeader = false.obs;
   RxBool readyPolyline = false.obs;
 
-  Set<Polyline> mypolylines = Set<Polyline>();
+  Set<Polyline> mypolylines = <Polyline>{};
   List<LatLng> polylineCoordinates = [];
 
   String filter = "";
@@ -34,13 +32,13 @@ class PositionController extends GetxController {
         request: PolylineRequest(
             mode: TravelMode.driving, origin: source, destination: dest));
     if (result.status == "OK") {
-      result.points.forEach((element) {
+      for (var element in result.points) {
         polylineCoordinates.add(LatLng(element.latitude, element.longitude));
-      });
+      }
     }
     mypolylines.add(Polyline(
         width: 10,
-        polylineId: PolylineId("polyline"),
+        polylineId: const PolylineId("polyline"),
         color: Colors.green,
         points: polylineCoordinates));
   }
@@ -116,7 +114,7 @@ class PositionController extends GetxController {
       );
       loadPOS();
     } else {
-      initialPos = CameraPosition(
+      initialPos = const CameraPosition(
         target: LatLng(36.693672548327164, 3.073091941698789),
         zoom: 11,
       );

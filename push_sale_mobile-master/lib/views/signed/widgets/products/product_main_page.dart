@@ -9,6 +9,9 @@ class ProductMainPage extends StatelessWidget {
   @override
   ProductController productController = Get.put(ProductController());
 
+  ProductMainPage({super.key});
+
+  @override
   Widget build(BuildContext context) {
     productController.client = null;
     productController.getProducts();
@@ -16,7 +19,7 @@ class ProductMainPage extends StatelessWidget {
       onWillPop: () async {
         return false;
       },
-      child: Container(
+      child: SizedBox(
         width: Get.width,
         height: Get.height - 89,
         child: Column(
@@ -24,16 +27,16 @@ class ProductMainPage extends StatelessWidget {
             Container(
               height: 50,
               width: Get.width,
-              margin: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+              margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
               decoration: BoxDecoration(
                 border: Border.all(
                   width: 1,
-                  color: Color.fromARGB(255, 214, 214, 214),
+                  color: const Color.fromARGB(255, 214, 214, 214),
                 ),
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            Container(
+            SizedBox(
               height: (Get.height - 143),
               width: Get.width,
               child: Obx(
@@ -46,7 +49,7 @@ class ProductMainPage extends StatelessWidget {
                       return Column(
                         children: [
                           Container(
-                            margin: EdgeInsets.symmetric(horizontal: 10),
+                            margin: const EdgeInsets.symmetric(horizontal: 10),
                             width: Get.width,
                             height: (Get.height / 4 - Get.height / 5),
                             // decoration:
@@ -57,31 +60,32 @@ class ProductMainPage extends StatelessWidget {
                                 Text(
                                   item.getLongDescription(
                                       Get.deviceLocale!.languageCode),
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
                                 ),
-                                Text("Plus..."),
+                                const Text("Plus..."),
                               ],
                             ),
                           ),
                           Container(
                             width: Get.width,
                             height: Get.height / 5,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               border: Border(bottom: BorderSide(width: 1)),
                             ),
                             child: ListView.builder(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: item.purchasevariants!.length,
-                                itemBuilder: (Context, _index) {
-                                  var element = item.purchasevariants![_index];
-                                  return Container(
+                                itemBuilder: (Context, index) {
+                                  var element = item.purchasevariants![index];
+                                  return SizedBox(
                                     width: Get.height / 4,
                                     height: Get.height / 4,
                                     child: Column(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceAround,
                                       children: [
-                                        Container(
+                                        SizedBox(
                                           width: Get.width / 3,
                                           height: Get.height / 8,
                                           child: CachedNetworkImage(
@@ -95,27 +99,25 @@ class ProductMainPage extends StatelessWidget {
                                             imageUrl: element.image,
                                             placeholder: (context, url) =>
                                                 Container(
-                                              padding: EdgeInsets.symmetric(
-                                                  horizontal: 50, vertical: 40),
-                                              child: CircularProgressIndicator(),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 50,
+                                                      vertical: 40),
+                                              child:
+                                                  const CircularProgressIndicator(),
                                             ),
                                             errorWidget:
                                                 (context, url, error) =>
-                                                    Icon(Icons.error),
+                                                    const Icon(Icons.error),
                                           ),
                                         ),
                                         Container(
-                                          margin: EdgeInsets.symmetric(
+                                          margin: const EdgeInsets.symmetric(
                                               horizontal: 30),
                                           child: Text(
-                                            element.getVariantName1(Get
-                                                    .deviceLocale!
-                                                    .languageCode) +
-                                                " " +
-                                                element.getVariantName2(Get
-                                                    .deviceLocale!
-                                                    .languageCode),
-                                            style: TextStyle(fontSize: 12),
+                                            "${element.getVariantName1(Get.deviceLocale!.languageCode)} ${element.getVariantName2(Get.deviceLocale!.languageCode)}",
+                                            style:
+                                                const TextStyle(fontSize: 12),
                                           ),
                                         )
                                       ],

@@ -13,12 +13,12 @@ import 'package:push_sale/models/purchase_variant.dart';
 
 class FichePurchaseProduct extends StatelessWidget {
   PageController pageController;
-  FichePurchaseProduct(this.pageController);
+  FichePurchaseProduct(this.pageController, {super.key});
   ProductController productController = Get.find();
   PurchaseOrderController purchaseController = Get.find();
   WarehouseController warehouseController = Get.find();
   late Product product;
-  var formatter = new NumberFormat("#,##0.00", "fr_FR");
+  var formatter = NumberFormat("#,##0.00", "fr_FR");
   TextEditingController qtyController = TextEditingController();
   TextEditingController priceController = TextEditingController();
   @override
@@ -36,12 +36,12 @@ class FichePurchaseProduct extends StatelessWidget {
 
     product = productController.productSelected!;
 
-    List<PurchaseVariant> _variants = List.from(product.purchasevariants!
+    List<PurchaseVariant> variants = List.from(product.purchasevariants!
         .where((article) => !purchaseController.orderitems
             .any((item) => item.variant_id == article.id))
         .toList());
 
-    List<String> var1 = productController.getOption(_variants, 1);
+    List<String> var1 = productController.getOption(variants, 1);
     return SafeArea(
       child: WillPopScope(
         onWillPop: () async {
@@ -71,8 +71,7 @@ class FichePurchaseProduct extends StatelessWidget {
                       btnOkOnPress: () {
                         purchaseController.saved.value = false;
                         Get.back();
-                      })
-                    ..show();
+                      }).show();
                 } else {
                   AwesomeDialog(
                       dialogType: DialogType.question,
@@ -83,8 +82,7 @@ class FichePurchaseProduct extends StatelessWidget {
                       btnOkOnPress: () {
                         purchaseController.saved.value = false;
                         Get.back();
-                      })
-                    ..show();
+                      }).show();
                 }
               } else {
                 purchaseController.saved.value = false;
@@ -100,14 +98,14 @@ class FichePurchaseProduct extends StatelessWidget {
           body: SingleChildScrollView(
             child: Column(
               children: [
-                Container(
+                SizedBox(
                   width: double.infinity,
                   child: Align(
                     alignment: Get.locale!.languageCode == "ar"
                         ? Alignment.topRight
                         : Alignment.topLeft,
                     child: IconButton(
-                      icon: Icon(Icons.arrow_back),
+                      icon: const Icon(Icons.arrow_back),
                       onPressed: () {
                         productController.selectedVariant = null;
                         productController.opt1.value = false;
@@ -120,7 +118,7 @@ class FichePurchaseProduct extends StatelessWidget {
                   ),
                 ),
                 Obx(
-                  () => Container(
+                  () => SizedBox(
                     width: double.infinity,
                     height: Get.height / 3.2,
                     child: CachedNetworkImage(
@@ -139,22 +137,23 @@ class FichePurchaseProduct extends StatelessWidget {
                           padding: EdgeInsets.symmetric(
                               horizontal: Get.width / 2 - 25,
                               vertical: (Get.height / 3.2) / 2 - 25),
-                          child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) => Icon(Icons.error),
+                          child: const CircularProgressIndicator()),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
                     ),
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 Container(
                   height: Get.height / 2.23,
-                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: ListView(
-                    physics: BouncingScrollPhysics(),
+                    physics: const BouncingScrollPhysics(),
                     children: [
                       Container(
-                        child: Text(
+                        child: const Text(
                           "***",
                           style: TextStyle(
                             fontFamily: 'alata',
@@ -162,31 +161,31 @@ class FichePurchaseProduct extends StatelessWidget {
                         ),
                       ),
 
-                      Divider(
+                      const Divider(
                         thickness: 1,
                       ),
                       // Long description of article
-                      Container(
+                      SizedBox(
                         height: 40,
                         child: Text(
                           product.getLongDescription(Get.locale!.languageCode),
-                          style:
-                              TextStyle(color: Color.fromARGB(255, 65, 65, 65)),
+                          style: const TextStyle(
+                              color: Color.fromARGB(255, 65, 65, 65)),
                         ),
                       ),
                       //Premiere Option du Vartiant
 
                       Container(
-                        padding: EdgeInsets.symmetric(vertical: 5),
+                        padding: const EdgeInsets.symmetric(vertical: 5),
                         height: 30,
                         child: Row(
                           children: [
                             Text(
-                              _variants.length > 0
-                                  ? _variants.first
+                              variants.isNotEmpty
+                                  ? variants.first
                                       .getOptionName1(Get.locale!.languageCode)
                                   : "",
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Color.fromARGB(255, 88, 88, 88),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
@@ -199,7 +198,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                               .getVariantName1(
                                                   Get.locale!.languageCode)
                                       : "",
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       color: Color.fromARGB(255, 116, 116, 116),
                                       fontSize: 12),
                                 ))
@@ -207,12 +206,12 @@ class FichePurchaseProduct extends StatelessWidget {
                         ),
                       ),
                       //Liste des variant 1
-                      _variants.length > 0
-                          ? Container(
+                      variants.isNotEmpty
+                          ? SizedBox(
                               width: Get.width,
                               height: 40.0 * (var1.length / 4).ceil(),
                               child: GridView.builder(
-                                  physics: BouncingScrollPhysics(),
+                                  physics: const BouncingScrollPhysics(),
                                   scrollDirection: Axis.horizontal,
                                   gridDelegate:
                                       SliverGridDelegateWithFixedCrossAxisCount(
@@ -229,7 +228,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                         productController.opt1.value = false;
                                         productController
                                             .selectedVariantReady.value = false;
-                                        productController.option1 = _variants
+                                        productController.option1 = variants
                                             .where((element) =>
                                                 element.getVariantName1(
                                                     Get.locale!.languageCode) ==
@@ -261,9 +260,9 @@ class FichePurchaseProduct extends StatelessWidget {
                                                                     .locale!
                                                                     .languageCode) ==
                                                             var1[index]
-                                                    ? Color.fromARGB(
+                                                    ? const Color.fromARGB(
                                                         255, 128, 145, 182)
-                                                    : Color.fromARGB(
+                                                    : const Color.fromARGB(
                                                             255, 205, 221, 253)
                                                         .withOpacity(0.5),
                                               ),
@@ -275,9 +274,9 @@ class FichePurchaseProduct extends StatelessWidget {
                                                                   .locale!
                                                                   .languageCode) ==
                                                           var1[index]
-                                                  ? Color.fromARGB(
+                                                  ? const Color.fromARGB(
                                                       255, 215, 228, 255)
-                                                  : Color.fromARGB(
+                                                  : const Color.fromARGB(
                                                           255, 244, 248, 255)
                                                       .withOpacity(0.5),
                                             ),
@@ -295,9 +294,9 @@ class FichePurchaseProduct extends StatelessWidget {
                                                                       .locale!
                                                                       .languageCode) ==
                                                               var1[index]
-                                                      ? Color.fromARGB(
+                                                      ? const Color.fromARGB(
                                                           255, 16, 18, 112)
-                                                      : Color.fromARGB(
+                                                      : const Color.fromARGB(
                                                           255, 98, 108, 196),
                                                 ),
                                               ),
@@ -306,16 +305,16 @@ class FichePurchaseProduct extends StatelessWidget {
                                     );
                                   }),
                             )
-                          : SizedBox.shrink(),
+                          : const SizedBox.shrink(),
                       // Deuxieme  Option du Vartiant s'elle existe
                       Obx(
                         () => !(productController.opt1.value &&
                                 productController.option1.first.getOptionName2(
                                         Get.locale!.languageCode) !=
                                     "")
-                            ? SizedBox.shrink()
+                            ? const SizedBox.shrink()
                             : Container(
-                                padding: EdgeInsets.only(top: 20),
+                                padding: const EdgeInsets.only(top: 20),
                                 height: 45,
                                 child: Row(
                                   children: [
@@ -323,7 +322,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                       productController.option1.first
                                           .getOptionName2(
                                               Get.locale!.languageCode),
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: Color.fromARGB(255, 88, 88, 88),
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12,
@@ -337,7 +336,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                                   .getVariantName2(
                                                       Get.locale!.languageCode)
                                           : ""),
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color:
                                             Color.fromARGB(255, 116, 116, 116),
                                         fontSize: 12,
@@ -352,12 +351,12 @@ class FichePurchaseProduct extends StatelessWidget {
                               productController.option1.first.getOptionName2(
                                       Get.locale!.languageCode) !=
                                   "")
-                          ? SizedBox.shrink()
-                          : Container(
+                          ? const SizedBox.shrink()
+                          : SizedBox(
                               height: 40.0 *
                                   (productController.option1.length / 4).ceil(),
                               child: GridView.builder(
-                                  physics: BouncingScrollPhysics(),
+                                  physics: const BouncingScrollPhysics(),
                                   scrollDirection: Axis.horizontal,
                                   gridDelegate:
                                       SliverGridDelegateWithFixedCrossAxisCount(
@@ -407,9 +406,9 @@ class FichePurchaseProduct extends StatelessWidget {
                                                                 .getVariantName2(Get
                                                                     .locale!
                                                                     .languageCode)
-                                                    ? Color.fromARGB(
+                                                    ? const Color.fromARGB(
                                                         255, 128, 145, 182)
-                                                    : Color.fromARGB(
+                                                    : const Color.fromARGB(
                                                             255, 205, 221, 253)
                                                         .withOpacity(0.5),
                                               ),
@@ -426,9 +425,9 @@ class FichePurchaseProduct extends StatelessWidget {
                                                               .getVariantName2(Get
                                                                   .locale!
                                                                   .languageCode)
-                                                  ? Color.fromARGB(
+                                                  ? const Color.fromARGB(
                                                       255, 215, 228, 255)
-                                                  : Color.fromARGB(
+                                                  : const Color.fromARGB(
                                                       255, 244, 248, 255),
                                             ),
                                             child: Center(
@@ -458,9 +457,9 @@ class FichePurchaseProduct extends StatelessWidget {
                                                                   .getVariantName2(Get
                                                                       .locale!
                                                                       .languageCode)
-                                                      ? Color.fromARGB(
+                                                      ? const Color.fromARGB(
                                                           255, 16, 18, 112)
-                                                      : Color.fromARGB(
+                                                      : const Color.fromARGB(
                                                           255, 98, 108, 196),
                                                 ),
                                               ),
@@ -471,7 +470,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                     );
                                   }),
                             )),
-                      SizedBox(
+                      const SizedBox(
                         height: 20,
                       ),
                       Obx(() {
@@ -486,7 +485,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Container(
+                                  SizedBox(
                                     width: Get.width / 3,
                                     child: DropdownButtonFormField2(
                                       dropdownStyleData: DropdownStyleData(
@@ -497,7 +496,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                       ),
                                       key: purchaseController.keyUnite,
                                       value: "Cart",
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                           fontSize: 12, color: Colors.black),
                                       // selectedItemHighlightColor:
                                       //     Color.fromARGB(255, 206, 235, 255),
@@ -510,19 +509,19 @@ class FichePurchaseProduct extends StatelessWidget {
                                             borderSide: BorderSide.none),
                                       ),
                                       isExpanded: true,
-                                      hint: Text(
+                                      hint: const Text(
                                         "Unité",
                                         style: TextStyle(fontSize: 12),
                                       ),
 
-                                      iconStyleData: IconStyleData(
+                                      iconStyleData: const IconStyleData(
                                         icon: Icon(
                                           Icons.arrow_drop_down,
                                           color: Colors.black45,
                                           size: 30,
                                         ),
                                       ),
-                                      buttonStyleData: ButtonStyleData(
+                                      buttonStyleData: const ButtonStyleData(
                                         height: 45,
                                       ),
                                       items: [
@@ -540,7 +539,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                           enabled: true,
                                           child: Text(
                                             "Caisse".tr,
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontSize: 14,
                                             ),
                                           ),
@@ -559,14 +558,14 @@ class FichePurchaseProduct extends StatelessWidget {
                                   ),
                                   Container(
                                     // padding: EdgeInsets.,
-                                    decoration: BoxDecoration(
+                                    decoration: const BoxDecoration(
                                         border: Border.symmetric(
                                             vertical: BorderSide(width: 0.1))),
                                     width: 80,
                                     height: 25,
                                     child: TextFormField(
                                       enableInteractiveSelection: false,
-                                      style: TextStyle(fontSize: 14),
+                                      style: const TextStyle(fontSize: 14),
                                       textAlign: TextAlign.center,
                                       onChanged: ((value) {
                                         purchaseController.priceItem.value =
@@ -576,7 +575,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                       }),
                                       controller: priceController,
                                       keyboardType: TextInputType.number,
-                                      decoration: InputDecoration(
+                                      decoration: const InputDecoration(
                                         border: InputBorder.none,
                                       ),
                                     ),
@@ -592,7 +591,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceAround,
                                       children: [
-                                        Container(
+                                        SizedBox(
                                           width: 29,
                                           child: IconButton(
                                             onPressed: () {
@@ -607,7 +606,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                                         .toStringAsFixed(0);
                                               }
                                             },
-                                            icon: Icon(
+                                            icon: const Icon(
                                               Icons.remove,
                                             ),
                                             iconSize: 16,
@@ -615,7 +614,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                         ),
                                         Container(
                                           // padding: EdgeInsets.,
-                                          decoration: BoxDecoration(
+                                          decoration: const BoxDecoration(
                                               border: Border.symmetric(
                                                   vertical:
                                                       BorderSide(width: 0.1))),
@@ -692,14 +691,15 @@ class FichePurchaseProduct extends StatelessWidget {
                                                               .value;
                                                   return AlertDialog(
                                                     contentPadding:
-                                                        EdgeInsets.only(
+                                                        const EdgeInsets.only(
                                                             left: 30,
                                                             right: 30,
                                                             top: 15),
                                                     titlePadding:
                                                         EdgeInsets.zero,
                                                     title: Container(
-                                                      decoration: BoxDecoration(
+                                                      decoration:
+                                                          const BoxDecoration(
                                                         color: Color.fromARGB(
                                                             255, 43, 87, 124),
                                                       ),
@@ -707,27 +707,23 @@ class FichePurchaseProduct extends StatelessWidget {
                                                       height: 50,
                                                       child: Center(
                                                         child: Text(
-                                                          'quantity'.tr +
-                                                              " x" +
-                                                              productController
-                                                                  .selectedVariant
-                                                                  .package
-                                                                  .toString(),
-                                                          style: TextStyle(
+                                                          "${'quantity'.tr} x${productController.selectedVariant.package}",
+                                                          style:
+                                                              const TextStyle(
                                                             color: Colors.white,
                                                             fontSize: 18,
                                                           ),
                                                         ),
                                                       ),
                                                     ),
-                                                    content: Container(
+                                                    content: SizedBox(
                                                       height: Get.height / 6,
                                                       child: Column(
                                                         mainAxisAlignment:
                                                             MainAxisAlignment
                                                                 .center,
                                                         children: [
-                                                          Container(
+                                                          SizedBox(
                                                             width:
                                                                 double.infinity,
                                                             height: 50,
@@ -743,7 +739,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                                               decoration:
                                                                   InputDecoration(
                                                                 prefixIcon:
-                                                                    Icon(Icons
+                                                                    const Icon(Icons
                                                                         .school_sharp),
                                                                 border: OutlineInputBorder(
                                                                     borderRadius:
@@ -755,14 +751,14 @@ class FichePurchaseProduct extends StatelessWidget {
                                                               onChanged:
                                                                   (value) {
                                                                 first = false;
-                                                                var qty_caisse =
-                                                                    double.parse(qtyCaisseController.text !=
+                                                                var qtyCaisse = double.parse(
+                                                                    qtyCaisseController.text !=
                                                                             ""
                                                                         ? qtyCaisseController
                                                                             .text
                                                                         : "0");
 
-                                                                var qty_pcs = int.parse(
+                                                                var qtyPcs = int.parse(
                                                                     qtyPcsController.text !=
                                                                             ""
                                                                         ? qtyPcsController
@@ -775,18 +771,17 @@ class FichePurchaseProduct extends StatelessWidget {
                                                                         .package;
 
                                                                 purchaseController
-                                                                        .quantityItem
-                                                                        .value =
-                                                                    qty_caisse *
-                                                                            package +
-                                                                        qty_pcs;
+                                                                    .quantityItem
+                                                                    .value = qtyCaisse *
+                                                                        package +
+                                                                    qtyPcs;
                                                               },
                                                             ),
                                                           ),
-                                                          SizedBox(
+                                                          const SizedBox(
                                                             height: 10,
                                                           ),
-                                                          Container(
+                                                          SizedBox(
                                                             width:
                                                                 double.infinity,
                                                             height: 50,
@@ -802,7 +797,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                                               decoration:
                                                                   InputDecoration(
                                                                 prefixIcon:
-                                                                    Icon(Icons
+                                                                    const Icon(Icons
                                                                         .category_rounded),
                                                                 border: OutlineInputBorder(
                                                                     borderRadius:
@@ -814,14 +809,14 @@ class FichePurchaseProduct extends StatelessWidget {
                                                               onChanged:
                                                                   (value) {
                                                                 first = false;
-                                                                var qty_caisse =
-                                                                    double.parse(qtyCaisseController.text !=
+                                                                var qtyCaisse = double.parse(
+                                                                    qtyCaisseController.text !=
                                                                             ""
                                                                         ? qtyCaisseController
                                                                             .text
                                                                         : "0");
 
-                                                                var qty_pcs = int.parse(
+                                                                var qtyPcs = int.parse(
                                                                     qtyPcsController.text !=
                                                                             ""
                                                                         ? qtyPcsController
@@ -834,20 +829,20 @@ class FichePurchaseProduct extends StatelessWidget {
                                                                         .package;
 
                                                                 purchaseController
-                                                                        .quantityItem
-                                                                        .value =
-                                                                    qty_caisse *
-                                                                            package +
-                                                                        qty_pcs;
+                                                                    .quantityItem
+                                                                    .value = qtyCaisse *
+                                                                        package +
+                                                                    qtyPcs;
                                                               },
                                                             ),
                                                           ),
-                                                          SizedBox(
+                                                          const SizedBox(
                                                             height: 5,
                                                           ),
                                                           Container(
-                                                            padding: EdgeInsets
-                                                                .symmetric(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
                                                                     horizontal:
                                                                         10),
                                                             child: Align(
@@ -884,16 +879,17 @@ class FichePurchaseProduct extends StatelessWidget {
                                                         color: Colors.blue,
                                                         child: Text(
                                                           'OK'.tr,
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white),
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: Colors
+                                                                      .white),
                                                         ),
                                                         onPressed: () {
                                                           if (purchaseController
                                                                   .quantityItem
                                                                   .value !=
                                                               0) {
-                                                            var qty_caisse = double.parse(
+                                                            var qtyCaisse = double.parse(
                                                                 qtyCaisseController
                                                                             .text !=
                                                                         ""
@@ -901,7 +897,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                                                         .text
                                                                     : "0");
 
-                                                            var qty_pcs = int.parse(
+                                                            var qtyPcs = int.parse(
                                                                 qtyPcsController
                                                                             .text !=
                                                                         ""
@@ -913,9 +909,9 @@ class FichePurchaseProduct extends StatelessWidget {
                                                                 productController
                                                                     .selectedVariant
                                                                     .package;
-                                                            if ((qty_caisse *
+                                                            if ((qtyCaisse *
                                                                             package +
-                                                                        qty_pcs) %
+                                                                        qtyPcs) %
                                                                     package ==
                                                                 0) {
                                                               purchaseController
@@ -929,28 +925,27 @@ class FichePurchaseProduct extends StatelessWidget {
                                                                   "Cart";
                                                               purchaseController
                                                                   .quantityItem
-                                                                  .value = (qty_caisse *
+                                                                  .value = (qtyCaisse *
                                                                           package +
-                                                                      qty_pcs) /
+                                                                      qtyPcs) /
                                                                   package;
                                                               qtyController
-                                                                  .text = ((qty_caisse *
+                                                                  .text = ((qtyCaisse *
                                                                               package +
-                                                                          qty_pcs) /
+                                                                          qtyPcs) /
                                                                       package)
                                                                   .toStringAsFixed(
                                                                       0);
                                                             } else {
                                                               purchaseController
-                                                                      .quantityItem
-                                                                      .value =
-                                                                  qty_caisse *
-                                                                          package +
-                                                                      qty_pcs;
+                                                                  .quantityItem
+                                                                  .value = qtyCaisse *
+                                                                      package +
+                                                                  qtyPcs;
                                                               qtyController
-                                                                  .text = (qty_caisse *
+                                                                  .text = (qtyCaisse *
                                                                           package +
-                                                                      qty_pcs)
+                                                                      qtyPcs)
                                                                   .toStringAsFixed(
                                                                       0);
                                                               purchaseController
@@ -974,7 +969,8 @@ class FichePurchaseProduct extends StatelessWidget {
                                                 },
                                               );
                                             },
-                                            style: TextStyle(fontSize: 14),
+                                            style:
+                                                const TextStyle(fontSize: 14),
                                             textAlign: TextAlign.center,
                                             onChanged: ((value) {
                                               purchaseController.quantityItem
@@ -982,16 +978,16 @@ class FichePurchaseProduct extends StatelessWidget {
                                             }),
                                             controller: qtyController,
                                             keyboardType: TextInputType.number,
-                                            decoration: InputDecoration(
+                                            decoration: const InputDecoration(
                                               border: InputBorder.none,
                                             ),
                                           ),
                                         ),
-                                        Container(
+                                        SizedBox(
                                           // color: Color.fromARGB(255, 192, 227, 255),
                                           width: 29,
                                           child: IconButton(
-                                            icon: Icon(
+                                            icon: const Icon(
                                               Icons.add,
                                             ),
                                             iconSize: 16,
@@ -1010,18 +1006,18 @@ class FichePurchaseProduct extends StatelessWidget {
                                   ),
                                 ],
                               )
-                            : SizedBox.shrink();
+                            : const SizedBox.shrink();
                       }),
                     ],
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 15,
                 ),
                 Container(
-                  padding: EdgeInsets.only(top: 5),
+                  padding: const EdgeInsets.only(top: 5),
                   width: double.infinity,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     boxShadow: [
                       BoxShadow(
                         color: Color.fromARGB(255, 245, 245, 245),
@@ -1037,17 +1033,18 @@ class FichePurchaseProduct extends StatelessWidget {
                     children: [
                       Obx(() => productController.selectedVariantReady.value
                           ? Container(
-                              padding: EdgeInsets.symmetric(horizontal: 20),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
                               child: Column(
                                 children: [
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
+                                      const Text(
                                         "Total : ",
                                       ),
-                                      Text(" ",
+                                      const Text(" ",
                                           style: TextStyle(
                                               fontFamily: 'alata',
                                               fontSize: 22)),
@@ -1062,7 +1059,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                                     ? productController
                                                         .selectedVariant.package
                                                     : 1)),
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                                 fontFamily: 'alata',
                                                 fontSize: 22),
                                           )),
@@ -1071,7 +1068,7 @@ class FichePurchaseProduct extends StatelessWidget {
                                 ],
                               ),
                             )
-                          : SizedBox(
+                          : const SizedBox(
                               height: 25,
                             )),
                       Obx(
@@ -1083,7 +1080,7 @@ class FichePurchaseProduct extends StatelessWidget {
                           color: productController.selectedVariantReady.value &&
                                   purchaseController.priceItem.value > 0
                               ? Colors.blue
-                              : Color.fromARGB(255, 141, 204, 255),
+                              : const Color.fromARGB(255, 141, 204, 255),
                           onPressed: () {
                             if (productController.selectedVariantReady.value &&
                                 purchaseController.priceItem.value != 0) {

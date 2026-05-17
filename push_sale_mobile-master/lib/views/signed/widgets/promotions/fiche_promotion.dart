@@ -6,8 +6,8 @@ import 'package:push_sale/views/signed/homepage.dart';
 import 'package:push_sale/views/signed/widgets/promotions/edit_promotion.dart';
 
 class FichePromotion extends StatelessWidget {
-  Promotion _promotion;
-  FichePromotion(this._promotion);
+  final Promotion _promotion;
+  const FichePromotion(this._promotion, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +42,7 @@ class FichePromotion extends StatelessWidget {
                   }
                 },
                 elevation: 5,
-                icon: Icon(Icons.menu),
+                icon: const Icon(Icons.menu),
                 itemBuilder: (context) {
                   return [
                     PopupMenuItem(
@@ -51,7 +51,7 @@ class FichePromotion extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text("new".tr),
-                            Icon(Icons.add, color: Colors.blue),
+                            const Icon(Icons.add, color: Colors.blue),
                           ],
                         )),
                     PopupMenuItem(
@@ -60,7 +60,7 @@ class FichePromotion extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text("edit".tr),
-                            Icon(Icons.edit, color: Colors.blue),
+                            const Icon(Icons.edit, color: Colors.blue),
                           ],
                         )),
                     PopupMenuItem(
@@ -69,14 +69,14 @@ class FichePromotion extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text("close".tr),
-                            Icon(Icons.close, color: Colors.blue),
+                            const Icon(Icons.close, color: Colors.blue),
                           ],
                         )),
                   ];
                 })
           ],
         ),
-        body: Container(
+        body: SizedBox(
           width: double.infinity,
           // padding: EdgeInsets.symmetric(horizontal: 40),
           height: Get.height - 120,
@@ -84,40 +84,41 @@ class FichePromotion extends StatelessWidget {
             children: [
               Container(
                 width: Get.width - 20,
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.calendar_month_outlined,
+                    const Icon(Icons.calendar_month_outlined,
                         color: Color.fromARGB(255, 122, 122, 122)),
                     Container(
-                      margin: EdgeInsets.symmetric(vertical: 10),
-                      padding:
-                          EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                      margin: const EdgeInsets.symmetric(vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 10),
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                               width: 1,
-                              color: Color.fromARGB(255, 214, 214, 214))),
+                              color: const Color.fromARGB(255, 214, 214, 214))),
                       child: Text(
                           DateFormat('dd/MM/y').format(_promotion.start_date),
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Color.fromARGB(255, 122, 122, 122))),
                     ),
                     Container(
-                      margin: EdgeInsets.symmetric(vertical: 10),
-                      padding:
-                          EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                      margin: const EdgeInsets.symmetric(vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 10),
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                               width: 1,
-                              color: Color.fromARGB(255, 214, 214, 214))),
+                              color: const Color.fromARGB(255, 214, 214, 214))),
                       child: Text(
                           DateFormat('dd/MM/y').format(_promotion.end_date),
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Color.fromARGB(255, 122, 122, 122))),
@@ -125,8 +126,8 @@ class FichePromotion extends StatelessWidget {
                   ],
                 ),
               ),
-              Divider(thickness: 1),
-              Container(
+              const Divider(thickness: 1),
+              SizedBox(
                 width: double.infinity,
                 height: Get.height / 1.4,
                 child: ListView.builder(
@@ -142,18 +143,12 @@ class FichePromotion extends StatelessWidget {
                                     Get.locale!.languageCode)),
                             subtitle: Text(item.product != null
                                 ? item.product!.variants!.length.toString()
-                                : item.variant!.getVariantName1(
-                                        Get.locale!.languageCode) +
-                                    " " +
-                                    item.variant!.getVariantName2(
-                                        Get.locale!.languageCode)),
+                                : "${item.variant!.getVariantName1(Get.locale!.languageCode)} ${item.variant!.getVariantName2(Get.locale!.languageCode)}"),
                             trailing: Column(
                               children: [
-                                Text("-" + item.discount.toString() + "%"),
-                                Text("min " +
-                                    item.minimum.toStringAsFixed(0) +
-                                    " " +
-                                    item.unite),
+                                Text("-${item.discount}%"),
+                                Text(
+                                    "min ${item.minimum.toStringAsFixed(0)} ${item.unite}"),
                               ],
                             ),
                             leading: Image.network(item.product != null
@@ -161,7 +156,7 @@ class FichePromotion extends StatelessWidget {
                                 : item.variant!.image),
                           );
                         default:
-                          return SizedBox.shrink();
+                          return const SizedBox.shrink();
                       }
                     }),
               ),

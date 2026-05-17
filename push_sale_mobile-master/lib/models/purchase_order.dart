@@ -97,20 +97,20 @@ class PurchaseOrder {
   }
 
   static fromListMapToList(List<dynamic> value) {
-    List<PurchaseOrder> _list = [];
+    List<PurchaseOrder> list = [];
     for (var item in value) {
-      _list.add(PurchaseOrder.fromMap(item));
+      list.add(PurchaseOrder.fromMap(item));
     }
-    return _list;
+    return list;
   }
 
   recalculateAmount() {
-    double _amount = 0.0;
+    double amount = 0.0;
     if (state == "shipped" || state == "paid") {
-      orderitems.forEach((element) {
-        _amount += element.confirmed_quantity! * element.price;
-      });
-      total_amount = _amount;
+      for (var element in orderitems) {
+        amount += element.confirmed_quantity! * element.price;
+      }
+      total_amount = amount;
     }
   }
 }

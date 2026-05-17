@@ -11,7 +11,7 @@ import 'package:push_sale/models/receivable.dart';
 import 'package:push_sale/views/signed/widgets/credit/confirm_diag.dart';
 
 class MainCreditPage extends StatelessWidget {
-  const MainCreditPage({Key? key}) : super(key: key);
+  const MainCreditPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +32,9 @@ class MainCreditPage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('loading'.tr + '...'),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text('${'loading'.tr}...'),
               ],
             ),
           );
@@ -54,7 +54,7 @@ class MainCreditPage extends StatelessWidget {
 
 // Widget pour l'arbre
 class TreeViewWidget extends StatelessWidget {
-  TreeViewWidget({Key? key}) : super(key: key);
+  TreeViewWidget({super.key});
 
   final CreditController controller = Get.find<CreditController>();
 
@@ -79,19 +79,19 @@ class YearWidget extends StatelessWidget {
   final YearNode yearNode;
   final CreditController controller = Get.find<CreditController>();
 
-  YearWidget({Key? key, required this.yearNode}) : super(key: key);
+  YearWidget({super.key, required this.yearNode});
 
   @override
   Widget build(BuildContext context) {
     int orderCount = controller.getYearOrderCount(yearNode);
     double totalSolde = controller.getYearTotalSolde(yearNode);
-    var formatter = new NumberFormat("#,##0.0", "fr_FR");
+    var formatter = NumberFormat("#,##0.0", "fr_FR");
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       elevation: 2,
       child: ExpansionTile(
-        tilePadding: EdgeInsets.symmetric(horizontal: 5, vertical: 0),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 5, vertical: 0),
         leading: Container(
           padding: const EdgeInsets.all(0),
           decoration: BoxDecoration(
@@ -105,7 +105,7 @@ class YearWidget extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'year'.tr + ' ${yearNode.year}',
+                '${'year'.tr} ${yearNode.year}',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -115,19 +115,19 @@ class YearWidget extends StatelessWidget {
             ),
             Container(
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 208, 228, 255),
+                color: const Color.fromARGB(255, 208, 228, 255),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                "💰" + formatter.format(totalSolde) + " ",
-                style: TextStyle(
+                "💰${formatter.format(totalSolde)} ",
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: const Color.fromARGB(255, 0, 0, 0),
+                  color: Color.fromARGB(255, 0, 0, 0),
                 ),
               ),
             ),
-            SizedBox(
+            const SizedBox(
               width: 10,
             ),
             Container(
@@ -160,11 +160,11 @@ class MonthWidget extends StatelessWidget {
   final MonthNode monthNode;
   final CreditController controller = Get.find<CreditController>();
 
-  MonthWidget({Key? key, required this.monthNode}) : super(key: key);
+  MonthWidget({super.key, required this.monthNode});
 
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.0", "fr_FR");
+    var formatter = NumberFormat("#,##0.0", "fr_FR");
 
     int orderCount = controller.getMonthOrderCount(monthNode);
     double totalSolde = controller.getMonthTotalSolde(monthNode);
@@ -172,7 +172,7 @@ class MonthWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: ExpansionTile(
-        tilePadding: EdgeInsets.symmetric(horizontal: 5, vertical: 0),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 5, vertical: 0),
         leading: Container(
           padding: const EdgeInsets.all(0),
           decoration: BoxDecoration(
@@ -194,19 +194,19 @@ class MonthWidget extends StatelessWidget {
             ),
             Container(
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 208, 228, 255),
+                color: const Color.fromARGB(255, 208, 228, 255),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                "💰" + formatter.format(totalSolde) + " ",
-                style: TextStyle(
+                "💰${formatter.format(totalSolde)} ",
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: const Color.fromARGB(255, 0, 0, 0),
+                  color: Color.fromARGB(255, 0, 0, 0),
                 ),
               ),
             ),
-            SizedBox(
+            const SizedBox(
               width: 10,
             ),
             Container(
@@ -239,18 +239,18 @@ class DateWidget extends StatelessWidget {
   final DateNode dateNode;
   final CreditController controller = Get.find<CreditController>();
 
-  DateWidget({Key? key, required this.dateNode}) : super(key: key);
+  DateWidget({super.key, required this.dateNode});
 
   @override
   Widget build(BuildContext context) {
     int orderCount = controller.getDateOrderCount(dateNode);
     double totalSolde = controller.getDateTotalSolde(dateNode);
-    var formatter = new NumberFormat("#,##0.0", "fr_FR");
+    var formatter = NumberFormat("#,##0.0", "fr_FR");
 
     return Padding(
       padding: const EdgeInsets.only(left: 0),
       child: ExpansionTile(
-        tilePadding: EdgeInsets.symmetric(vertical: 0, horizontal: 5),
+        tilePadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 5),
         leading: Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
@@ -269,19 +269,19 @@ class DateWidget extends StatelessWidget {
             ),
             Container(
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 208, 228, 255),
+                color: const Color.fromARGB(255, 208, 228, 255),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                "💰" + formatter.format(totalSolde) + " ",
-                style: TextStyle(
+                "💰${formatter.format(totalSolde)} ",
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: const Color.fromARGB(255, 0, 0, 0),
+                  color: Color.fromARGB(255, 0, 0, 0),
                 ),
               ),
             ),
-            SizedBox(
+            const SizedBox(
               width: 10,
             ),
             Container(
@@ -314,138 +314,137 @@ class ClientCard extends StatelessWidget {
   final CreditClient credit;
   final CreditController controller = Get.find<CreditController>();
 
-  ClientCard({Key? key, required this.credit}) : super(key: key);
+  ClientCard({super.key, required this.credit});
 
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(width: 1, color: Color.fromARGB(96, 174, 174, 174)),
+        border: Border.all(
+            width: 1, color: const Color.fromARGB(96, 174, 174, 174)),
         borderRadius: BorderRadius.circular(10),
       ),
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      padding: EdgeInsets.all(controller.credits.value.length > 0 ? 0 : 1),
+      padding: EdgeInsets.all(controller.credits.value.isNotEmpty ? 0 : 1),
       child: ListTile(
-            leading: Container(
-              width: 50,
-              height: 50,
-              child: CachedNetworkImage(
-                cacheManager: CacheManager(
-                  Config(
-                    credit.image,
-                    stalePeriod: const Duration(days: 7),
-                  ),
-                ),
-                imageUrl: credit.image,
-                placeholder: (context, url) => Container(
-                    padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                    child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) => Icon(Icons.error),
+        leading: SizedBox(
+          width: 50,
+          height: 50,
+          child: CachedNetworkImage(
+            cacheManager: CacheManager(
+              Config(
+                credit.image,
+                stalePeriod: const Duration(days: 7),
               ),
             ),
-            title: Text(
-              credit.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            imageUrl: credit.image,
+            placeholder: (context, url) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                child: const CircularProgressIndicator()),
+            errorWidget: (context, url, error) => const Icon(Icons.error),
+          ),
+        ),
+        title: Text(
+          credit.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Row(
               children: [
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.shopping_cart,
-                        size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(credit.code),
-                  ],
+                const Icon(Icons.shopping_cart, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(credit.code),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(
+                  Icons.monetization_on_outlined,
+                  size: 14,
+                  color: Colors.green,
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.monetization_on_outlined,
-                      size: 14,
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    formatter.format(credit.totalAmount),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
                       color: Colors.green,
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        formatter.format(credit.totalAmount),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.add_task_sharp,
-                      size: 14,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.add_task_sharp,
+                  size: 14,
+                  color: Colors.orange,
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    formatter.format(credit.solde),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
                       color: Colors.orange,
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        formatter.format(credit.solde),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
-            isThreeLine: true,
-            // trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-            onTap: () async {
-              bool confirm = await Get.dialog<bool>(
-                    StyledConfirmDialog(
-                      message: "ask.confirm".tr,
-                      details:
-                          "👤 Client: ${credit.name}\n🏷️ ${credit.code}\n💰 Montant: " +
-                              formatter.format(credit.solde),
-                      color: Colors.purple,
-                      icon: Icons.person,
-                      confirmText: "confirm".tr,
-                      cancelText: "cancel".tr,
-                    ),
-                  ) ??
-                  false;
+          ],
+        ),
+        isThreeLine: true,
+        // trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        onTap: () async {
+          bool confirm = await Get.dialog<bool>(
+                StyledConfirmDialog(
+                  message: "ask.confirm".tr,
+                  details:
+                      "👤 Client: ${credit.name}\n🏷️ ${credit.code}\n💰 Montant: ${formatter.format(credit.solde)}",
+                  color: Colors.purple,
+                  icon: Icons.person,
+                  confirmText: "confirm".tr,
+                  cancelText: "cancel".tr,
+                ),
+              ) ??
+              false;
 
-              if (confirm) {
-                ReceivaleLine line = new ReceivaleLine(
-                  purchaseorder_id: credit.purchaseorderId,
-                  purchase_date: DateTime.now(),
-                  code: credit.code,
-                  total_amount: credit.totalAmount,
-                  solde: credit.solde,
-                );
-                line.cashed = credit.solde;
-                controller.generateTrackId();
-                bool res = await controller.sendCash([line]);
-                if (res) {
-                    controller.credits.value = [];
-                    await controller.loadData();
-                } else {}
-              }
-            },
-          ),
+          if (confirm) {
+            ReceivaleLine line = ReceivaleLine(
+              purchaseorder_id: credit.purchaseorderId,
+              purchase_date: DateTime.now(),
+              code: credit.code,
+              total_amount: credit.totalAmount,
+              solde: credit.solde,
+            );
+            line.cashed = credit.solde;
+            controller.generateTrackId();
+            bool res = await controller.sendCash([line]);
+            if (res) {
+              controller.credits.value = [];
+              await controller.loadData();
+            } else {}
+          }
+        },
+      ),
     );
   }
 }

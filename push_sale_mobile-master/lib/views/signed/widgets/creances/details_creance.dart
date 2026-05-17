@@ -6,12 +6,12 @@ import 'package:push_sale/controllers/creaces_controller.dart';
 
 class DetailsCreance extends StatelessWidget {
   PageController pageController;
-  DetailsCreance(this.pageController);
+  DetailsCreance(this.pageController, {super.key});
   CreancesController creancesController = Get.find();
   ClientController clientController = Get.find();
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     creancesController.encaissement.value = 0;
     creancesController.regularisation.value = 0;
     creancesController.saved.value = "notyet";
@@ -19,23 +19,23 @@ class DetailsCreance extends StatelessWidget {
     creancesController.generateTrackId();
     return Column(
       children: [
-        Container(
+        SizedBox(
           width: Get.width,
           height: 50,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SizedBox.shrink(),
+              const SizedBox.shrink(),
               Text(creancesController.selectedClient!.client_name),
               showMenuCreanec(context, creancesController),
             ],
           ),
         ),
-        Divider(
+        const Divider(
           thickness: 1,
           height: 1,
         ),
-        Container(
+        SizedBox(
           height: Get.height - 301,
           child: RefreshIndicator(
             onRefresh: creancesController.getDetailCreance,
@@ -49,19 +49,20 @@ class DetailsCreance extends StatelessWidget {
                     () => ListTile(
                       title: Text(item.code),
                       leading: Container(
-                        padding: EdgeInsets.only(top: 5),
+                        padding: const EdgeInsets.only(top: 5),
                         child: creancesController.regularisation.value > 0 &&
                                 item.cashed != null
                             ? item.solde == item.cashed
-                                ? Icon(Icons.check_box_outlined,
+                                ? const Icon(Icons.check_box_outlined,
                                     color: Colors.green)
                                 : item.solde > item.cashed! && item.cashed! > 0
-                                    ? Icon(
+                                    ? const Icon(
                                         Icons.filter_center_focus_outlined,
                                         color: Colors.orange,
                                       )
-                                    : Icon(Icons.check_box_outline_blank_sharp)
-                            : Icon(Icons.check_box_outline_blank_sharp),
+                                    : const Icon(
+                                        Icons.check_box_outline_blank_sharp)
+                            : const Icon(Icons.check_box_outline_blank_sharp),
                       ),
                       subtitle: Text(DateFormat("dd/MM/y HH:mm")
                           .format(item.purchase_date)),
@@ -76,34 +77,34 @@ class DetailsCreance extends StatelessWidget {
             ),
           ),
         ),
-        Divider(
+        const Divider(
           thickness: 1,
           height: 1,
         ),
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Solde Precedent"),
+              const Text("Solde Precedent"),
               Text(
                   formatter.format(
                       creancesController.selectedClient!.total_vendu -
                           creancesController.selectedClient!.total_paye),
-                  style: TextStyle(fontFamily: 'alata'))
+                  style: const TextStyle(fontFamily: 'alata'))
             ],
           ),
         ),
         Obx(
           () => Container(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Total encaissé"),
+                const Text("Total encaissé"),
                 Text(
                   formatter.format(creancesController.encaissement.value),
-                  style: TextStyle(fontFamily: 'alata'),
+                  style: const TextStyle(fontFamily: 'alata'),
                 )
               ],
             ),
@@ -111,9 +112,9 @@ class DetailsCreance extends StatelessWidget {
         ),
         Align(
           alignment: Alignment.centerRight,
-          child: Container(
+          child: SizedBox(
             width: Get.width / 4,
-            child: Divider(
+            child: const Divider(
               height: 1,
               thickness: 2,
             ),
@@ -121,17 +122,17 @@ class DetailsCreance extends StatelessWidget {
         ),
         Obx(
           () => Container(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Nouveau Solde"),
+                const Text("Nouveau Solde"),
                 Text(
                   formatter.format(
                       creancesController.selectedClient!.total_vendu -
                           creancesController.selectedClient!.total_paye -
                           creancesController.encaissement.value),
-                  style: TextStyle(fontFamily: 'alata'),
+                  style: const TextStyle(fontFamily: 'alata'),
                 )
               ],
             ),
@@ -153,21 +154,21 @@ class DetailsCreance extends StatelessWidget {
             minWidth: 250,
             elevation: 10,
             child: creancesController.saved.value == "success"
-                ? Icon(
+                ? const Icon(
                     Icons.check_circle_outline,
                     color: Colors.green,
                   )
                 : creancesController.saved.value == "notyet"
                     ? Text(
                         "save".tr,
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                       )
                     : creancesController.saved.value == "error"
-                        ? Icon(
+                        ? const Icon(
                             Icons.error,
                             color: Colors.red,
                           )
-                        : CircularProgressIndicator(),
+                        : const CircularProgressIndicator(),
           ),
         ),
       ],
@@ -181,12 +182,12 @@ showEncaissementWindow(
     context: context,
     builder: (BuildContext context) {
       TextEditingController moneyTextController = TextEditingController();
-      var formatter = new NumberFormat("#,##0.00", "fr_FR");
+      var formatter = NumberFormat("#,##0.00", "fr_FR");
       return AlertDialog(
-        contentPadding: EdgeInsets.only(left: 30, right: 30, top: 40),
+        contentPadding: const EdgeInsets.only(left: 30, right: 30, top: 40),
         titlePadding: EdgeInsets.zero,
         title: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Color.fromARGB(255, 43, 87, 124),
           ),
           width: double.infinity,
@@ -199,13 +200,13 @@ showEncaissementWindow(
               child: Center(
                 child: Text(
                   "cash.window".tr,
-                  style: TextStyle(color: Colors.white, fontSize: 18),
+                  style: const TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ),
             ),
           ),
         ),
-        content: Container(
+        content: SizedBox(
           height: Get.height / 5,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -217,13 +218,13 @@ showEncaissementWindow(
                 child: Column(children: [
                   Container(
                     width: Get.width,
-                    padding: EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                     ),
                     height: 90,
                     child: Form(
                       key: creanceController.formKey,
-                      child: Container(
+                      child: SizedBox(
                         width: 100,
                         height: 50,
                         child: TextFormField(
@@ -249,7 +250,7 @@ showEncaissementWindow(
                           },
                           controller: moneyTextController,
                           decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.money),
+                            prefixIcon: const Icon(Icons.money),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(3),
                             ),
@@ -266,7 +267,7 @@ showEncaissementWindow(
                 ]),
               ),
               Container(
-                  child: Text(
+                  child: const Text(
                 "L'encaissement du montant revient à encaisser chaque commande ouverte en commençant par la plus ancienne",
                 style: TextStyle(fontSize: 14),
                 textAlign: TextAlign.justify,
@@ -278,7 +279,7 @@ showEncaissementWindow(
           MaterialButton(
             minWidth: double.infinity,
             color: Colors.blue,
-            child: Text(
+            child: const Text(
               'OK',
               style: TextStyle(color: Colors.white),
             ),
@@ -319,7 +320,7 @@ PopupMenuButton showMenuCreanec(
       }
     },
     elevation: 5,
-    icon: Icon(Icons.menu),
+    icon: const Icon(Icons.menu),
     itemBuilder: (context) {
       return [
         PopupMenuItem(
@@ -328,7 +329,7 @@ PopupMenuButton showMenuCreanec(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("client.cash".tr),
-              Icon(Icons.monetization_on_outlined, color: Colors.blue),
+              const Icon(Icons.monetization_on_outlined, color: Colors.blue),
             ],
           ),
         ),
@@ -338,7 +339,7 @@ PopupMenuButton showMenuCreanec(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("client.cash.all".tr),
-              Icon(Icons.calculate_rounded, color: Colors.blue),
+              const Icon(Icons.calculate_rounded, color: Colors.blue),
             ],
           ),
         ),

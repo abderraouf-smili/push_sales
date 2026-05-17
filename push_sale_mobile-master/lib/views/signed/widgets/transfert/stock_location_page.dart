@@ -7,6 +7,8 @@ import 'package:push_sale/models/warehouse.dart';
 
 class StockLocationPage extends StatelessWidget {
   WarehouseController warehouseController = Get.find();
+
+  StockLocationPage({super.key});
   @override
   Widget build(BuildContext context) {
     return Obx(() => RefreshIndicator(
@@ -34,16 +36,15 @@ class StockLocationPage extends StatelessWidget {
                         ),
                       ),
                       imageUrl: item.image,
-                      placeholder: (context, url) => Container(
+                      placeholder: (context, url) => const SizedBox(
                           width: 30,
                           height: 30,
                           child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) => Icon(Icons.error),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
                     ),
                     subtitle: Text(
-                      item.getVariantName1(Get.deviceLocale!.languageCode) +
-                          " " +
-                          item.getVariantName2(Get.deviceLocale!.languageCode),
+                      "${item.getVariantName1(Get.deviceLocale!.languageCode)} ${item.getVariantName2(Get.deviceLocale!.languageCode)}",
                       style: TextStyle(
                           color: item.quantity != item.previsionnel
                               ? Colors.blue
@@ -55,14 +56,7 @@ class StockLocationPage extends StatelessWidget {
                         Text(
                           item.quantity ~/ item.package != 0 ||
                                   item.previsionnel ~/ item.package != 0
-                              ? ((item.previsionnel != item.quantity
-                                      ? (item.quantity ~/ item.package)
-                                              .toStringAsFixed(0) +
-                                          " ➝ "
-                                      : "")) +
-                                  (item.previsionnel ~/ item.package)
-                                      .toStringAsFixed(0) +
-                                  " Cart"
+                              ? "${item.previsionnel != item.quantity ? "${(item.quantity ~/ item.package).toStringAsFixed(0)} ➝ " : ""}${(item.previsionnel ~/ item.package).toStringAsFixed(0)} Cart"
                               : "",
                           style: TextStyle(
                               color: item.quantity != item.previsionnel
@@ -72,14 +66,7 @@ class StockLocationPage extends StatelessWidget {
                         Text(
                           item.quantity % item.package != 0 ||
                                   item.previsionnel % item.package != 0
-                              ? ((item.previsionnel != item.quantity
-                                      ? (item.quantity % item.package)
-                                              .toStringAsFixed(0) +
-                                          " ➝ "
-                                      : "")) +
-                                  (item.previsionnel % item.package)
-                                      .toStringAsFixed(0) +
-                                  " Pcs"
+                              ? "${item.previsionnel != item.quantity ? "${(item.quantity % item.package).toStringAsFixed(0)} ➝ " : ""}${(item.previsionnel % item.package).toStringAsFixed(0)} Pcs"
                               : "",
                           style: TextStyle(
                               color: item.quantity != item.previsionnel

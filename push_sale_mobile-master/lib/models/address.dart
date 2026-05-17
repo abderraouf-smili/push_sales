@@ -28,9 +28,9 @@ class Address {
   static Address fromMap(Map<String, dynamic> value) {
     return Address(
       id: value["id"],
-      street: value["street"] == null ? "" : value["street"],
-      commune: value["commune"] == null ? "" : value["commune"],
-      zipcode: value["zipcode"] == null ? "" : value["zipcode"],
+      street: value["street"] ?? "",
+      commune: value["commune"] ?? "",
+      zipcode: value["zipcode"] ?? "",
       latitude: double.parse((value["latitude"] ?? "0").toString()),
       longitude: double.parse((value["longitude"] ?? "0").toString()),
       city: City.fromMap(value["city"]),

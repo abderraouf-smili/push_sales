@@ -11,7 +11,7 @@ class productListWidget extends StatelessWidget {
 
   Product product;
   PageController pageController;
-  productListWidget(this.product, this.pageController);
+  productListWidget(this.product, this.pageController, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class productListWidget extends StatelessWidget {
     }
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 0),
       height: 60,
       child: GestureDetector(
         onTap: () {
@@ -33,7 +33,7 @@ class productListWidget extends StatelessWidget {
           pageController.jumpToPage(2);
         },
         child: ListTile(
-          leading: Container(
+          leading: SizedBox(
             width: 40,
             height: 40,
             child: CachedNetworkImage(
@@ -45,17 +45,18 @@ class productListWidget extends StatelessWidget {
               ),
               imageUrl: product.image,
               placeholder: (context, url) => Container(
-                  padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                  child: CircularProgressIndicator()),
-              errorWidget: (context, url, error) => Icon(Icons.error),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                  child: const CircularProgressIndicator()),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
             ),
           ),
           subtitle: Text(product.variants!.length.toString()),
-          title: Container(
+          title: SizedBox(
               width: Get.width / 3,
               child:
                   Text(product.getLongDescription(Get.locale!.languageCode))),
-          trailing: Container(
+          trailing: SizedBox(
             width: Get.width / 3,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -65,10 +66,10 @@ class productListWidget extends StatelessWidget {
                         "assets/images/promo.png",
                         width: 30,
                       )
-                    : SizedBox.shrink(),
+                    : const SizedBox.shrink(),
                 Text(
                   product.showPrice!,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'alata',
                     fontSize: 14,
                   ),

@@ -11,7 +11,7 @@ import 'package:push_sale/models/variant.dart';
 class OrdersToShip extends StatelessWidget {
   PageController pageController;
   OrderController orderController = Get.find();
-  OrdersToShip(this.pageController);
+  OrdersToShip(this.pageController, {super.key});
   @override
   Widget build(BuildContext context) {
     orderController.pageController = pageController;
@@ -22,13 +22,13 @@ class OrdersToShip extends StatelessWidget {
         color: Colors.blue,
         child: Row(
           children: [
-            SizedBox.shrink(),
-            Container(
+            const SizedBox.shrink(),
+            SizedBox(
               width: Get.width - 50,
               child: Center(
                 child: Text(
                   "orders.to.ship".tr,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                   ),
@@ -46,7 +46,7 @@ class OrdersToShip extends StatelessWidget {
                   }
                 },
                 elevation: 5,
-                icon: Icon(
+                icon: const Icon(
                   Icons.menu,
                   color: Colors.white,
                 ),
@@ -59,9 +59,9 @@ class OrdersToShip extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text("optimize.route".tr,
-                              style: TextStyle(
+                              style: const TextStyle(
                                   color: !true ? Colors.grey : Colors.black)),
-                          Icon(Icons.share_location_outlined,
+                          const Icon(Icons.share_location_outlined,
                               color: !true ? Colors.grey : Colors.blue),
                         ],
                       ),
@@ -73,9 +73,9 @@ class OrdersToShip extends StatelessWidget {
                         children: [
                           Text(
                             "maps.route".tr,
-                            style: TextStyle(color: Colors.black),
+                            style: const TextStyle(color: Colors.black),
                           ),
-                          Icon(Icons.map_sharp, color: Colors.blue),
+                          const Icon(Icons.map_sharp, color: Colors.blue),
                         ],
                       ),
                     ),
@@ -85,11 +85,11 @@ class OrdersToShip extends StatelessWidget {
         ),
       ),
       Obx(
-        () => Container(
+        () => SizedBox(
           height: orderController.statusLoadRoute.value != "none" ? 70 : 0,
           child: Column(
             children: [
-              Container(
+              SizedBox(
                 width: Get.width,
                 height: 69,
                 child: orderController.statusLoadRoute.value == "success"
@@ -105,12 +105,12 @@ class OrdersToShip extends StatelessWidget {
                                       : orderController.route_position.value -
                                           1;
                             },
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.arrow_back,
                               color: Colors.red,
                             ),
                           ),
-                          Container(
+                          SizedBox(
                             width: Get.width / 1.8,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -118,30 +118,30 @@ class OrdersToShip extends StatelessWidget {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.place),
+                                    const Icon(Icons.place),
                                     Text(
                                       orderController.route_maps[orderController
                                               .route_position.value]
                                           .getStartAdress(),
-                                      style: TextStyle(fontSize: 14),
+                                      style: const TextStyle(fontSize: 14),
                                     )
                                   ],
                                 ),
                                 Row(
                                   children: [
-                                    Icon(Icons.flag),
+                                    const Icon(Icons.flag),
                                     Text(
                                       orderController.route_maps[orderController
                                               .route_position.value]
                                           .getEndAdress(),
-                                      style: TextStyle(fontSize: 14),
+                                      style: const TextStyle(fontSize: 14),
                                     )
                                   ],
                                 ),
                               ],
                             ),
                           ),
-                          Container(
+                          SizedBox(
                             width: Get.width / 5,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -149,28 +149,16 @@ class OrdersToShip extends StatelessWidget {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.timeline_sharp),
-                                    Text((orderController
-                                                    .route_maps[orderController
-                                                        .route_position.value]
-                                                    .distance /
-                                                1000)
-                                            .toStringAsFixed(0) +
-                                        " " +
-                                        "km".tr),
+                                    const Icon(Icons.timeline_sharp),
+                                    Text(
+                                        "${(orderController.route_maps[orderController.route_position.value].distance / 1000).toStringAsFixed(0)} ${"km".tr}"),
                                   ],
                                 ),
                                 Row(
                                   children: [
-                                    Icon(Icons.timer_sharp),
-                                    Text((orderController
-                                                    .route_maps[orderController
-                                                        .route_position.value]
-                                                    .time /
-                                                60)
-                                            .toStringAsFixed(0) +
-                                        " " +
-                                        "min".tr),
+                                    const Icon(Icons.timer_sharp),
+                                    Text(
+                                        "${(orderController.route_maps[orderController.route_position.value].time / 60).toStringAsFixed(0)} ${"min".tr}"),
                                   ],
                                 ),
                               ],
@@ -185,7 +173,7 @@ class OrdersToShip extends StatelessWidget {
                                   ? (orderController.route_maps.length - 1)
                                   : orderController.route_position.value + 1;
                             },
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.arrow_forward,
                               color: Colors.green,
                             ),
@@ -194,7 +182,7 @@ class OrdersToShip extends StatelessWidget {
                       )
                     : orderController.statusLoadRoute.value == "error"
                         ? Container(
-                            child: Center(
+                            child: const Center(
                               child: Icon(
                                 Icons.error_outlined,
                                 color: Colors.red,
@@ -203,13 +191,13 @@ class OrdersToShip extends StatelessWidget {
                           )
                         : orderController.statusLoadRoute.value == "loading"
                             ? Container(
-                                child: Center(
+                                child: const Center(
                                   child: CircularProgressIndicator(),
                                 ),
                               )
-                            : SizedBox.shrink(),
+                            : const SizedBox.shrink(),
               ),
-              Divider(
+              const Divider(
                 thickness: 1,
                 height: 1,
               ),
@@ -217,16 +205,16 @@ class OrdersToShip extends StatelessWidget {
           ),
         ),
       ),
-      Container(
+      SizedBox(
         height: 40,
         width: double.infinity,
         child: TabBar(
           controller: orderController.tabController,
           isScrollable: true,
           tabs: [
-            Container(
+            SizedBox(
               width: Get.width / 3 - 32,
-              child: Tab(
+              child: const Tab(
                 icon: Icon(
                   Icons.local_grocery_store_outlined,
                   size: 30,
@@ -234,9 +222,9 @@ class OrdersToShip extends StatelessWidget {
                 ),
               ),
             ),
-            Container(
+            SizedBox(
               width: Get.width / 3 - 32,
-              child: Tab(
+              child: const Tab(
                 icon: Icon(
                   Icons.directions_car_filled_outlined,
                   size: 30,
@@ -244,9 +232,9 @@ class OrdersToShip extends StatelessWidget {
                 ),
               ),
             ),
-            Container(
+            SizedBox(
               width: Get.width / 3 - 32,
-              child: Tab(
+              child: const Tab(
                 icon: Icon(
                   Icons.settings_backup_restore_outlined,
                   size: 30,
@@ -258,13 +246,13 @@ class OrdersToShip extends StatelessWidget {
         ),
       ),
       Obx(
-        () => Container(
+        () => SizedBox(
           height: Get.height -
               143 -
               40 -
               (orderController.statusLoadRoute.value != "none" ? 71 : 0),
           child: TabBarView(
-            physics: NeverScrollableScrollPhysics(),
+            physics: const NeverScrollableScrollPhysics(),
             controller: orderController.tabController,
             children: [
               ListPurchaseOrders(pageController),
@@ -279,13 +267,13 @@ class OrdersToShip extends StatelessWidget {
 }
 
 class ListPurchaseOrders extends StatelessWidget {
-  ListPurchaseOrders(this.pageController);
+  ListPurchaseOrders(this.pageController, {super.key});
   PageController pageController;
   OrderController orderController = Get.find();
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
-    return Container(
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
+    return SizedBox(
       width: Get.width,
       height: Get.height - 143 - 81,
       child: Obx(
@@ -297,21 +285,22 @@ class ListPurchaseOrders extends StatelessWidget {
             itemBuilder: (context, index) {
               var item = orderController.shippingOrders[index];
               return Container(
-                margin: EdgeInsets.symmetric(horizontal: 2, vertical: 0.5),
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 2, vertical: 0.5),
                 decoration: BoxDecoration(
                     border: Border.all(
                       width: 1,
-                      color: Color.fromARGB(255, 209, 209, 209),
+                      color: const Color.fromARGB(255, 209, 209, 209),
                     ),
                     borderRadius: BorderRadius.circular(5),
-                    color: Color.fromARGB(255, 255, 255, 255)),
+                    color: const Color.fromARGB(255, 255, 255, 255)),
                 child: ListTile(
                   contentPadding:
-                      EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                      const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
                   onTap: () {
                     orderController.selectedPO = item;
                     pageController.animateToPage(1,
-                        duration: Duration(milliseconds: 300),
+                        duration: const Duration(milliseconds: 300),
                         curve: Curves.linear);
                   },
                   title: Container(child: Text(item.client!.name)),
@@ -322,21 +311,19 @@ class ListPurchaseOrders extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            item.client!.address!.city.name +
-                                " - " +
-                                item.client!.address!.wilaya.name,
+                            "${item.client!.address!.city.name} - ${item.client!.address!.wilaya.name}",
                           ),
                           item.state == "paid"
-                              ? Icon(
+                              ? const Icon(
                                   Icons.check_box,
                                   color: Colors.green,
                                 )
                               : item.state == "shipped"
-                                  ? Icon(
+                                  ? const Icon(
                                       Icons.child_friendly_outlined,
                                       color: Color.fromARGB(255, 239, 133, 253),
                                     )
-                                  : SizedBox.shrink()
+                                  : const SizedBox.shrink()
                         ],
                       ),
                       Container(child: Text(item.code)),
@@ -357,31 +344,32 @@ class ListPurchaseOrders extends StatelessWidget {
                       ),
                     ),
                   ),
-                  trailing: Container(
+                  trailing: SizedBox(
                     width: 90,
                     height: 45,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(formatter.format(item.total_amount),
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'alata')),
                         Container(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.category,
                                 size: 16,
                                 color: Colors.green,
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 width: 5,
                               ),
                               Text(
                                 item.orderitems.length.toString(),
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
@@ -401,6 +389,8 @@ class ListPurchaseOrders extends StatelessWidget {
 
 class ListPurchaseOrdersOnMap extends StatelessWidget {
   OrderController orderController = Get.find();
+
+  ListPurchaseOrdersOnMap({super.key});
   @override
   Widget build(BuildContext context) {
     return Obx(
@@ -419,40 +409,38 @@ class ListPurchaseOrdersOnMap extends StatelessWidget {
                     orderController.MyCurrentPosition!.longitude),
                 zoom: 11,
               )
-            : CameraPosition(
+            : const CameraPosition(
                 target: LatLng(0, 0),
                 zoom: 11,
               ),
         markers: orderController.points_delivery,
-        circles: Set.from(
-          [
-            Circle(
-              circleId: CircleId("myposition"),
-              center: LatLng(
-                  orderController.MyCurrentPosition == null
-                      ? 36.693672548327164
-                      : orderController.MyCurrentPosition!.latitude,
-                  orderController.MyCurrentPosition == null
-                      ? 3.073091941698789
-                      : orderController.MyCurrentPosition!.longitude),
-              radius: 500,
-              strokeWidth: 1,
-              strokeColor: Colors.blue,
-              fillColor: Colors.blue.withOpacity(0.25),
-            ),
-          ],
-        ),
+        circles: {
+          Circle(
+            circleId: const CircleId("myposition"),
+            center: LatLng(
+                orderController.MyCurrentPosition == null
+                    ? 36.693672548327164
+                    : orderController.MyCurrentPosition!.latitude,
+                orderController.MyCurrentPosition == null
+                    ? 3.073091941698789
+                    : orderController.MyCurrentPosition!.longitude),
+            radius: 500,
+            strokeWidth: 1,
+            strokeColor: Colors.blue,
+            fillColor: Colors.blue.withOpacity(0.25),
+          ),
+        },
       ),
     );
   }
 }
 
 class ReturnGoods extends StatelessWidget {
-  ReturnGoods({Key? key}) : super(key: key);
+  ReturnGoods({super.key});
   OrderController orderController = Get.find();
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: Get.width,
       height: Get.height - 143 - 81,
       child: ListView.builder(
@@ -469,21 +457,19 @@ class ReturnGoods extends StatelessWidget {
                   ),
                 ),
                 imageUrl: item.image,
-                placeholder: (context, url) => Container(
+                placeholder: (context, url) => const SizedBox(
                     width: 30, height: 30, child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) => Icon(Icons.error),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
               ),
-              subtitle: Text(item.variant_name_1 + " " + item.variant_name_2!),
+              subtitle: Text("${item.variant_name_1} ${item.variant_name_2!}"),
               trailing: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(item.restant ~/ item.package != 0
-                      ? (item.restant ~/ item.package).toStringAsFixed(0) +
-                          " Cart"
+                      ? "${(item.restant ~/ item.package).toStringAsFixed(0)} Cart"
                       : ""),
                   Text(item.restant % item.package != 0
-                      ? (item.restant % item.package).toStringAsFixed(0) +
-                          " Pcs"
+                      ? "${(item.restant % item.package).toStringAsFixed(0)} Pcs"
                       : ""),
                 ],
               ),

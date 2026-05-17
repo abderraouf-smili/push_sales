@@ -119,7 +119,7 @@ class StockOperationController extends GetxController {
               .replaceAll("è", "e")
               .replaceAll("à", "a"),
           text2: item.quantity ~/ item.package != 0
-              ? (item.quantity ~/ item.package).toStringAsFixed(0) + " Cart"
+              ? "${(item.quantity ~/ item.package).toStringAsFixed(0)} Cart"
               : "",
           size: 1,
           format: '%-30s %16s %n',
@@ -128,18 +128,10 @@ class StockOperationController extends GetxController {
       textPrint.add(
         LineTextPrinter(
           type: LineTextPrinter.TYPE_TEXT,
-          text1: "  " +
-              item.variant_1
-                  .replaceAll("é", "e")
-                  .replaceAll("è", "e")
-                  .replaceAll("à", "a") +
-              " " +
-              item.variant_2
-                  .replaceAll("é", "e")
-                  .replaceAll("è", "e")
-                  .replaceAll("à", "a"),
+          text1:
+              "  ${item.variant_1.replaceAll("é", "e").replaceAll("è", "e").replaceAll("à", "a")} ${item.variant_2.replaceAll("é", "e").replaceAll("è", "e").replaceAll("à", "a")}",
           text2: item.quantity % item.package != 0
-              ? (item.quantity % item.package).toStringAsFixed(0) + " Pcs "
+              ? "${(item.quantity % item.package).toStringAsFixed(0)} Pcs "
               : "",
           size: 0,
           isSubTitle: true,

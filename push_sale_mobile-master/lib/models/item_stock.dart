@@ -119,11 +119,11 @@ class PriceItem {
   }
 
   static List<PriceItem> fromListMapToList(List<dynamic> value) {
-    List<PriceItem> _list = [];
+    List<PriceItem> list = [];
     for (var item in value) {
-      _list.add(PriceItem.fromMap(item));
+      list.add(PriceItem.fromMap(item));
     }
-    return _list;
+    return list;
   }
 
   Map<String, dynamic> toMap() {

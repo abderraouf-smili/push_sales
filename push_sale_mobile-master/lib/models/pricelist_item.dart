@@ -19,7 +19,8 @@ class PriceListItem {
     return PriceListItem(
       id: int.parse(value["id"].toString()),
       pricelist_id: int.parse(value["pricelist_id"].toString()),
-      variant: value["variant"]!=null ? Variant.fromMap(value["variant"]):null,
+      variant:
+          value["variant"] != null ? Variant.fromMap(value["variant"]) : null,
       sku: value["sku"],
       price: double.parse(value["price"].toString()),
     );
@@ -27,10 +28,10 @@ class PriceListItem {
 
   static List<PriceListItem> fromListMap(List<dynamic> value) {
     List<PriceListItem> list = [];
-    value.forEach((item) {
+    for (var item in value) {
       PriceListItem price = PriceListItem.fromMap(item);
       list.add(price);
-    });
+    }
     return list;
   }
 

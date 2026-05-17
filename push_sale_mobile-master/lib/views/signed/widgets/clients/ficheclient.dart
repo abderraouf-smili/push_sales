@@ -20,7 +20,7 @@ class FicheClient extends StatelessWidget {
   Client _client;
   PermissionsController Perm = Get.find();
   ReasoController reasonController = Get.put(ReasoController());
-  FicheClient(this._client);
+  FicheClient(this._client, {super.key});
   ProductController productController = Get.put(ProductController());
   ClientController clientController = Get.find();
 
@@ -28,7 +28,7 @@ class FicheClient extends StatelessWidget {
   Widget build(BuildContext context) {
     productController.client = _client;
     productController.getFullPromotion();
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     clientController.getCurrentOrders(_client.id);
     return SafeArea(
       bottom: false,
@@ -37,7 +37,7 @@ class FicheClient extends StatelessWidget {
         appBar: AppBar(
           title: Text(
             _client.name,
-            style: TextStyle(fontFamily: "alata", fontSize: 18),
+            style: const TextStyle(fontFamily: "alata", fontSize: 18),
           ),
           centerTitle: true,
           backgroundColor: Colors.blue.withOpacity(0.5),
@@ -66,7 +66,7 @@ class FicheClient extends StatelessWidget {
                   }
                 },
                 elevation: 5,
-                icon: Icon(Icons.menu),
+                icon: const Icon(Icons.menu),
                 itemBuilder: (context) {
                   return [
                     PopupMenuItem(
@@ -76,7 +76,8 @@ class FicheClient extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text("sale".tr),
-                            Icon(Icons.calculate_rounded, color: Colors.blue),
+                            const Icon(Icons.calculate_rounded,
+                                color: Colors.blue),
                           ],
                         )),
                     PopupMenuItem(
@@ -86,7 +87,8 @@ class FicheClient extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text("visit".tr),
-                            Icon(Icons.local_taxi_outlined, color: Colors.blue),
+                            const Icon(Icons.local_taxi_outlined,
+                                color: Colors.blue),
                           ],
                         )),
                     PopupMenuItem(
@@ -96,7 +98,7 @@ class FicheClient extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text("edit".tr),
-                            Icon(Icons.edit, color: Colors.blue),
+                            const Icon(Icons.edit, color: Colors.blue),
                           ],
                         )),
                     PopupMenuItem(
@@ -107,7 +109,7 @@ class FicheClient extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text("print.client.balance".tr),
-                            Icon(Icons.print, color: Colors.blue),
+                            const Icon(Icons.print, color: Colors.blue),
                           ],
                         )),
                     PopupMenuItem(
@@ -117,12 +119,12 @@ class FicheClient extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text("printer.settings".tr,
-                              style: TextStyle(color: Colors.black)),
-                          Icon(Icons.bluetooth, color: Colors.blue),
+                              style: const TextStyle(color: Colors.black)),
+                          const Icon(Icons.bluetooth, color: Colors.blue),
                         ],
                       ),
                     ),
-                    PopupMenuItem(
+                    const PopupMenuItem(
                         enabled: false,
                         value: 4,
                         child: Row(
@@ -143,23 +145,23 @@ class FicheClient extends StatelessWidget {
         ),
         body: SlidingUpPanel(
             collapsed: Container(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: const BoxDecoration(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
                 color: Color.fromARGB(255, 41, 112, 148),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.arrow_upward_sharp,
                     color: Colors.white,
                   ),
                   Text(
                     "client.more.infos".tr,
-                    style: TextStyle(color: Colors.white, fontSize: 20),
+                    style: const TextStyle(color: Colors.white, fontSize: 20),
                   ),
-                  SizedBox.shrink(),
+                  const SizedBox.shrink(),
                 ],
               ),
             ),
@@ -190,23 +192,23 @@ class FicheClient extends StatelessWidget {
                     ),
                   ),
                   _client.mobile == ""
-                      ? SizedBox.shrink()
+                      ? const SizedBox.shrink()
                       : Expanded(
                           child: Container(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 20,
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.phone_iphone,
                                   size: 25,
                                   color: Colors.blue,
                                 ),
                                 Text(
                                   " ${_client.mobile}",
-                                  style: TextStyle(fontSize: 20),
+                                  style: const TextStyle(fontSize: 20),
                                 ),
                               ],
                             ),
@@ -214,7 +216,7 @@ class FicheClient extends StatelessWidget {
                         ),
                   Expanded(
                       child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Perm.check(
                               Row(
                                 mainAxisAlignment:
@@ -228,7 +230,7 @@ class FicheClient extends StatelessWidget {
                                   Container(
                                     child: Text(
                                       formatter.format(_client.solde),
-                                      style: TextStyle(fontSize: 20),
+                                      style: const TextStyle(fontSize: 20),
                                     ),
                                   ),
                                 ],
@@ -236,21 +238,21 @@ class FicheClient extends StatelessWidget {
                               "Clients.solde"))),
                   Expanded(
                     child: Container(
-                      margin: EdgeInsets.symmetric(horizontal: 20),
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
                       width: Get.width,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.calendar_month,
                             size: 25,
                             color: Colors.green,
                           ),
-                          Container(
+                          SizedBox(
                             width: Get.width - 70,
                             child: ListView.builder(
                                 reverse: true,
-                                physics: BouncingScrollPhysics(),
+                                physics: const BouncingScrollPhysics(),
                                 padding: EdgeInsets.zero,
                                 scrollDirection: Axis.horizontal,
                                 itemCount: _client.visitdays!.length,
@@ -258,19 +260,19 @@ class FicheClient extends StatelessWidget {
                                   var day = _client.visitdays![index].day;
                                   return Container(
                                     width: 125,
-                                    padding: EdgeInsets.only(left: 5),
+                                    padding: const EdgeInsets.only(left: 5),
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.check_rounded,
                                           size: 20,
                                           color: Colors.blue,
                                         ),
                                         Text(
                                           day.tr,
-                                          style: TextStyle(fontSize: 18),
+                                          style: const TextStyle(fontSize: 18),
                                         ),
                                       ],
                                     ),
@@ -286,7 +288,7 @@ class FicheClient extends StatelessWidget {
                     child: Container(
                       width: double.infinity,
                       // margin: EdgeInsets.symmetric(vertical: 30),
-                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: MaterialButton(
                         color: Colors.green,
                         onPressed: Perm.check(null, "Clients.sale")
@@ -300,12 +302,12 @@ class FicheClient extends StatelessWidget {
                         ),
                         child: Text(
                           "get_started".tr,
-                          style: TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
                     ),
                   ),
-                  Expanded(
+                  const Expanded(
                     flex: 2,
                     child: SizedBox.shrink(),
                   )
@@ -317,7 +319,7 @@ class FicheClient extends StatelessWidget {
                 decoration: BoxDecoration(
                     color: Colors.grey.withOpacity(0.2),
                     borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(15))),
+                        const BorderRadius.vertical(top: Radius.circular(15))),
                 height: Get.height / 1.5,
                 child: Column(
                   children: [
@@ -326,11 +328,11 @@ class FicheClient extends StatelessWidget {
                           ? Alignment.centerRight
                           : Alignment.centerLeft,
                       child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
                         child: Text(
                           "others".tr,
-                          style: TextStyle(fontSize: 25),
+                          style: const TextStyle(fontSize: 25),
                         ),
                       ),
                     ),
@@ -338,19 +340,19 @@ class FicheClient extends StatelessWidget {
                       () {
                         if (productController.loadVariantReady.value) {
                           List<dynamic> list = productController.listPromo;
-                          return Container(
+                          return SizedBox(
                             width: Get.width - 20,
-                            height: 120 * (list.length > 0 ? 1 : 0),
+                            height: 120 * (list.isNotEmpty ? 1 : 0),
                             child: ListView.builder(
                                 scrollDirection: Axis.horizontal,
-                                physics: BouncingScrollPhysics(),
+                                physics: const BouncingScrollPhysics(),
                                 itemCount: list.length,
                                 itemBuilder: (context, index) {
                                   return PromoItem(list[index]);
                                 }),
                           );
                         } else {
-                          return SizedBox(
+                          return const SizedBox(
                             child: CircularProgressIndicator(),
                           );
                         }
@@ -384,21 +386,21 @@ class FicheClient extends StatelessWidget {
                                                   height: 40,
                                                 )
                                               : item.state == "shipped"
-                                                  ? Icon(
+                                                  ? const Icon(
                                                       Icons
                                                           .child_friendly_outlined,
                                                       color: Color.fromARGB(
                                                           255, 239, 133, 253),
                                                       size: 35,
                                                     )
-                                                  : Icon(
+                                                  : const Icon(
                                                       Icons
                                                           .local_shipping_outlined,
                                                       color: Colors.blue,
                                                       size: 35,
                                                     ),
                                         ),
-                                        subtitle: Container(
+                                        subtitle: SizedBox(
                                           width: Get.width / 10,
                                           child: Text(
                                               DateFormat("dd-MM-yyyy HH:mm")
@@ -406,13 +408,13 @@ class FicheClient extends StatelessWidget {
                                         ),
                                         trailing: Text(
                                           formatter.format(item.total_amount),
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                               fontFamily: "alata",
                                               fontSize: 18),
                                         ),
                                       );
                                     })
-                                : Container(
+                                : const SizedBox(
                                     width: double.infinity,
                                     child: Center(
                                         child: CircularProgressIndicator()),
@@ -431,12 +433,12 @@ class FicheClient extends StatelessWidget {
 
 class PromoItem extends StatelessWidget {
   var item;
-  PromoItem(this.item);
+  PromoItem(this.item, {super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 15),
+      margin: const EdgeInsets.symmetric(horizontal: 15),
       width: 100,
       height: 120,
       child: Stack(
@@ -462,15 +464,15 @@ class PromoItem extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 255, 97, 89),
+                color: const Color.fromARGB(255, 255, 97, 89),
                 border: Border.all(
-                    width: 1, color: Color.fromARGB(255, 255, 21, 0)),
+                    width: 1, color: const Color.fromARGB(255, 255, 21, 0)),
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text(
                   "-" + item.discount.toStringAsFixed(0) + "%",
-                  style: TextStyle(
+                  style: const TextStyle(
                       color: Color.fromARGB(255, 255, 251, 0),
                       fontSize: 15,
                       fontWeight: FontWeight.bold),
@@ -481,14 +483,14 @@ class PromoItem extends StatelessWidget {
           Positioned(
               bottom: 0,
               left: 10,
-              child: Container(
+              child: SizedBox(
                 width: 80,
                 height: 30,
                 // color: Colors.orange,
                 child: Center(
                   child: Text(
                     item.product,
-                    style: TextStyle(fontSize: 8, color: Colors.red),
+                    style: const TextStyle(fontSize: 8, color: Colors.red),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -500,7 +502,7 @@ class PromoItem extends StatelessWidget {
 }
 
 void showVisitOption(BuildContext context, ReasoController reasoController,
-    String client_id, ClientController clientController) {
+    String clientId, ClientController clientController) {
   reasoController.submittig = "new".obs;
   showGeneralDialog(
     context: context,
@@ -511,14 +513,14 @@ void showVisitOption(BuildContext context, ReasoController reasoController,
         child: child,
       );
     },
-    transitionDuration: Duration(milliseconds: 250),
+    transitionDuration: const Duration(milliseconds: 250),
     pageBuilder: (BuildContext context, Animation animation,
         Animation secondaryAnimation) {
       return AlertDialog(
-        contentPadding: EdgeInsets.symmetric(vertical: 25),
+        contentPadding: const EdgeInsets.symmetric(vertical: 25),
         titlePadding: EdgeInsets.zero,
         title: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Color.fromARGB(255, 43, 87, 124),
           ),
           width: double.infinity,
@@ -526,20 +528,20 @@ void showVisitOption(BuildContext context, ReasoController reasoController,
           child: Center(
             child: Text(
               "reason.no.sale".tr,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
               ),
             ),
           ),
         ),
-        content: Container(
+        content: SizedBox(
           height: reasoController.ReasonSale.length * 55,
           width: Get.width,
           child: Obx(
             () => reasoController.submittig.value == "new"
                 ? ListView.builder(
-                    physics: NeverScrollableScrollPhysics(),
+                    physics: const NeverScrollableScrollPhysics(),
                     padding: EdgeInsets.zero,
                     itemCount: reasoController.ReasonSale.length,
                     itemBuilder: (context, index) {
@@ -551,24 +553,24 @@ void showVisitOption(BuildContext context, ReasoController reasoController,
                           },
                           child: AnimatedContainer(
                             curve: Curves.easeInOut,
-                            duration: Duration(
+                            duration: const Duration(
                               milliseconds: 300,
                             ),
-                            margin: EdgeInsets.symmetric(
+                            margin: const EdgeInsets.symmetric(
                                 horizontal: 2, vertical: 1),
-                            padding: EdgeInsets.symmetric(horizontal: 5),
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
                             width: double.infinity,
                             height: 50,
                             decoration: BoxDecoration(
                               color: reasoController.selectedId.value == item.id
-                                  ? Color.fromARGB(255, 225, 228, 255)
+                                  ? const Color.fromARGB(255, 225, 228, 255)
                                   : Colors.white,
                               border: Border.all(
                                 width: 1,
-                                color:
-                                    reasoController.selectedId.value == item.id
-                                        ? Color.fromARGB(255, 179, 182, 255)
-                                        : Color.fromARGB(255, 218, 220, 255),
+                                color: reasoController.selectedId.value ==
+                                        item.id
+                                    ? const Color.fromARGB(255, 179, 182, 255)
+                                    : const Color.fromARGB(255, 218, 220, 255),
                               ),
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -578,8 +580,8 @@ void showVisitOption(BuildContext context, ReasoController reasoController,
                                 Row(
                                   children: [
                                     Container(
-                                      margin:
-                                          EdgeInsets.symmetric(horizontal: 15),
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 15),
                                       child: item.getIcon(),
                                     ),
                                     Text(
@@ -594,7 +596,7 @@ void showVisitOption(BuildContext context, ReasoController reasoController,
                                         color: Colors.green,
                                         size: Get.width / 20,
                                       )
-                                    : SizedBox.shrink()
+                                    : const SizedBox.shrink()
                               ],
                             ),
                           ),
@@ -603,13 +605,13 @@ void showVisitOption(BuildContext context, ReasoController reasoController,
                     },
                   )
                 : reasoController.submittig.value == "submit"
-                    ? Container(
+                    ? const SizedBox(
                         height: 30,
                         width: 30,
                         child: Center(child: CircularProgressIndicator()),
                       )
                     : reasoController.submittig.value == "success"
-                        ? Container(
+                        ? const SizedBox(
                             height: 30,
                             width: 30,
                             child: Center(
@@ -619,7 +621,7 @@ void showVisitOption(BuildContext context, ReasoController reasoController,
                               ),
                             ),
                           )
-                        : Container(
+                        : const SizedBox(
                             height: 30,
                             width: 30,
                             child: Center(
@@ -632,7 +634,7 @@ void showVisitOption(BuildContext context, ReasoController reasoController,
           ),
         ),
         actions: <Widget>[
-          Container(
+          SizedBox(
             width: 300,
             height: 55,
             child: Row(
@@ -644,7 +646,7 @@ void showVisitOption(BuildContext context, ReasoController reasoController,
                   color: Colors.red,
                   child: Text(
                     'cancel'.tr,
-                    style: TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.white),
                   ),
                   onPressed: () {
                     Get.back();
@@ -654,13 +656,13 @@ void showVisitOption(BuildContext context, ReasoController reasoController,
                   minWidth: 145,
                   height: 55,
                   color: Colors.blue,
-                  child: Text(
+                  child: const Text(
                     'OK',
                     style: TextStyle(color: Colors.white),
                   ),
                   onPressed: () async {
                     if (reasoController.selectedId.value > 0) {
-                      await reasoController.submit(client_id);
+                      await reasoController.submit(clientId);
                       await clientController.getClients();
                       Get.back();
                     }

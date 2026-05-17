@@ -34,7 +34,7 @@ class PermissionsController extends GetxController {
 
   dynamic check(dynamic func, String function) {
     if (func != null) {
-      Widget ret = SizedBox.shrink();
+      Widget ret = const SizedBox.shrink();
 
       if (localPermissions
               .where((element) => element.permission == function)

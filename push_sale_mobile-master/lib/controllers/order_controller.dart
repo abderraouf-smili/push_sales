@@ -118,10 +118,10 @@ class OrderController extends GetxController
   removeCoupon() {
     couponLoaded.value = 0;
     total.value = 0;
-    orderitems.forEach((element) {
+    for (var element in orderitems) {
       element.removeCoupon();
       total.value = total.value + element.total;
-    });
+    }
     coupon = null;
   }
 
@@ -149,10 +149,10 @@ class OrderController extends GetxController
     PO_position.add("0");
     waypoints
         .add("${MyCurrentPosition!.latitude},${MyCurrentPosition!.longitude}");
-    clients_delivery.forEach((element) {
+    for (var element in clients_delivery) {
       waypoints
           .add("${element.address!.latitude},${element.address!.longitude}");
-    });
+    }
     // waypoints
     //     .add("${MyCurrentPosition!.latitude},${MyCurrentPosition!.longitude}");
     // print(waypoints.sublist(1, waypoints.length - 1).join('|'));
@@ -167,15 +167,15 @@ class OrderController extends GetxController
   }
 
   double getCouponDiscount() {
-    double _discount = 0.0;
-    orderitems.forEach((element) {
+    double discount = 0.0;
+    for (var element in orderitems) {
       if (element.coupon_id != null) {
-        _discount += (element.total * 100 / (100 - element.discount)) *
+        discount += (element.total * 100 / (100 - element.discount)) *
             (element.discount) /
             100;
       }
-    });
-    return _discount;
+    }
+    return discount;
   }
 
   Future<dynamic> checkCouponCode() async {
@@ -214,9 +214,9 @@ class OrderController extends GetxController
               }
             }
             total.value = 0;
-            orderitems.forEach((element) {
+            for (var element in orderitems) {
               total.value = total.value + element.total;
-            });
+            }
           } else {
             print("COUPON is amount discount");
           }
@@ -325,21 +325,21 @@ class OrderController extends GetxController
     out_of_stock.removeWhere((element) => element["id"] == variant.id);
     hasChanged.value++;
     total.value = 0;
-    orderitems.forEach((element) {
+    for (var element in orderitems) {
       total.value = total.value + element.total;
-    });
+    }
   }
 
-  removeItem(Orderitem _item) {
-    orderitems.removeWhere((element) => element.id == _item.id);
+  removeItem(Orderitem item) {
+    orderitems.removeWhere((element) => element.id == item.id);
     total.value = 0;
-    orderitems.forEach((element) {
+    for (var element in orderitems) {
       total.value = total.value + element.total;
-    });
+    }
   }
 
   String getItemId() {
-    Uuid uuid = Uuid();
+    Uuid uuid = const Uuid();
     return uuid.v1();
   }
 
@@ -434,11 +434,11 @@ class OrderController extends GetxController
             (element) => element.state == "shipped" || element.state == "paid")
         .toList()
         .forEach((element) {
-      element.orderitems.forEach((item) {
+      for (var item in element.orderitems) {
         if (item.quantity != item.confirmed_quantity) {
           addRestantProducts.value = true;
           var item_ = restant
-              .where((_item) => _item.variant_id == item.variant_id)
+              .where((item) => item.variant_id == item.variant_id)
               .toList();
           if (item_.isEmpty) {
             PurchaseOrderitem a = item;
@@ -459,7 +459,7 @@ class OrderController extends GetxController
             }
           }
         }
-      });
+      }
     });
   }
 
@@ -547,18 +547,18 @@ class OrderController extends GetxController
       ),
     );
 
-    Client _client = purchaseOrder.client!;
+    Client client = purchaseOrder.client!;
 
     textPrint.add(
       LineTextPrinter(
         align: LineTextPrinter.LEFT,
         type: LineTextPrinter.TYPE_TEXT,
         text1: "Client",
-        text2: _client.name
+        text2: client.name
                 .replaceAll("é", "e")
                 .replaceAll("è", "e")
                 .replaceAll("à", "a") +
-            (_client.mobile != "" ? " - Tel : ${_client.mobile} " : ""),
+            (client.mobile != "" ? " - Tel : ${client.mobile} " : ""),
         format: '%-6s %40s %n',
         size: 1,
       ),
@@ -569,12 +569,12 @@ class OrderController extends GetxController
         align: LineTextPrinter.LEFT,
         type: LineTextPrinter.TYPE_TEXT,
         text1: "Adresse",
-        text2: _client.address!.city.name
+        text2: client.address!.city.name
                 .replaceAll("é", "e")
                 .replaceAll("è", "e")
                 .replaceAll("à", "a") +
             "  " +
-            _client.address!.wilaya.name
+            client.address!.wilaya.name
                 .replaceAll("é", "e")
                 .replaceAll("è", "e")
                 .replaceAll("à", "a"),
@@ -771,18 +771,18 @@ class OrderController extends GetxController
       ),
     );
 
-    Client _client = MyOrder != null ? MyOrder.client! : client!;
+    Client client = MyOrder != null ? MyOrder.client! : client;
 
     textPrint.add(
       LineTextPrinter(
         align: LineTextPrinter.LEFT,
         type: LineTextPrinter.TYPE_TEXT,
         text1: "Client",
-        text2: _client.name
+        text2: client.name
                 .replaceAll("é", "e")
                 .replaceAll("è", "e")
                 .replaceAll("à", "a") +
-            (_client.mobile != "" ? " - Tel : ${_client.mobile} " : ""),
+            (client.mobile != "" ? " - Tel : ${client.mobile} " : ""),
         format: '%-6s %40s %n',
         size: 1,
       ),
@@ -793,12 +793,12 @@ class OrderController extends GetxController
         align: LineTextPrinter.LEFT,
         type: LineTextPrinter.TYPE_TEXT,
         text1: "Adresse",
-        text2: _client.address!.city.name
+        text2: client.address!.city.name
                 .replaceAll("é", "e")
                 .replaceAll("è", "e")
                 .replaceAll("à", "a") +
             "  " +
-            _client.address!.wilaya.name
+            client.address!.wilaya.name
                 .replaceAll("é", "e")
                 .replaceAll("è", "e")
                 .replaceAll("à", "a"),
@@ -1128,46 +1128,46 @@ class OrderController extends GetxController
     );
   }
 
-  cancelAllQuantity(PurchaseOrderitem _item) {
+  cancelAllQuantity(PurchaseOrderitem item) {
     itemModify.value = false;
-    _item.cancelQuantity();
+    item.cancelQuantity();
     // isDismissed.value
     //     .where((element) => element[_item.id] != null)
     //     .first[_item.id] = "drop";
-    double _total = 0;
-    selectedPO!.orderitems.forEach((element) {
-      _total +=
+    double total = 0;
+    for (var element in selectedPO!.orderitems) {
+      total +=
           (element.modified ? element.confirmed_quantity : element.quantity)! *
               element.price;
-    });
+    }
     selectedPO!.residual =
-        selectedPO!.residual! - (selectedPO!.total_amount - _total);
-    selectedPO!.total_amount = _total;
-    amount_total.value = _total;
+        selectedPO!.residual! - (selectedPO!.total_amount - total);
+    selectedPO!.total_amount = total;
+    amount_total.value = total;
     itemModify.value = true;
   }
 
-  modifyQuantityItem(PurchaseOrderitem _item, double _quantity) {
+  modifyQuantityItem(PurchaseOrderitem item, double quantity) {
     itemModify.value = false;
-    if (_item.unite != uniteOption.value) {
-      _item.setUnite(uniteOption.value);
+    if (item.unite != uniteOption.value) {
+      item.setUnite(uniteOption.value);
     }
-    _item.setConfirmQuantity(_quantity);
-    double _total = 0;
-    selectedPO!.orderitems.forEach((element) {
+    item.setConfirmQuantity(quantity);
+    double total = 0;
+    for (var element in selectedPO!.orderitems) {
       print(element.variant_id.toString() +
           " : " +
           element.quantity.toString() +
           " x " +
           element.price.toString());
-      _total +=
+      total +=
           (element.modified ? element.confirmed_quantity : element.quantity)! *
               element.price;
-    });
+    }
     selectedPO!.residual =
-        selectedPO!.residual! - (selectedPO!.total_amount - _total);
-    selectedPO!.total_amount = _total;
-    amount_total.value = _total;
+        selectedPO!.residual! - (selectedPO!.total_amount - total);
+    selectedPO!.total_amount = total;
+    amount_total.value = total;
     itemModify.value = true;
   }
 
@@ -1188,10 +1188,10 @@ class OrderController extends GetxController
     super.onInit();
   }
 
-  Future<ResponseHttpRequest> reNew(String id) async{
+  Future<ResponseHttpRequest> reNew(String id) async {
     ResponseHttpRequest response =
-        await CallApi.RequestHttp(global.reNewOrder,data: {"order_id":id});
-        return response;
+        await CallApi.RequestHttp(global.reNewOrder, data: {"order_id": id});
+    return response;
   }
 }
 

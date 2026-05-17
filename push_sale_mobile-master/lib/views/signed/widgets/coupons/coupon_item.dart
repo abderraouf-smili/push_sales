@@ -5,25 +5,26 @@ import 'package:push_sale/models/coupon.dart';
 
 class CouponItem extends StatelessWidget {
   Coupon item;
-  CouponItem(this.item);
+  CouponItem(this.item, {super.key});
+  @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     return Container(
       width: double.infinity,
       height: Get.height / 12,
-      margin: EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
       decoration: BoxDecoration(
-          border:
-              Border.all(width: 1, color: Color.fromARGB(255, 206, 230, 255)),
+          border: Border.all(
+              width: 1, color: const Color.fromARGB(255, 206, 230, 255)),
           borderRadius: BorderRadius.circular(5),
-          color: Color.fromARGB(255, 249, 252, 255)),
+          color: const Color.fromARGB(255, 249, 252, 255)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: Get.width / 10,
             height: Get.width / 10,
-            margin: EdgeInsets.symmetric(horizontal: 5),
+            margin: const EdgeInsets.symmetric(horizontal: 5),
             child: item.is_pourcentage
                 ? Icon(
                     Icons.percent,
@@ -36,7 +37,7 @@ class CouponItem extends StatelessWidget {
                     color: Colors.green,
                   ),
           ),
-          Container(
+          SizedBox(
             width: Get.width / 2.2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,7 +45,7 @@ class CouponItem extends StatelessWidget {
                 Text(
                   item.code,
                   style: TextStyle(
-                      color: Color.fromARGB(255, 151, 81, 75),
+                      color: const Color.fromARGB(255, 151, 81, 75),
                       fontFamily: 'alata',
                       fontSize: Get.width / 25),
                 ),
@@ -52,16 +53,16 @@ class CouponItem extends StatelessWidget {
                     style: TextStyle(
                         fontFamily: 'alata',
                         fontSize: Get.width / 30,
-                        color: Color.fromARGB(255, 112, 112, 112))),
-                Text("more.than".tr + " " + formatter.format(item.min_amount),
+                        color: const Color.fromARGB(255, 112, 112, 112))),
+                Text("${"more.than".tr} ${formatter.format(item.min_amount)}",
                     style: TextStyle(
                         fontFamily: 'alata',
                         fontSize: Get.width / 30,
-                        color: Color.fromARGB(255, 112, 112, 112))),
+                        color: const Color.fromARGB(255, 112, 112, 112))),
               ],
             ),
           ),
-          Container(
+          SizedBox(
             width: Get.width / 4,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -71,24 +72,24 @@ class CouponItem extends StatelessWidget {
                     style: TextStyle(
                         fontFamily: 'alata',
                         fontSize: Get.width / 30,
-                        color: Color.fromARGB(255, 112, 112, 112))),
+                        color: const Color.fromARGB(255, 112, 112, 112))),
                 Text(DateFormat("dd/MM/y").format(item.end_date),
                     style: TextStyle(
                         fontFamily: 'alata',
                         fontSize: Get.width / 30,
-                        color: Color.fromARGB(255, 112, 112, 112))),
+                        color: const Color.fromARGB(255, 112, 112, 112))),
               ],
             ),
           ),
           Container(
-            margin: EdgeInsets.symmetric(horizontal: 5),
+            margin: const EdgeInsets.symmetric(horizontal: 5),
             width: Get.width -
                 (Get.width / 12 + Get.width / 2.2 + Get.width / 4 + 34),
             child: Center(
               child: Text(
                 item.count.toString(),
                 style: TextStyle(
-                    color: Color.fromARGB(255, 36, 111, 172),
+                    color: const Color.fromARGB(255, 36, 111, 172),
                     fontSize: Get.width / 18,
                     fontFamily: 'kodchasan',
                     fontWeight: FontWeight.bold),

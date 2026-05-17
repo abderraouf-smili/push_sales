@@ -1,7 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/key.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/promotion_controller.dart';
@@ -11,6 +8,8 @@ import 'package:push_sale/views/signed/widgets/promotions/fiche_promotion.dart';
 
 class PromotionsList extends StatelessWidget {
   PromotionController promotionController = Get.put(PromotionController());
+
+  PromotionsList({super.key});
   @override
   Widget build(BuildContext context) {
     promotionController.getPromotions();
@@ -34,7 +33,7 @@ class PromotionsList extends StatelessWidget {
                     Get.offAll(() => HomePage(index: 4));
                   }
                 },
-                icon: Icon(Icons.arrow_back)),
+                icon: const Icon(Icons.arrow_back)),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
@@ -43,7 +42,8 @@ class PromotionsList extends StatelessWidget {
             child: const Icon(Icons.add),
           ),
           body: Obx(() => !promotionController.listIsReady.value
-              ? Container(child: Center(child: CircularProgressIndicator()))
+              ? Container(
+                  child: const Center(child: CircularProgressIndicator()))
               : ListView.builder(
                   itemCount: promotionController.promotions.length,
                   itemBuilder: (context, index) {
@@ -54,12 +54,12 @@ class PromotionsList extends StatelessWidget {
                       },
                       title: Text(
                         item.description,
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       leading: Icon(
                         Icons.online_prediction_outlined,
                         color: item.end_date
-                                    .add(Duration(
+                                    .add(const Duration(
                                         hours: 23, minutes: 59, seconds: 59))
                                     .compareTo(DateTime.now()) >=
                                 0
@@ -78,11 +78,11 @@ class PromotionsList extends StatelessWidget {
                           ],
                         ),
                       ),
-                      trailing: Container(
+                      trailing: SizedBox(
                           width: 50,
                           child: Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.category,
                                 size: 16,
                               ),

@@ -10,9 +10,11 @@ import 'package:push_sale/views/signed/widgets/settings/printer_config.dart';
 class SaleOrderList extends StatelessWidget {
   OrderController orderController = Get.put(OrderController());
   PrinterController printerController = Get.put(PrinterController());
+
+  SaleOrderList({super.key});
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     orderController.getOrders();
     return SafeArea(
       bottom: false,
@@ -40,7 +42,7 @@ class SaleOrderList extends StatelessWidget {
                 }
               },
               elevation: 5,
-              icon: Icon(Icons.menu),
+              icon: const Icon(Icons.menu),
               itemBuilder: (context) {
                 return [
                   PopupMenuItem(
@@ -50,8 +52,8 @@ class SaleOrderList extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text("print.invoices.today".tr,
-                            style: TextStyle(color: Colors.black)),
-                        Icon(Icons.print, color: Colors.blue),
+                            style: const TextStyle(color: Colors.black)),
+                        const Icon(Icons.print, color: Colors.blue),
                       ],
                     ),
                   ),
@@ -62,8 +64,8 @@ class SaleOrderList extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text("print.goods.today".tr,
-                            style: TextStyle(color: Colors.black)),
-                        Icon(Icons.print, color: Colors.blue),
+                            style: const TextStyle(color: Colors.black)),
+                        const Icon(Icons.print, color: Colors.blue),
                       ],
                     ),
                   ),
@@ -74,8 +76,8 @@ class SaleOrderList extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text("printer.settings".tr,
-                            style: TextStyle(color: Colors.black)),
-                        Icon(Icons.bluetooth, color: Colors.blue),
+                            style: const TextStyle(color: Colors.black)),
+                        const Icon(Icons.bluetooth, color: Colors.blue),
                       ],
                     ),
                   ),
@@ -90,7 +92,8 @@ class SaleOrderList extends StatelessWidget {
                           style:
                               TextStyle(color: Colors.black.withOpacity(0.5)),
                         ),
-                        Icon(Icons.picture_as_pdf_sharp, color: Colors.blue),
+                        const Icon(Icons.picture_as_pdf_sharp,
+                            color: Colors.blue),
                       ],
                     ),
                   ),
@@ -105,7 +108,7 @@ class SaleOrderList extends StatelessWidget {
                           style:
                               TextStyle(color: Colors.black.withOpacity(0.5)),
                         ),
-                        Icon(Icons.send, color: Colors.blue),
+                        const Icon(Icons.send, color: Colors.blue),
                       ],
                     ),
                   ),
@@ -128,15 +131,15 @@ class SaleOrderList extends StatelessWidget {
                       subtitle: Text(item.client!.name),
                       trailing: Text(
                         formatter.format(item.total_amount),
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     );
                   })
-              : Container(
+              : const SizedBox(
                   width: double.infinity,
                   height: double.infinity,
                   child: Center(
-                    child: Container(
+                    child: SizedBox(
                         width: 40,
                         height: 40,
                         child: CircularProgressIndicator()),

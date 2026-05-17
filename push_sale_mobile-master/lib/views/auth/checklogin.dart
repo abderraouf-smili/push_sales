@@ -10,26 +10,26 @@ CheckLoginSign(Map<String, dynamic> result) {
       {
         if (result["provider"] == "email") {
           AwesomeDialog(
-              btnOkOnPress: () {
-                FocusScope.of(Get.context!).requestFocus(new FocusNode());
-                Get.offAllNamed("/LoginPage",
-                    arguments: {"mail": result["email"]});
-              },
-              context: Get.context!,
-              dialogType: DialogType.success,
-              title: "success".tr,
-              desc: "registred.email".tr)
-            ..show();
+                  btnOkOnPress: () {
+                    FocusScope.of(Get.context!).requestFocus(FocusNode());
+                    Get.offAllNamed("/LoginPage",
+                        arguments: {"mail": result["email"]});
+                  },
+                  context: Get.context!,
+                  dialogType: DialogType.success,
+                  title: "success".tr,
+                  desc: "registred.email".tr)
+              .show();
         } else {
           AwesomeDialog(
-              btnOkOnPress: () {
-                Get.offAllNamed("/SettingsProfilePage");
-              },
-              context: Get.context!,
-              dialogType: DialogType.success,
-              title: "success".tr,
-              desc: "registred.social".tr)
-            ..show();
+                  btnOkOnPress: () {
+                    Get.offAllNamed("/SettingsProfilePage");
+                  },
+                  context: Get.context!,
+                  dialogType: DialogType.success,
+                  title: "success".tr,
+                  desc: "registred.social".tr)
+              .show();
         }
       }
       break;
@@ -52,83 +52,83 @@ CheckLoginSign(Map<String, dynamic> result) {
           case "wrong-password":
             {
               AwesomeDialog(
-                  btnOkOnPress: () {},
-                  context: Get.context!,
-                  dialogType: DialogType.error,
-                  title: "error".tr,
-                  desc: "wrongpassword".tr)
-                ..show();
+                      btnOkOnPress: () {},
+                      context: Get.context!,
+                      dialogType: DialogType.error,
+                      title: "error".tr,
+                      desc: "wrongpassword".tr)
+                  .show();
             }
             break;
 
           case "email-not-found":
             {
               AwesomeDialog(
-                  btnOkOnPress: () {},
-                  context: Get.context!,
-                  dialogType: DialogType.warning,
-                  title: "error".tr,
-                  desc: "nouserfound".tr)
-                ..show();
+                      btnOkOnPress: () {},
+                      context: Get.context!,
+                      dialogType: DialogType.warning,
+                      title: "error".tr,
+                      desc: "nouserfound".tr)
+                  .show();
             }
             break;
 
           case "email-in-use":
             {
               AwesomeDialog(
-                  btnOkOnPress: () {},
-                  context: Get.context!,
-                  dialogType: DialogType.warning,
-                  title: "error".tr,
-                  desc: "email.used".tr)
-                ..show();
+                      btnOkOnPress: () {},
+                      context: Get.context!,
+                      dialogType: DialogType.warning,
+                      title: "error".tr,
+                      desc: "email.used".tr)
+                  .show();
             }
             break;
           case "user-disabled":
             {
               AwesomeDialog(
-                  btnOkOnPress: () {},
-                  context: Get.context!,
-                  dialogType: DialogType.error,
-                  title: "error".tr,
-                  desc: "userdisabled".tr)
-                ..show();
+                      btnOkOnPress: () {},
+                      context: Get.context!,
+                      dialogType: DialogType.error,
+                      title: "error".tr,
+                      desc: "userdisabled".tr)
+                  .show();
             }
             break;
 
           case "unknown-error":
             {
               AwesomeDialog(
-                  btnOkOnPress: () {},
-                  context: Get.context!,
-                  dialogType: DialogType.error,
-                  title: "error".tr,
-                  desc: "unknown.error".tr)
-                ..show();
+                      btnOkOnPress: () {},
+                      context: Get.context!,
+                      dialogType: DialogType.error,
+                      title: "error".tr,
+                      desc: "unknown.error".tr)
+                  .show();
             }
             break;
 
           case "selection-account-error":
             {
               AwesomeDialog(
-                  btnOkOnPress: () {},
-                  context: Get.context!,
-                  dialogType: DialogType.error,
-                  title: "error".tr,
-                  desc: "selection.error".tr)
-                ..show();
+                      btnOkOnPress: () {},
+                      context: Get.context!,
+                      dialogType: DialogType.error,
+                      title: "error".tr,
+                      desc: "selection.error".tr)
+                  .show();
             }
             break;
           case "mail-not-verified":
             {
               print("${result["code"]}");
               AwesomeDialog(
-                  btnOkOnPress: () {},
-                  context: Get.context!,
-                  dialogType: DialogType.error,
-                  title: "error".tr,
-                  desc: "mail.not.verified".tr)
-                ..show();
+                      btnOkOnPress: () {},
+                      context: Get.context!,
+                      dialogType: DialogType.error,
+                      title: "error".tr,
+                      desc: "mail.not.verified".tr)
+                  .show();
             }
             break;
         }

@@ -6,7 +6,6 @@ import 'package:push_sale/api/my_image_picker.dart';
 import 'package:push_sale/controllers/compte_menu_controller.dart';
 import 'package:push_sale/controllers/dropdown_controller.dart';
 import 'package:push_sale/models/actor.dart';
-import 'package:push_sale/views/signed/comptesetting.dart';
 import 'package:push_sale/views/signed/homepage.dart';
 import 'package:push_sale/views/signed/widgets/clients/dropdown.dart';
 
@@ -17,6 +16,8 @@ class EditPerosnalData extends StatelessWidget {
   TextEditingController lastNameController = TextEditingController();
   TextEditingController firstNameController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
+
+  EditPerosnalData({super.key});
   @override
   Widget build(BuildContext context) {
     compteController.sendingState.value = 0;
@@ -36,7 +37,7 @@ class EditPerosnalData extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  margin: EdgeInsets.symmetric(vertical: 10),
+                  margin: const EdgeInsets.symmetric(vertical: 10),
                   width: Get.width,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -45,22 +46,22 @@ class EditPerosnalData extends StatelessWidget {
                           onPressed: () {
                             Get.back();
                           },
-                          icon: Icon(Icons.arrow_back)),
+                          icon: const Icon(Icons.arrow_back)),
                       Text(
                         "edit.profile".tr,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontFamily: "kodchasan",
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Color.fromARGB(255, 23, 91, 146)),
                       ),
-                      SizedBox(),
-                      SizedBox(),
+                      const SizedBox(),
+                      const SizedBox(),
                     ],
                   ),
                 ),
                 Center(
-                  child: Container(
+                  child: SizedBox(
                     width: 200,
                     child: Stack(children: [
                       Positioned(
@@ -71,7 +72,7 @@ class EditPerosnalData extends StatelessWidget {
                           decoration: BoxDecoration(
                             border: Border.all(
                                 width: 2,
-                                color: Color.fromARGB(255, 192, 92, 231)),
+                                color: const Color.fromARGB(255, 192, 92, 231)),
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -97,11 +98,11 @@ class EditPerosnalData extends StatelessWidget {
                               ]
                             : null,
                         maxImages: 1,
-                        previewMargin: EdgeInsets.only(top: 1, left: 1),
+                        previewMargin: const EdgeInsets.only(top: 1, left: 1),
                         previewWidth: 198,
                         previewHeight: 198,
                         boxShape: BoxShape.circle,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           border: InputBorder.none,
                         ),
                         name: "Image",
@@ -112,10 +113,10 @@ class EditPerosnalData extends StatelessWidget {
                     ]),
                   ),
                 ),
-                Divider(thickness: 1),
+                const Divider(thickness: 1),
                 Obx(
                   () => Container(
-                    padding: EdgeInsets.symmetric(horizontal: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
                     width: Get.width,
                     height: compteController.validate_lastname.value ? 73 : 50,
                     child: TextFormField(
@@ -129,7 +130,7 @@ class EditPerosnalData extends StatelessWidget {
                       },
                       controller: lastNameController,
                       decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.assignment_ind),
+                        prefixIcon: const Icon(Icons.assignment_ind),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -141,12 +142,12 @@ class EditPerosnalData extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 Obx(
                   () => Container(
-                    padding: EdgeInsets.symmetric(horizontal: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
                     width: Get.width,
                     height: compteController.validate_firstname.value ? 73 : 50,
                     child: TextFormField(
@@ -160,7 +161,7 @@ class EditPerosnalData extends StatelessWidget {
                       },
                       controller: firstNameController,
                       decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.person_add),
+                        prefixIcon: const Icon(Icons.person_add),
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(20)),
                         labelText: "first.name".tr,
@@ -171,19 +172,19 @@ class EditPerosnalData extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 Obx(
                   () => Container(
-                    padding: EdgeInsets.symmetric(horizontal: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
                     width: Get.width / 1.5 - 10,
                     height: compteController.validate_phone.value ? 73 : 50,
                     child: TextFormField(
                       keyboardType: TextInputType.phone,
                       validator: (value) {
                         RegExp phoneExp = RegExp(r'^[0-9]{10}$');
-                        if (value!.length == 0) {
+                        if (value!.isEmpty) {
                           compteController.validate_phone.value = true;
                           return "errorPhone.empty".tr;
                         } else if (value.length > 10 ||
@@ -197,7 +198,7 @@ class EditPerosnalData extends StatelessWidget {
                       },
                       controller: phoneController,
                       decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.phone_iphone),
+                        prefixIcon: const Icon(Icons.phone_iphone),
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(20)),
                         labelText: "phone".tr,
@@ -208,16 +209,17 @@ class EditPerosnalData extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: 15),
+                  margin: const EdgeInsets.symmetric(horizontal: 15),
                   width: Get.width / 1.5 - 40,
                   height: 50,
                   decoration: BoxDecoration(
                     border: Border.all(
-                        width: 1, color: Color.fromARGB(255, 212, 212, 212)),
+                        width: 1,
+                        color: const Color.fromARGB(255, 212, 212, 212)),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: EmptyDropDown(
@@ -226,16 +228,17 @@ class EditPerosnalData extends StatelessWidget {
                     fontSize: 16,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: 15),
+                  margin: const EdgeInsets.symmetric(horizontal: 15),
                   width: Get.width / 1.5 - 40,
                   height: 50,
                   decoration: BoxDecoration(
                     border: Border.all(
-                        width: 1, color: Color.fromARGB(255, 134, 134, 134)),
+                        width: 1,
+                        color: const Color.fromARGB(255, 134, 134, 134)),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: WilayaDropDown(
@@ -245,16 +248,17 @@ class EditPerosnalData extends StatelessWidget {
                     wilaya: compteController.actor!.address!.wilaya,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: 15),
+                  margin: const EdgeInsets.symmetric(horizontal: 15),
                   width: Get.width / 1.5 - 40,
                   height: 50,
                   decoration: BoxDecoration(
                     border: Border.all(
-                        width: 1, color: Color.fromARGB(255, 134, 134, 134)),
+                        width: 1,
+                        color: const Color.fromARGB(255, 134, 134, 134)),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: CityDropDown(
@@ -263,34 +267,34 @@ class EditPerosnalData extends StatelessWidget {
                     fontSize: 16,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 compteController.actor!.distributor != null
                     ? Container(
-                        margin: EdgeInsets.symmetric(horizontal: 15),
+                        margin: const EdgeInsets.symmetric(horizontal: 15),
                         width: Get.width,
                         height: 50,
                         decoration: BoxDecoration(
                           border: Border.all(
                               width: 1,
-                              color: Color.fromARGB(255, 212, 212, 212)),
+                              color: const Color.fromARGB(255, 212, 212, 212)),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Center(
                             child: Text(
                           compteController.actor!.distributor!.name,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: "kodchasan",
                             fontSize: 20,
                           ),
                         )))
-                    : SizedBox.shrink(),
-                SizedBox(
+                    : const SizedBox.shrink(),
+                const SizedBox(
                   height: 20,
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 15),
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
                   child: Center(
                     child: Obx(
                       () => MaterialButton(
@@ -318,25 +322,25 @@ class EditPerosnalData extends StatelessWidget {
                             ));
                           } else {
                             AwesomeDialog(
-                                dialogType: DialogType.error,
-                                title: "sure".tr,
-                                body: Text("error.saved".tr),
-                                context: context,
-                                btnOkOnPress: () {})
-                              ..show();
+                                    dialogType: DialogType.error,
+                                    title: "sure".tr,
+                                    body: Text("error.saved".tr),
+                                    context: context,
+                                    btnOkOnPress: () {})
+                                .show();
                             compteController.sendingState.value = -1;
                           }
                         },
                         child: compteController.sendingState.value == 0
                             ? Text("save".tr)
                             : compteController.sendingState.value == 1
-                                ? CircularProgressIndicator()
+                                ? const CircularProgressIndicator()
                                 : compteController.sendingState.value == -1
-                                    ? Icon(
+                                    ? const Icon(
                                         Icons.error,
                                         color: Colors.red,
                                       )
-                                    : Icon(
+                                    : const Icon(
                                         Icons.check_circle_outline_outlined,
                                         color: Colors.white,
                                       ),

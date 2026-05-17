@@ -32,7 +32,7 @@ class Product {
   });
 
   static Product fromMap(Map<String, dynamic> value) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     String _showPrice = "-";
     List<Variant>? _variants;
 
@@ -42,7 +42,7 @@ class Product {
         double min = _variants[0].original_price;
         double max = min;
 
-        _variants.forEach((element) {
+        for (var element in _variants) {
           if (element.original_price > 0) {
             if (min > element.original_price) {
               min = element.original_price;
@@ -51,7 +51,7 @@ class Product {
               max = element.original_price;
             }
           }
-        });
+        }
         _showPrice = min == max
             ? formatter.format(min)
             : formatter.format(min) + " - " + formatter.format(max);

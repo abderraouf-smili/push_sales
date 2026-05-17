@@ -26,7 +26,7 @@ class StatController extends GetxController {
   StatsDeliveryDay? delivery_stats_day;
   ProfitStatsSummary? profitStatsSummary;
 
-  List<Color> _color = [
+  final List<Color> _color = [
     Colors.red,
     Colors.blue,
     Colors.green,

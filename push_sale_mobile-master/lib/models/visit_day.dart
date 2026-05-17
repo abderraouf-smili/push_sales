@@ -17,16 +17,16 @@ class VisitDay {
   }
 
   static fromListMapMap(List<dynamic> value) {
-    List<String> _list_tmp = [];
-    List<VisitDay> _list = [];
+    List<String> listTmp = [];
+    List<VisitDay> list = [];
     for (var item in value) {
-      _list_tmp.add(item["day"]);
+      listTmp.add(item["day"]);
     }
     for (String item in global.weekdays) {
-      if (_list_tmp.contains(item)) {
-        _list.add(VisitDay(item));
+      if (listTmp.contains(item)) {
+        list.add(VisitDay(item));
       }
     }
-    return _list.reversed.toList();
+    return list.reversed.toList();
   }
 }

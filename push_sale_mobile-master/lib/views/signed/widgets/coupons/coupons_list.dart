@@ -7,6 +7,8 @@ import 'package:push_sale/views/signed/widgets/coupons/coupon_item.dart';
 class CouponsList extends StatelessWidget {
   CouponController couponController = Get.put(CouponController());
 
+  CouponsList({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,7 +22,7 @@ class CouponsList extends StatelessWidget {
         title: Text("my.coupons".tr),
         centerTitle: true,
       ),
-      body: Container(
+      body: SizedBox(
         width: double.infinity,
         height: Get.height - 90,
         child: RefreshIndicator(

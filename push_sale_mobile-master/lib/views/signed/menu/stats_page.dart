@@ -14,9 +14,11 @@ class StatsPage extends StatelessWidget {
   StatController statController = Get.put(StatController());
   PermissionsController perm = Get.find<PermissionsController>();
 
+  StatsPage({super.key});
+
   @override
   Widget build(BuildContext context) {
-    if (statController.pieCharData.length == 0 &&
+    if (statController.pieCharData.isEmpty &&
         perm.check(null, "StatsPage.TournoverDashboard")) {
       statController.getStats();
     }
@@ -24,7 +26,7 @@ class StatsPage extends StatelessWidget {
       statController.getDeliveryStats();
     }
     if (perm.check(null, "admin") &&
-        statController.profitChartData.length == 0 &&
+        statController.profitChartData.isEmpty &&
         !statController.profitStatsReady.value &&
         !statController.profitStatsLoading.value) {
       statController.getProfitStats();
@@ -32,7 +34,7 @@ class StatsPage extends StatelessWidget {
 
     List<Widget> Dashboard = [
       calenderDashboard(statController),
-      Divider(),
+      const Divider(),
       perm.check(profitChart(statController, context), "admin"),
       perm.check(
           TournoverDashboard(statController), "StatsPage.TournoverDashboard"),
@@ -51,7 +53,7 @@ class StatsPage extends StatelessWidget {
               Container(
                 width: double.infinity,
                 color: const Color.fromARGB(255, 107, 166, 255),
-                child: Container(
+                child: SizedBox(
                   height: 50,
                   child: Center(
                     child: Text(
@@ -63,10 +65,10 @@ class StatsPage extends StatelessWidget {
               ),
 
               // Listing of charts
-              Container(
+              SizedBox(
                 height: Get.height - 100,
                 child: CustomScrollView(
-                  physics: BouncingScrollPhysics(),
+                  physics: const BouncingScrollPhysics(),
                   slivers: [
                     CupertinoSliverRefreshControl(
                       refreshTriggerPullDistance: 180,
@@ -87,11 +89,11 @@ class StatsPage extends StatelessWidget {
               )
             ],
           )
-        : Container(
+        : const SizedBox(
             width: double.infinity,
             height: double.infinity,
             child: Center(
-                child: Container(
+                child: SizedBox(
                     width: 40, height: 40, child: CircularProgressIndicator())),
           ));
   }
@@ -115,7 +117,7 @@ class StatsPage extends StatelessWidget {
         year = DateFormat('y').format(date!);
       }
       return !statController.statsReady.value
-          ? SizedBox.shrink()
+          ? const SizedBox.shrink()
           : Container(
               padding:
                   EdgeInsets.symmetric(horizontal: Get.width / 6, vertical: 2),
@@ -129,7 +131,7 @@ class StatsPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: Get.height / 8 - 20,
                       fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 92, 92, 92),
+                      color: const Color.fromARGB(255, 92, 92, 92),
                     ),
                   ),
                   Column(
@@ -140,14 +142,14 @@ class StatsPage extends StatelessWidget {
                         style: TextStyle(
                             fontSize: Get.height / 20 - 15,
                             fontWeight: FontWeight.bold,
-                            color: Color.fromARGB(255, 92, 92, 92)),
+                            color: const Color.fromARGB(255, 92, 92, 92)),
                       ),
                       Text(
-                        month! + " " + year!,
+                        "${month!} ${year!}",
                         style: TextStyle(
                             fontSize: Get.height / 25 - 10,
                             fontWeight: FontWeight.bold,
-                            color: Color.fromARGB(255, 92, 92, 92)),
+                            color: const Color.fromARGB(255, 92, 92, 92)),
                       )
                     ],
                   ),
@@ -158,21 +160,22 @@ class StatsPage extends StatelessWidget {
   }
 
   Widget OrdersStatus(StatController statController) {
-    return Container(
+    return SizedBox(
       width: Get.width,
       child: Column(
         children: [
           TitleDashboard("status.orders".tr),
           Obx(() => !statController.statsReady.value
-              ? SizedBox.shrink()
+              ? const SizedBox.shrink()
               : Container(
-                  margin: EdgeInsets.symmetric(horizontal: 10),
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
                   height: (statController.statsOrders.length / 2).ceil() * 100,
                   width: Get.width,
                   child: GridView.builder(
-                      physics: NeverScrollableScrollPhysics(),
+                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: statController.statsOrders.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         childAspectRatio: 2,
                       ),
@@ -195,10 +198,10 @@ class StatsPage extends StatelessWidget {
   }
 
   Widget TournoverDashboard(StatController statController) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     return Obx(() {
       return !statController.statsReady.value
-          ? SizedBox.shrink()
+          ? const SizedBox.shrink()
           : GestureDetector(
               onTap: () {
                 if (statController.stats_day!.total != 0) {
@@ -206,7 +209,8 @@ class StatsPage extends StatelessWidget {
                 }
               },
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
                 width: Get.width - 20,
                 height: Get.height / 8,
                 child: Column(
@@ -222,7 +226,7 @@ class StatsPage extends StatelessWidget {
                               width: 25,
                               height: 25,
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 10,
                             ),
                             Text(
@@ -230,18 +234,18 @@ class StatsPage extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: Get.height / 14 - 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 92, 92, 92),
+                                color: const Color.fromARGB(255, 92, 92, 92),
                               ),
                             ),
                           ],
                         ),
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.group_sharp,
                               color: Colors.blue,
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 10,
                             ),
                             Text(
@@ -249,7 +253,7 @@ class StatsPage extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: Get.height / 18 - 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 92, 92, 92),
+                                color: const Color.fromARGB(255, 92, 92, 92),
                               ),
                             ),
                           ],
@@ -261,11 +265,11 @@ class StatsPage extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.balance,
                               color: Colors.green,
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 10,
                             ),
                             Text(
@@ -274,37 +278,38 @@ class StatsPage extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: Get.height / 18 - 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 92, 92, 92),
+                                color: const Color.fromARGB(255, 92, 92, 92),
                               ),
                             ),
                           ],
                         ),
                         Row(
                           children: [
-                            Icon(Icons.receipt_long_sharp),
-                            SizedBox(
+                            const Icon(Icons.receipt_long_sharp),
+                            const SizedBox(
                               width: 10,
                             ),
                             Text(statController.stats_day!.visited.toString(),
                                 style: TextStyle(
                                   fontSize: Get.height / 20 - 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 92, 92, 92),
+                                  color: const Color.fromARGB(255, 92, 92, 92),
                                 )),
                           ],
                         ),
                         Row(
                           children: [
-                            Icon(Icons.group_remove_outlined,
+                            const Icon(Icons.group_remove_outlined,
                                 color: Color.fromRGBO(236, 104, 104, 1)),
-                            SizedBox(
+                            const SizedBox(
                               width: 10,
                             ),
                             Text(statController.stats_day!.rest.toString(),
                                 style: TextStyle(
                                   fontSize: Get.height / 20 - 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 236, 104, 104),
+                                  color:
+                                      const Color.fromARGB(255, 236, 104, 104),
                                 )),
                           ],
                         ),
@@ -318,14 +323,15 @@ class StatsPage extends StatelessWidget {
   }
 
   Widget DeliveryOrdersDashboard(StatController statController) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     return Obx(() {
       return !statController.statsReady.value
-          ? SizedBox.shrink()
+          ? const SizedBox.shrink()
           : GestureDetector(
               onTap: () {},
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
                 width: Get.width - 20,
                 height: Get.height / 8,
                 child: Column(
@@ -341,7 +347,7 @@ class StatsPage extends StatelessWidget {
                               width: 25,
                               height: 25,
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 10,
                             ),
                             Text(
@@ -350,18 +356,18 @@ class StatsPage extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: Get.height / 14 - 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 92, 92, 92),
+                                color: const Color.fromARGB(255, 92, 92, 92),
                               ),
                             ),
                           ],
                         ),
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.shopping_cart,
                               color: Color.fromARGB(255, 160, 55, 48),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 10,
                             ),
                             Text(
@@ -371,7 +377,7 @@ class StatsPage extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: Get.height / 20 - 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 160, 55, 48),
+                                color: const Color.fromARGB(255, 160, 55, 48),
                               ),
                             ),
                           ],
@@ -383,11 +389,11 @@ class StatsPage extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.money,
                               color: Colors.green,
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 10,
                             ),
                             Text(
@@ -396,15 +402,15 @@ class StatsPage extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: Get.height / 16 - 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 92, 92, 92),
+                                color: const Color.fromARGB(255, 92, 92, 92),
                               ),
                             ),
                           ],
                         ),
                         Row(
                           children: [
-                            Icon(Icons.local_shipping_outlined),
-                            SizedBox(
+                            const Icon(Icons.local_shipping_outlined),
+                            const SizedBox(
                               width: 10,
                             ),
                             Text(
@@ -414,7 +420,7 @@ class StatsPage extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: Get.height / 20 - 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 92, 92, 92),
+                                  color: const Color.fromARGB(255, 92, 92, 92),
                                 )),
                           ],
                         ),
@@ -434,7 +440,7 @@ class StatsPage extends StatelessWidget {
         TitleDashboard("Benefice livre"),
         Obx(() {
           if (!statController.profitStatsReady.value) {
-            return SizedBox.shrink();
+            return const SizedBox.shrink();
           }
 
           double maxY = statController.maxProfitY * 1.25;
@@ -444,7 +450,7 @@ class StatsPage extends StatelessWidget {
 
           return Container(
             width: Get.width,
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Column(
               children: [
                 Row(
@@ -454,14 +460,14 @@ class StatsPage extends StatelessWidget {
                       DateFormat("MMMM y", Get.locale!.languageCode)
                           .format(statController.profitMonth)
                           .capitalizeFirst!,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Color.fromARGB(255, 92, 92, 92),
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.calendar_month_outlined),
+                      icon: const Icon(Icons.calendar_month_outlined),
                       onPressed: () async {
                         DateTime? selected = await showDatePicker(
                           context: context,
@@ -501,17 +507,17 @@ class StatsPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
                   "Montant encaisse: ${formatter.format(statController.profitStatsSummary!.cashed)}",
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Color.fromARGB(255, 92, 92, 92),
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 12),
-                Container(
+                const SizedBox(height: 12),
+                SizedBox(
                   width: Get.width,
                   height: Get.height / 3.5,
                   child: BarChart(
@@ -519,7 +525,7 @@ class StatsPage extends StatelessWidget {
                       barTouchData: BarTouchData(
                         enabled: true,
                         touchTooltipData: BarTouchTooltipData(
-                          tooltipBgColor: Color.fromARGB(235, 40, 67, 90),
+                          tooltipBgColor: const Color.fromARGB(235, 40, 67, 90),
                           getTooltipItem: (
                             BarChartGroupData group,
                             int groupIndex,
@@ -533,7 +539,7 @@ class StatsPage extends StatelessWidget {
                                 rodIndex == 0 ? item.purchases : item.sales;
                             return BarTooltipItem(
                               "${item.day}\n$title: ${formatter.format(value)}",
-                              TextStyle(
+                              const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: "alata",
@@ -542,15 +548,16 @@ class StatsPage extends StatelessWidget {
                           },
                         ),
                       ),
-                      gridData: FlGridData(show: true, drawVerticalLine: false),
+                      gridData:
+                          const FlGridData(show: true, drawVerticalLine: false),
                       titlesData: FlTitlesData(
-                        rightTitles: AxisTitles(
+                        rightTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        topTitles: AxisTitles(
+                        topTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        leftTitles: AxisTitles(
+                        leftTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
                         bottomTitles: AxisTitles(
@@ -569,11 +576,11 @@ class StatsPage extends StatelessWidget {
                                   axisSide: meta.axisSide,
                                   child: Text(
                                     day.toString(),
-                                    style: TextStyle(fontSize: 11),
+                                    style: const TextStyle(fontSize: 11),
                                   ),
                                 );
                               }
-                              return SizedBox.shrink();
+                              return const SizedBox.shrink();
                             },
                           ),
                         ),
@@ -607,8 +614,8 @@ class StatsPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: 8),
-                Row(
+                const SizedBox(height: 8),
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Indicator(
@@ -636,10 +643,10 @@ class StatsPage extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyle(
+          style: const TextStyle(
             color: Color.fromARGB(255, 92, 92, 92),
             fontSize: 13,
             fontWeight: FontWeight.bold,
@@ -657,7 +664,7 @@ class StatsPage extends StatelessWidget {
       child: Center(
           child: Text(
         titre,
-        style: TextStyle(
+        style: const TextStyle(
           color: Color.fromARGB(255, 128, 128, 128),
           fontSize: 18.0,
           letterSpacing: 1.5,
@@ -672,16 +679,16 @@ class StatsPage extends StatelessWidget {
         TitleDashboard("turnover".tr),
         Obx(
           () => statController.statsReady.value &&
-                  statController.pieCharData.length > 0
-              ? Container(
+                  statController.pieCharData.isNotEmpty
+              ? SizedBox(
                   width: Get.width,
                   height: Get.height / 4,
                   child: LineChart(LineChartData(
-                    gridData: FlGridData(
+                    gridData: const FlGridData(
                       show: false,
                       drawVerticalLine: false,
                     ),
-                    titlesData: FlTitlesData(
+                    titlesData: const FlTitlesData(
                       show: false,
                       rightTitles: AxisTitles(
                         sideTitles: SideTitles(showTitles: false),
@@ -714,7 +721,7 @@ class StatsPage extends StatelessWidget {
                         isCurved: true,
                         barWidth: 5,
                         isStrokeCapRound: true,
-                        dotData: FlDotData(
+                        dotData: const FlDotData(
                           show: false,
                         ),
                         belowBarData: BarAreaData(
@@ -725,16 +732,16 @@ class StatsPage extends StatelessWidget {
                   )),
                 )
               : statController.statsReady.value &&
-                      statController.pieCharData.length == 0
+                      statController.pieCharData.isEmpty
                   ? Container(
                       width: Get.width,
                       height: Get.height / 4,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                           image: DecorationImage(
                               image: AssetImage(
                                   "assets/images/stats_empty_line.png"))),
                     )
-                  : SizedBox.shrink(),
+                  : const SizedBox.shrink(),
         ),
       ],
     );
@@ -746,21 +753,21 @@ class StatsPage extends StatelessWidget {
         TitleDashboard("category_turnover".tr),
         Obx(
           () => statController.statsReady.value &&
-                  statController.pieCharData.length > 0
+                  statController.pieCharData.isNotEmpty
               ? Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                      Container(
+                      SizedBox(
                         width: Get.width / 2,
                         height: Get.height / 3,
                         child: PieChart(PieChartData(
                           sectionsSpace: 5,
                           sections: List.generate(
                               statController.pieCharData.length, (index) {
-                            var _item = statController.pieCharData[index];
+                            var item = statController.pieCharData[index];
                             return PieChartSectionData(
-                              value: _item.value,
-                              color: _item.color,
+                              value: item.value,
+                              color: item.color,
                             );
                           }),
                         )),
@@ -770,26 +777,26 @@ class StatsPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: List.generate(
                               statController.pieCharData.length, (int index) {
-                            var _item = statController.pieCharData[index];
+                            var item = statController.pieCharData[index];
                             return Indicator(
-                              color: _item.color,
-                              text: _item.getTitle(Get.locale!.languageCode),
+                              color: item.color,
+                              text: item.getTitle(Get.locale!.languageCode),
                               isSquare: false,
                             );
                           }))
                     ])
               : statController.statsReady.value &&
-                      statController.pieCharData.length == 0
+                      statController.pieCharData.isEmpty
                   ? Container(
-                      margin: EdgeInsets.only(top: 20),
+                      margin: const EdgeInsets.only(top: 20),
                       width: Get.width,
                       height: Get.height / 4,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                           image: DecorationImage(
                               image: AssetImage(
                                   "assets/images/stats_empty_pie.png"))),
                     )
-                  : SizedBox.shrink(),
+                  : const SizedBox.shrink(),
         ),
       ],
     );
@@ -801,8 +808,8 @@ class StatsPage extends StatelessWidget {
         TitleDashboard("customer_classes".tr),
         Obx(
           () => statController.statsReady.value &&
-                  statController.lineChartData.length > 0
-              ? Container(
+                  statController.lineChartData.isNotEmpty
+              ? SizedBox(
                   width: double.infinity,
                   height: Get.height / 4,
                   child: BarChart(
@@ -821,7 +828,7 @@ class StatsPage extends StatelessWidget {
                                 child: Text(
                                   statController.barCharData[x.toInt() - 1]
                                       .getTitle(Get.locale!.languageCode),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       fontFamily: "alata",
                                       color:
                                           Color.fromARGB(255, 104, 152, 192)),
@@ -830,13 +837,13 @@ class StatsPage extends StatelessWidget {
                             },
                           ),
                         ),
-                        leftTitles: AxisTitles(
+                        leftTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        topTitles: AxisTitles(
+                        topTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        rightTitles: AxisTitles(
+                        rightTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
                       ),
@@ -854,13 +861,13 @@ class StatsPage extends StatelessWidget {
                                 ],
                                 showingTooltipIndicators: [0],
                               )),
-                      gridData: FlGridData(show: false),
+                      gridData: const FlGridData(show: false),
                       alignment: BarChartAlignment.spaceAround,
                       maxY: statController.maxYbar * 1.5,
                     ),
                   ),
                 )
-              : SizedBox.shrink(),
+              : const SizedBox.shrink(),
         ),
       ],
     );
@@ -893,7 +900,7 @@ BarTouchData get barTouchData => BarTouchData(
         },
       ),
     );
-LinearGradient get _barsGradient => LinearGradient(
+LinearGradient get _barsGradient => const LinearGradient(
       colors: [
         Color.fromARGB(255, 38, 97, 146),
         Color.fromARGB(255, 175, 219, 255),

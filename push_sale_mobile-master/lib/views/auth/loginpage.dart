@@ -12,6 +12,8 @@ class LoginPage extends StatelessWidget {
       Get.put(AuthentificationController());
   bool showPassword = false;
   PageController loginPageController = PageController(initialPage: 0);
+
+  LoginPage({super.key});
   @override
   Widget build(BuildContext context) {
     mailController.text = Get.arguments != null ? Get.arguments["mail"] : "";
@@ -20,7 +22,7 @@ class LoginPage extends StatelessWidget {
         child: Scaffold(
           resizeToAvoidBottomInset: false,
           body: Container(
-            margin: EdgeInsets.symmetric(horizontal: 20),
+            margin: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               children: [
                 //logo
@@ -37,7 +39,7 @@ class LoginPage extends StatelessWidget {
                   flex: 7,
                   child: PageView(
                       controller: loginPageController,
-                      physics: NeverScrollableScrollPhysics(),
+                      physics: const NeverScrollableScrollPhysics(),
                       children: [
                         Column(
                           children: [
@@ -50,7 +52,7 @@ class LoginPage extends StatelessWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         "login".tr,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                             fontSize: 30,
                                             fontFamily: "kodchasan",
                                             fontWeight: FontWeight.bold),
@@ -59,24 +61,24 @@ class LoginPage extends StatelessWidget {
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: Text("login_text".tr,
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                               fontSize: 12,
                                               fontFamily: "kodchasan",
                                               color: Color.fromARGB(
                                                   255, 121, 121, 121))),
                                     ),
-                                    SizedBox(
+                                    const SizedBox(
                                       height: 20,
                                     ),
                                     TextFormField(
                                       controller: mailController,
                                       keyboardType: TextInputType.emailAddress,
-                                      validator: (value) => value!.length == 0
+                                      validator: (value) => value!.isEmpty
                                           ? "mailempty".tr
                                           : EmailValidator.validate(value)
                                               ? null
                                               : "wrongemailadress".tr,
-                                      decoration: InputDecoration(
+                                      decoration: const InputDecoration(
                                         fillColor: Colors.red,
                                         prefixIcon: Icon(Icons.mail),
                                         hintText: "example@softstarter.dz",
@@ -89,14 +91,14 @@ class LoginPage extends StatelessWidget {
                                       () => TextFormField(
                                         obscureText:
                                             !authController.showPassword.value,
-                                        validator: (value) => value!.length == 0
+                                        validator: (value) => value!.isEmpty
                                             ? "emptypassword".tr
                                             : value.length < 6
                                                 ? "shortpassword".tr
                                                 : null,
                                         decoration: InputDecoration(
                                           prefixIcon:
-                                              Icon(Icons.vpn_key_rounded),
+                                              const Icon(Icons.vpn_key_rounded),
                                           suffixIcon: IconButton(
                                             onPressed: () {
                                               authController
@@ -117,8 +119,8 @@ class LoginPage extends StatelessWidget {
                                       ),
                                     ),
                                     Container(
-                                      margin:
-                                          EdgeInsets.symmetric(vertical: 12),
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 12),
                                       child: Align(
                                         alignment: Alignment.topRight,
                                         child: InkWell(
@@ -127,7 +129,7 @@ class LoginPage extends StatelessWidget {
                                           },
                                           child: Text(
                                             "password_forgot".tr,
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                                 fontWeight: FontWeight.bold),
                                           ),
                                         ),
@@ -138,16 +140,12 @@ class LoginPage extends StatelessWidget {
                               ),
                             ),
                             Container(
-                              margin: EdgeInsets.symmetric(
+                              margin: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 20),
                               child: MaterialButton(
                                 minWidth: double.infinity,
                                 height: 60,
-                                color: Color.fromARGB(255, 83, 177, 117),
-                                child: Text(
-                                  "login".tr,
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                                color: const Color.fromARGB(255, 83, 177, 117),
                                 shape: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(15),
                                   borderSide: BorderSide.none,
@@ -157,6 +155,10 @@ class LoginPage extends StatelessWidget {
                                       await authController.SubmitFormLogin();
                                   CheckLoginSign(sign);
                                 },
+                                child: Text(
+                                  "login".tr,
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                               ),
                             ),
                             Column(
@@ -165,7 +167,7 @@ class LoginPage extends StatelessWidget {
                                   alignment: Alignment.centerLeft,
                                   child: Text(
                                     "otherway".tr,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                         fontSize: 12,
                                         fontFamily: "kodchasan",
                                         color:
@@ -173,7 +175,7 @@ class LoginPage extends StatelessWidget {
                                   ),
                                 ),
                                 Container(
-                                  margin: EdgeInsets.symmetric(
+                                  margin: const EdgeInsets.symmetric(
                                       horizontal: 60, vertical: 20),
                                   child: Row(
                                     mainAxisAlignment:
@@ -209,22 +211,22 @@ class LoginPage extends StatelessWidget {
                                   ),
                                 ),
                                 Container(
-                                  margin: EdgeInsets.symmetric(
+                                  margin: const EdgeInsets.symmetric(
                                       vertical: 20, horizontal: 20),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
                                         "not_yet_user".tr,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                             fontWeight: FontWeight.bold),
                                       ),
-                                      SizedBox(
+                                      const SizedBox(
                                         width: 10,
                                       ),
                                       GestureDetector(
                                         onTap: () {
-                                          Get.to(() => SignupPage());
+                                          Get.to(() => const SignupPage());
                                         },
                                         child: Text("signup".tr,
                                             style: Theme.of(context)
@@ -238,7 +240,7 @@ class LoginPage extends StatelessWidget {
                             )
                           ],
                         ),
-                        Container(
+                        SizedBox(
                           width: double.infinity,
                           child: Image.asset("assets/images/google.gif"),
                         ),

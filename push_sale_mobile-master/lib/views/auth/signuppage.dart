@@ -6,6 +6,8 @@ import 'package:push_sale/controllers/authentification_controller.dart';
 import 'package:push_sale/views/auth/checklogin.dart';
 
 class SignupPage extends StatefulWidget {
+  const SignupPage({super.key});
+
   @override
   State<SignupPage> createState() => _SignupPageState();
 }
@@ -13,7 +15,7 @@ class SignupPage extends StatefulWidget {
 class _SignupPageState extends State<SignupPage> {
   AuthentificationController authController = Get.find();
   TextEditingController mailController = TextEditingController();
-  PageController _pageController = PageController();
+  final PageController _pageController = PageController();
   bool showPassword = false;
   @override
   Widget build(BuildContext context) {
@@ -21,7 +23,7 @@ class _SignupPageState extends State<SignupPage> {
         child: Scaffold(
       resizeToAvoidBottomInset: false,
       body: Container(
-        margin: EdgeInsets.symmetric(horizontal: 20),
+        margin: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           children: [
             Expanded(
@@ -39,7 +41,7 @@ class _SignupPageState extends State<SignupPage> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text("signup".tr,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 30,
                             fontFamily: "kodchasan",
                             fontWeight: FontWeight.bold)),
@@ -47,7 +49,7 @@ class _SignupPageState extends State<SignupPage> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text("signup_text".tr,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 12,
                             fontFamily: "kodchasan",
                             color: Color.fromARGB(255, 121, 121, 121))),
@@ -55,11 +57,11 @@ class _SignupPageState extends State<SignupPage> {
                 ],
               ),
             ),
-            Container(
+            SizedBox(
               height: Get.height * 4 / 7,
               child: PageView(
                 controller: _pageController,
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 scrollDirection: Axis.horizontal,
                 children: [
                   Container(
@@ -73,7 +75,7 @@ class _SignupPageState extends State<SignupPage> {
                               children: [
                                 TextFormField(
                                   // controller: mailController,
-                                  decoration: InputDecoration(
+                                  decoration: const InputDecoration(
                                     prefixIcon: Icon(Icons.person),
                                     hintText: "Benlemoufak Ahmed Reda",
                                   ),
@@ -87,7 +89,7 @@ class _SignupPageState extends State<SignupPage> {
                                 TextFormField(
                                   controller: mailController,
                                   keyboardType: TextInputType.emailAddress,
-                                  validator: (value) => value!.length == 0
+                                  validator: (value) => value!.isEmpty
                                       ? "mailempty".tr
                                       : EmailValidator.validate(value)
                                           ? null
@@ -95,14 +97,14 @@ class _SignupPageState extends State<SignupPage> {
                                   onSaved: (value) {
                                     authController.email = value;
                                   },
-                                  decoration: InputDecoration(
+                                  decoration: const InputDecoration(
                                     prefixIcon: Icon(Icons.mail),
                                     hintText: "a.beloumafek@softstarter.dz",
                                   ),
                                 ),
                                 TextFormField(
                                   obscureText: !showPassword,
-                                  validator: (value) => value!.length == 0
+                                  validator: (value) => value!.isEmpty
                                       ? "emptypassword".tr
                                       : value.length < 6
                                           ? "shortpassword".tr
@@ -111,7 +113,7 @@ class _SignupPageState extends State<SignupPage> {
                                     authController.password = value;
                                   },
                                   decoration: InputDecoration(
-                                    prefixIcon: Icon(Icons.key),
+                                    prefixIcon: const Icon(Icons.key),
                                     suffixIcon: IconButton(
                                       onPressed: () {
                                         showPassword = !showPassword;
@@ -129,15 +131,11 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                         ),
                         Container(
-                          margin: EdgeInsets.symmetric(horizontal: 20),
+                          margin: const EdgeInsets.symmetric(horizontal: 20),
                           child: MaterialButton(
                               minWidth: double.infinity,
                               height: 60,
-                              color: Color.fromARGB(255, 83, 177, 117),
-                              child: Text(
-                                "create".tr,
-                                style: TextStyle(color: Colors.white),
-                              ),
+                              color: const Color.fromARGB(255, 83, 177, 117),
                               shape: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15),
                                 borderSide: BorderSide.none,
@@ -146,11 +144,15 @@ class _SignupPageState extends State<SignupPage> {
                                 Map<String, dynamic> sign =
                                     await authController.SubmitFormCreate();
                                 CheckLoginSign(sign);
-                              }),
+                              },
+                              child: Text(
+                                "create".tr,
+                                style: const TextStyle(color: Colors.white),
+                              )),
                         ),
                         Container(
-                          margin: EdgeInsets.only(top: 5),
-                          child: Divider(
+                          margin: const EdgeInsets.only(top: 5),
+                          child: const Divider(
                             height: 10,
                             thickness: 1,
                           ),
@@ -159,14 +161,14 @@ class _SignupPageState extends State<SignupPage> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             "otherway".tr,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 12,
                                 fontFamily: "kodchasan",
                                 color: Color.fromARGB(255, 121, 121, 121)),
                           ),
                         ),
                         Container(
-                          margin: EdgeInsets.symmetric(
+                          margin: const EdgeInsets.symmetric(
                               horizontal: 60, vertical: 20),
                           child: GetPlatform.isIOS
                               ? Row(
@@ -240,7 +242,7 @@ class _SignupPageState extends State<SignupPage> {
                       ],
                     ),
                   ),
-                  Container(
+                  SizedBox(
                     width: double.infinity,
                     child: Image.asset("assets/images/google.gif"),
                   ),
@@ -252,7 +254,7 @@ class _SignupPageState extends State<SignupPage> {
                 ],
               ),
             ),
-            SizedBox(
+            const SizedBox(
               height: 20,
             ),
           ],

@@ -10,7 +10,9 @@ class MainCreancePage extends StatelessWidget {
   PageController pageController = PageController();
   CreancesController creancesController = Get.put(CreancesController());
   ClientController clientController = Get.put(ClientController(""));
-  var formatter = new NumberFormat("#,##0.00", "fr_FR");
+  var formatter = NumberFormat("#,##0.00", "fr_FR");
+
+  MainCreancePage({super.key});
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -19,7 +21,7 @@ class MainCreancePage extends StatelessWidget {
           pageController.animateToPage(
             0,
             curve: Curves.linear,
-            duration: Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 200),
           );
         } else if (creancesController.page.value == 0) {
           return true;
@@ -32,18 +34,18 @@ class MainCreancePage extends StatelessWidget {
           centerTitle: true,
           title: Text(
             "receivables".tr,
-            style: TextStyle(fontFamily: "kodchasan", fontSize: 16),
+            style: const TextStyle(fontFamily: "kodchasan", fontSize: 16),
           ),
         ),
-        body: Container(
+        body: SizedBox(
             width: Get.width,
             height: Get.height - 100,
             child: Column(children: [
-              Container(
+              SizedBox(
                 width: double.infinity,
                 height: Get.height - 100,
                 child: PageView(
-                  physics: NeverScrollableScrollPhysics(),
+                  physics: const NeverScrollableScrollPhysics(),
                   controller: pageController,
                   onPageChanged: (value) {
                     creancesController.page.value = value;

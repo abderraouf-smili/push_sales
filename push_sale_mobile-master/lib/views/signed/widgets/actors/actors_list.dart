@@ -5,6 +5,8 @@ import 'package:push_sale/views/signed/widgets/actors/actor_item.dart';
 
 class ActorsList extends StatelessWidget {
   ActorsController actorsController = Get.put(ActorsController());
+
+  ActorsList({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(

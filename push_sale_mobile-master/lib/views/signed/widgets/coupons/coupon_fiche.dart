@@ -1,8 +1,5 @@
 import 'package:another_flushbar/flushbar.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/key.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/coupon_controller.dart';
@@ -11,7 +8,7 @@ import 'package:push_sale/views/signed/widgets/coupons/coupons_list.dart';
 
 class CouponFiche extends StatelessWidget {
   Coupon? coupon;
-  CouponFiche(this.coupon);
+  CouponFiche(this.coupon, {super.key});
 
   TextEditingController couponDescriptionController = TextEditingController();
   TextEditingController couponCodeController = TextEditingController();
@@ -49,10 +46,10 @@ class CouponFiche extends StatelessWidget {
         shadowColor: Colors.grey,
       ),
       body: Container(
-        padding: EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         child: SingleChildScrollView(
-          physics: BouncingScrollPhysics(),
-          child: Container(
+          physics: const BouncingScrollPhysics(),
+          child: SizedBox(
             height: Get.height - 100,
             child: Form(
               key: couponController.CouponFormKey,
@@ -62,21 +59,21 @@ class CouponFiche extends StatelessWidget {
                   Expanded(
                     flex: 1,
                     child: Container(
-                      margin:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
                       child: Center(
                           child: Column(
                         children: [
                           Text(
                             "coupon.settings".tr,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 25,
                                 fontFamily: 'alata'),
                           ),
-                          Container(
+                          SizedBox(
                             width: Get.width / 2,
-                            child: Divider(thickness: 1),
+                            child: const Divider(thickness: 1),
                           )
                         ],
                       )),
@@ -85,7 +82,7 @@ class CouponFiche extends StatelessWidget {
                   Expanded(
                     flex: 1,
                     child: Container(
-                      margin: EdgeInsets.symmetric(horizontal: 10),
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -125,8 +122,7 @@ class CouponFiche extends StatelessWidget {
                                   style: const TextStyle(
                                     fontSize: 16,
                                     // fontWeight: FontWeight.bold,
-                                    color: const Color.fromARGB(
-                                        255, 122, 122, 122),
+                                    color: Color.fromARGB(255, 122, 122, 122),
                                   ),
                                 ),
                               ),
@@ -171,8 +167,7 @@ class CouponFiche extends StatelessWidget {
                                   style: const TextStyle(
                                     fontSize: 16,
                                     // fontWeight: FontWeight.bold,
-                                    color: const Color.fromARGB(
-                                        255, 122, 122, 122),
+                                    color: Color.fromARGB(255, 122, 122, 122),
                                   ),
                                 ),
                               ),
@@ -196,7 +191,7 @@ class CouponFiche extends StatelessWidget {
                       },
                       controller: couponDescriptionController,
                       maxLines: 1,
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                       decoration: InputDecoration(
                         labelText: "description".tr,
                         border: OutlineInputBorder(
@@ -219,7 +214,7 @@ class CouponFiche extends StatelessWidget {
                       onSaved: (value) {
                         couponController.coupon_code = value!;
                       },
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                       decoration: InputDecoration(
                         labelText: "code".tr,
                         border: OutlineInputBorder(
@@ -243,7 +238,7 @@ class CouponFiche extends StatelessWidget {
                       onSaved: (value) {
                         couponController.coupon_minimum = double.parse(value!);
                       },
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                       decoration: InputDecoration(
                         labelText: "minimum".tr,
                         border: OutlineInputBorder(
@@ -267,7 +262,7 @@ class CouponFiche extends StatelessWidget {
                       keyboardType: TextInputType.number,
                       controller: couponDiscountController,
                       maxLines: 1,
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                       decoration: InputDecoration(
                         labelText: "discount".tr,
                         border: OutlineInputBorder(
@@ -291,7 +286,7 @@ class CouponFiche extends StatelessWidget {
                       onSaved: (value) {
                         couponController.coupon_count = int.parse(value!);
                       },
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                       decoration: InputDecoration(
                         labelText: "count".tr,
                         border: OutlineInputBorder(
@@ -301,7 +296,7 @@ class CouponFiche extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    margin: EdgeInsets.symmetric(vertical: 20),
+                    margin: const EdgeInsets.symmetric(vertical: 20),
                     child: Obx(
                       () => MaterialButton(
                         height: 45,
@@ -317,19 +312,21 @@ class CouponFiche extends StatelessWidget {
                           if (response != "success") {
                             //
                             Flushbar(
-                              title: "coupon".tr + " " + "error".tr,
+                              title: "${"coupon".tr} ${"error".tr}",
                               message: response,
-                              titleColor: Color.fromARGB(255, 255, 255, 255),
-                              messageColor: Color.fromARGB(255, 253, 254, 255),
-                              duration: Duration(seconds: 3),
-                              icon: Icon(Icons.check,
+                              titleColor:
+                                  const Color.fromARGB(255, 255, 255, 255),
+                              messageColor:
+                                  const Color.fromARGB(255, 253, 254, 255),
+                              duration: const Duration(seconds: 3),
+                              icon: const Icon(Icons.check,
                                   color: Color.fromARGB(255, 255, 255, 255)),
                               backgroundColor:
-                                  Color.fromARGB(255, 122, 122, 122),
+                                  const Color.fromARGB(255, 122, 122, 122),
                               flushbarPosition: FlushbarPosition.TOP,
                               borderRadius: BorderRadius.circular(10),
                               // borderColor: Color.fromARGB(255, 186, 224, 255),
-                            )..show(context);
+                            ).show(context);
                           } else {
                             couponController.getCouponns();
                             Get.off(() => CouponsList());
@@ -338,34 +335,36 @@ class CouponFiche extends StatelessWidget {
                             Flushbar(
                               title: "success".tr,
                               message: "successfully.saved".tr,
-                              titleColor: Color.fromARGB(255, 255, 255, 255),
-                              messageColor: Color.fromARGB(255, 253, 254, 255),
-                              duration: Duration(seconds: 3),
-                              icon: Icon(Icons.check,
+                              titleColor:
+                                  const Color.fromARGB(255, 255, 255, 255),
+                              messageColor:
+                                  const Color.fromARGB(255, 253, 254, 255),
+                              duration: const Duration(seconds: 3),
+                              icon: const Icon(Icons.check,
                                   color: Color.fromARGB(255, 255, 255, 255)),
                               backgroundColor:
-                                  Color.fromARGB(255, 122, 122, 122),
+                                  const Color.fromARGB(255, 122, 122, 122),
                               flushbarPosition: FlushbarPosition.TOP,
                               borderRadius: BorderRadius.circular(10),
                               // borderColor: Color.fromARGB(255, 186, 224, 255),
-                            )..show(context);
+                            ).show(context);
                           }
                         },
                         child: couponController.send.value == "new"
                             ? Text(
                                 "save".tr,
-                                style: TextStyle(color: Colors.white),
+                                style: const TextStyle(color: Colors.white),
                               )
                             : couponController.send.value == "sent"
-                                ? CircularProgressIndicator(
+                                ? const CircularProgressIndicator(
                                     color: Colors.white,
                                   )
                                 : couponController.send.value == "success"
-                                    ? Icon(
+                                    ? const Icon(
                                         Icons.check_circle,
                                         color: Colors.green,
                                       )
-                                    : Icon(
+                                    : const Icon(
                                         Icons.error,
                                         color: Colors.red,
                                       ),

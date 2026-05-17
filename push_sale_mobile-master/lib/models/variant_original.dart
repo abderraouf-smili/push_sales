@@ -58,12 +58,12 @@ class Variant {
   }
 
   static List<Variant> fromListMapToList(List<dynamic> value) {
-    List<Variant> _list = [];
+    List<Variant> list = [];
     for (var item in value) {
       // print("================> ${item}");
-      _list.add(Variant.fromMap(item));
+      list.add(Variant.fromMap(item));
     }
-    return _list;
+    return list;
   }
 
   Map<String, dynamic> toMap() {

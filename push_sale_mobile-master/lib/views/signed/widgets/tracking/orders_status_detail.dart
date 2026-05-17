@@ -8,17 +8,17 @@ import 'package:push_sale/models/order.dart';
 class OrdersStatusDetail extends StatelessWidget {
   String state;
   OrderController orderController = Get.find();
-  OrdersStatusDetail(this.state);
+  OrdersStatusDetail(this.state, {super.key});
 
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     orderController.getOrdersByStatus(state);
     double total = 0;
 
     return Scaffold(
         appBar: AppBar(
-          title: Text("orders.to.track".tr + " " + ("state." + state).tr),
+          title: Text("${"orders.to.track".tr} ${("state.$state").tr}"),
           centerTitle: true,
         ),
         body: Obx(() {
@@ -33,25 +33,25 @@ class OrdersStatusDetail extends StatelessWidget {
               ? Column(
                   children: [
                     Container(
-                      margin: EdgeInsets.symmetric(horizontal: 10),
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
                       width: 500,
                       height: 40,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(" "),
-                          Text(" "),
+                          const Text(" "),
+                          const Text(" "),
                           Text(orderController.status_orders_loaded.value
                               ? formatter.format(total)
                               : ""),
                         ],
                       ),
                     ),
-                    Container(
+                    SizedBox(
                       height: Get.height - 140,
                       child: Container(
                         child: ListView.builder(
-                          physics: BouncingScrollPhysics(),
+                          physics: const BouncingScrollPhysics(),
                           itemCount: orderController.status_orders.length,
                           itemBuilder: (context, index) {
                             Order item = orderController.status_orders[index];
@@ -63,10 +63,12 @@ class OrdersStatusDetail extends StatelessWidget {
                   ],
                 )
               : Container(
-                width: Get.width,
-                height: Get.height,
-                margin: EdgeInsets.symmetric(horizontal: Get.width/2-30,vertical: Get.height/2-75),
-                  child: CircularProgressIndicator(),
+                  width: Get.width,
+                  height: Get.height,
+                  margin: EdgeInsets.symmetric(
+                      horizontal: Get.width / 2 - 30,
+                      vertical: Get.height / 2 - 75),
+                  child: const CircularProgressIndicator(),
                 );
         }));
   }
@@ -74,12 +76,12 @@ class OrdersStatusDetail extends StatelessWidget {
 
 class itemOrderStatus extends StatelessWidget {
   Order order;
-  itemOrderStatus(this.order);
+  itemOrderStatus(this.order, {super.key});
   OrderController orderController = Get.find();
 
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     double total = 0.0;
     for (var item in order.purchase_orders!) {
       total += item.total_amount;
@@ -91,11 +93,11 @@ class itemOrderStatus extends StatelessWidget {
         }
       },
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           color: Colors.white,
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Color.fromARGB(255, 173, 218, 255),
               blurRadius: 5,
@@ -109,13 +111,13 @@ class itemOrderStatus extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Container(
-              margin: EdgeInsets.symmetric(horizontal: 2, vertical: 3),
-              padding: EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+              margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
               width: Get.width / 5,
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: Color.fromARGB(255, 165, 165, 165),
                       blurRadius: 2,
@@ -132,14 +134,14 @@ class itemOrderStatus extends StatelessWidget {
                 ),
               ),
             ),
-            Container(
+            SizedBox(
               width: Get.width - Get.width / 3.7,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
                     // width: Get.width * 2 / 3,
-                    margin: EdgeInsets.symmetric(horizontal: 5),
+                    margin: const EdgeInsets.symmetric(horizontal: 5),
                     // color: Colors.greenAccent,
                     child: Column(
                       // mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -147,27 +149,28 @@ class itemOrderStatus extends StatelessWidget {
                       children: [
                         Text(
                           order.client!.name,
-                          style: TextStyle(fontFamily: "alata", fontSize: 17),
+                          style: const TextStyle(
+                              fontFamily: "alata", fontSize: 17),
                         ),
                         Text(
                           DateFormat('dd/MM/y', Get.locale!.languageCode)
                               .format(order.order_date),
-                          style: TextStyle(color: Colors.grey),
+                          style: const TextStyle(color: Colors.grey),
                         ),
                         Text(order.code,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontFamily: "alata", color: Colors.grey)),
                       ],
                     ),
                   ),
-                  Container(
+                  SizedBox(
                     width: 70,
                     // color: Colors.green,
                     child: Align(
                         alignment: Alignment.centerRight,
                         child: Text(formatter.format(total),
-                            style:
-                                TextStyle(fontFamily: "alata", fontSize: 12))),
+                            style: const TextStyle(
+                                fontFamily: "alata", fontSize: 12))),
                   )
                 ],
               ),
@@ -189,14 +192,14 @@ class itemOrderStatus extends StatelessWidget {
             child: child,
           );
         },
-        transitionDuration: Duration(milliseconds: 250),
+        transitionDuration: const Duration(milliseconds: 250),
         pageBuilder: (BuildContext context, Animation animation,
             Animation secondaryAnimation) {
           return AlertDialog(
-            contentPadding: EdgeInsets.only(left: 30, right: 30, top: 15),
+            contentPadding: const EdgeInsets.only(left: 30, right: 30, top: 15),
             titlePadding: EdgeInsets.zero,
             title: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Color.fromARGB(255, 43, 87, 124),
               ),
               width: double.infinity,
@@ -204,21 +207,21 @@ class itemOrderStatus extends StatelessWidget {
               child: Center(
                 child: Text(
                   order.code,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                   ),
                 ),
               ),
             ),
-            content: Container(
+            content: SizedBox(
               width: double.infinity,
               height: 50,
               child: Text("renew.order.question".tr),
             ),
             actions: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 width: Get.width * 0.75,
                 child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -228,7 +231,7 @@ class itemOrderStatus extends StatelessWidget {
                         color: Colors.red,
                         child: Text(
                           "cancel".tr,
-                          style: TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white),
                         ),
                         onPressed: () {
                           Navigator.of(context).pop();
@@ -237,7 +240,7 @@ class itemOrderStatus extends StatelessWidget {
                       MaterialButton(
                         minWidth: Get.width * 0.25,
                         color: Colors.blue,
-                        child: Text(
+                        child: const Text(
                           'OK',
                           style: TextStyle(color: Colors.white),
                         ),

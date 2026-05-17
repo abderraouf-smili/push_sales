@@ -15,7 +15,7 @@ import 'dart:math' as math;
 class Clients extends StatelessWidget {
   String posted_id;
 
-  Clients(this.posted_id);
+  Clients(this.posted_id, {super.key});
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -27,7 +27,7 @@ class Clients extends StatelessWidget {
 class ListClients extends StatelessWidget {
   String posted_id;
 
-  ListClients(this.posted_id);
+  ListClients(this.posted_id, {super.key});
 
   ClientController clientController = Get.put(ClientController("get"));
   FilterController filterController = Get.put(FilterController());
@@ -41,7 +41,7 @@ class ListClients extends StatelessWidget {
       children: [
         // Search Bar
         Container(
-          margin: EdgeInsets.symmetric(horizontal: 10),
+          margin: const EdgeInsets.symmetric(horizontal: 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -159,9 +159,9 @@ class ListClients extends StatelessWidget {
                           filterController.searchKeyCity.currentState!.reset();
                           filterController.searchKeyTPV.currentState!.reset();
                         },
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.close,
-                          color: const Color.fromARGB(255, 197, 110, 83),
+                          color: Color.fromARGB(255, 197, 110, 83),
                         ),
                       )
                     ],
@@ -236,7 +236,7 @@ class ListClients extends StatelessWidget {
                                     ),
                                   ),
                           ),
-                          SizedBox(
+                          const SizedBox(
                             width: 5,
                           ),
                           GestureDetector(
@@ -244,21 +244,24 @@ class ListClients extends StatelessWidget {
                               clientController.visit_day_only.value =
                                   !clientController.visit_day_only.value;
                             },
-                            child: Container(
+                            child: SizedBox(
                               width: Get.width / 5,
                               height: 40,
                               child: Container(
-                                margin: EdgeInsets.symmetric(
+                                margin: const EdgeInsets.symmetric(
                                     vertical: 2, horizontal: 1),
                                 decoration: BoxDecoration(
                                   color: clientController.visit_day_only.value
-                                      ? Color.fromARGB(255, 161, 167, 255)
-                                      : Color.fromARGB(255, 210, 213, 255),
+                                      ? const Color.fromARGB(255, 161, 167, 255)
+                                      : const Color.fromARGB(
+                                          255, 210, 213, 255),
                                   border: Border.all(
                                     width: 1,
                                     color: clientController.visit_day_only.value
-                                        ? Color.fromARGB(255, 139, 131, 252)
-                                        : Color.fromARGB(255, 167, 173, 255),
+                                        ? const Color.fromARGB(
+                                            255, 139, 131, 252)
+                                        : const Color.fromARGB(
+                                            255, 167, 173, 255),
                                   ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),

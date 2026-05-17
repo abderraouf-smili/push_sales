@@ -17,7 +17,8 @@ class CompteMenuController extends GetxController {
 
   /* for Preference langauge  */
   RxString currentLangue = "fr".obs;
-  /***************/
+
+  /// ************
 
   SharedPreferences? Prefs;
   String token = "";
@@ -54,7 +55,7 @@ class CompteMenuController extends GetxController {
       currentLangue.value = "fr"; //    <============ To be changed in future
       ready.value = true;
     } else {
-      print("=====> ERROR: " + response.status);
+      print("=====> ERROR: ${response.status}");
       print(response.message);
     }
   }
@@ -63,7 +64,7 @@ class CompteMenuController extends GetxController {
     var formdata = FormKey.currentState;
     if (formdata!.validate()) {
       formdata.save();
-      var img;
+      String img;
       if (ImageActor != null && ImageActor!.isNotEmpty) {
         if (ImageActor!.first is Image) {
           // print("No modification on image");

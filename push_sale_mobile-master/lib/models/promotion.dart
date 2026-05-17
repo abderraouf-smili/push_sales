@@ -48,16 +48,16 @@ class Promotion {
   }
 
   Map<String, dynamic> toMap() {
-    Map<String, dynamic> _ret = {
+    Map<String, dynamic> ret = {
       "id": id,
       "description": description,
       "start_date": DateFormat('y/MM/dd').format(start_date),
       "end_date": DateFormat('y/MM/dd').format(end_date),
       "image": null,
-      "typepv": typepv != null ? typepv!.toMap() : null,
+      "typepv": typepv?.toMap(),
       "type_promotion_id": type_promotion_id,
       "lines": lines.map((e) => e.toMap()).toList(),
     };
-    return _ret;
+    return ret;
   }
 }

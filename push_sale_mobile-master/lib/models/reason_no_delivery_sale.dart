@@ -29,11 +29,11 @@ class ReasonNoDeliverySale {
   }
 
   static fromListMapMap(List<dynamic> value) {
-    List<ReasonNoDeliverySale> _list = [];
+    List<ReasonNoDeliverySale> list = [];
     for (var item in value) {
-      _list.add(ReasonNoDeliverySale.fromMap(item["reason"]));
+      list.add(ReasonNoDeliverySale.fromMap(item["reason"]));
     }
-    return _list;
+    return list;
   }
 
   String getDescription(String locale) {
@@ -50,27 +50,27 @@ class ReasonNoDeliverySale {
   dynamic getIcon() {
     switch (code) {
       case "S.D":
-        return Icon(
+        return const Icon(
           Icons.category_outlined,
           color: Colors.green,
         );
       case "M.F":
-        return Icon(
+        return const Icon(
           Icons.browser_not_supported,
           color: Colors.orange,
         );
       case "G.A":
-        return Icon(
+        return const Icon(
           Icons.person_off_outlined,
           color: Colors.red,
         );
       case "M.O":
-        return Icon(
+        return const Icon(
           Icons.back_hand_outlined,
           color: Colors.blue,
         );
       case "N.C":
-        return Icon(
+        return const Icon(
           Icons.money_off,
           color: Colors.red,
         );

@@ -9,6 +9,19 @@ rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
+def legacyPluginNamespaces = [
+    blue_thermal_printer: "id.kakzaki.blue_thermal_printer",
+]
+
+subprojects { project ->
+    def legacyNamespace = legacyPluginNamespaces[project.name]
+    if (legacyNamespace != null) {
+        project.plugins.withId("com.android.library") {
+            project.android.namespace = legacyNamespace
+            project.android.compileSdkVersion 36
+        }
+    }
+}
 subprojects {
     project.evaluationDependsOn(":app")
 }

@@ -18,7 +18,7 @@ class EditClient extends StatelessWidget {
   TextEditingController nameController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
   Client? client;
-  EditClient({this.client});
+  EditClient({super.key, this.client});
 
   @override
   Widget build(BuildContext context) {
@@ -59,19 +59,19 @@ class EditClient extends StatelessWidget {
           centerTitle: true,
           backgroundColor:
               edit ? Colors.red.withOpacity(0.7) : Colors.transparent,
-          actions: [IconButton(onPressed: () {}, icon: Icon(Icons.menu))],
+          actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.menu))],
         ),
         body: SingleChildScrollView(
           padding: EdgeInsets.zero,
           child: Form(
             key: clientController.FormKey,
             child: Container(
-              padding: EdgeInsets.only(bottom: 40),
-              color: Color.fromARGB(255, 244, 249, 255),
+              padding: const EdgeInsets.only(bottom: 40),
+              color: const Color.fromARGB(255, 244, 249, 255),
               child: Column(
                 children: [
                   //Picture
-                  Container(
+                  SizedBox(
                     // color: Colors.orange,
                     height: Get.height / 2.5,
                     width: double.infinity,
@@ -89,7 +89,7 @@ class EditClient extends StatelessWidget {
                       previewMargin: EdgeInsets.zero,
                       previewWidth: Get.width,
                       previewHeight: Get.height / 2.5,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         border: InputBorder.none,
                       ),
                       name: "Image",
@@ -107,20 +107,21 @@ class EditClient extends StatelessWidget {
                   Stack(
                     children: [
                       Container(
-                        margin:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 10),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             width: 1,
-                            color: Color.fromARGB(255, 196, 196, 196),
+                            color: const Color.fromARGB(255, 196, 196, 196),
                           ),
                         ),
                         child: Column(
                           children: [
                             // Name
                             Container(
-                              margin: EdgeInsets.symmetric(horizontal: 20),
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 20),
                               child: Container(
                                 child: TextFormField(
                                   controller: nameController,
@@ -132,7 +133,7 @@ class EditClient extends StatelessWidget {
                                   },
                                   decoration: InputDecoration(
                                     labelText: "name.client".tr,
-                                    labelStyle: TextStyle(fontSize: 14),
+                                    labelStyle: const TextStyle(fontSize: 14),
                                     border: InputBorder.none,
                                   ),
                                 ),
@@ -140,7 +141,8 @@ class EditClient extends StatelessWidget {
                             ),
                             //phone
                             Container(
-                              margin: EdgeInsets.symmetric(horizontal: 20),
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 20),
                               child: Container(
                                 child: TextFormField(
                                   keyboardType: TextInputType.phone,
@@ -153,7 +155,7 @@ class EditClient extends StatelessWidget {
                                   },
                                   decoration: InputDecoration(
                                     labelText: "mobile.client".tr,
-                                    labelStyle: TextStyle(fontSize: 14),
+                                    labelStyle: const TextStyle(fontSize: 14),
                                     border: InputBorder.none,
                                   ),
                                 ),
@@ -165,7 +167,7 @@ class EditClient extends StatelessWidget {
                       //Button GPS
                       Obx(
                         () => clientController.GPS_ready.value
-                            ? SizedBox.shrink()
+                            ? const SizedBox.shrink()
                             : Positioned(
                                 right: Get.locale!.languageCode != 'ar'
                                     ? 20
@@ -176,7 +178,8 @@ class EditClient extends StatelessWidget {
                                 top: 30,
                                 child: Container(
                                   height: 60,
-                                  padding: EdgeInsets.symmetric(vertical: 10),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 10),
                                   child: IconButton(
                                     onPressed: () async {
                                       var status =
@@ -190,26 +193,28 @@ class EditClient extends StatelessWidget {
                                             .GetAddressFromLatLong(position);
                                       } else if (status.isDenied) {
                                         AwesomeDialog(
-                                            btnCancelOnPress: () {},
-                                            btnOkOnPress: () async {
-                                              var permission = await Geolocator
-                                                  .requestPermission();
-                                            },
-                                            context: Get.context!,
-                                            dialogType: DialogType.error,
-                                            title: "error".tr,
-                                            desc:
-                                                "position.disabled.do.you.want.enable"
-                                                    .tr)
-                                          ..show();
+                                                btnCancelOnPress: () {},
+                                                btnOkOnPress: () async {
+                                                  var permission =
+                                                      await Geolocator
+                                                          .requestPermission();
+                                                },
+                                                context: Get.context!,
+                                                dialogType: DialogType.error,
+                                                title: "error".tr,
+                                                desc:
+                                                    "position.disabled.do.you.want.enable"
+                                                        .tr)
+                                            .show();
                                       } else if (status.isPermanentlyDenied) {
                                         AwesomeDialog(
-                                            btnOkOnPress: () {},
-                                            context: Get.context!,
-                                            dialogType: DialogType.error,
-                                            title: "error".tr,
-                                            desc: "position.forver.disabled".tr)
-                                          ..show();
+                                                btnOkOnPress: () {},
+                                                context: Get.context!,
+                                                dialogType: DialogType.error,
+                                                title: "error".tr,
+                                                desc: "position.forver.disabled"
+                                                    .tr)
+                                            .show();
                                       }
                                     },
                                     icon: Icon(
@@ -218,7 +223,8 @@ class EditClient extends StatelessWidget {
                                       color: clientController.hasNoGPS.value &&
                                               clientController
                                                   .isButtonClicked.value
-                                          ? Color.fromARGB(255, 180, 61, 53)
+                                          ? const Color.fromARGB(
+                                              255, 180, 61, 53)
                                           : Colors.blue,
                                     ),
                                   ),
@@ -233,7 +239,7 @@ class EditClient extends StatelessWidget {
                         child: Obx(
                           () => clientController.hasNoGPS.value &&
                                   clientController.isButtonClicked.value
-                              ? Container(
+                              ? const SizedBox(
                                   width: 80,
                                   height: 40,
                                   child: Center(
@@ -246,7 +252,7 @@ class EditClient extends StatelessWidget {
                                     ),
                                   ),
                                 )
-                              : SizedBox.shrink(),
+                              : const SizedBox.shrink(),
                         ),
                       ),
                     ],
@@ -258,19 +264,19 @@ class EditClient extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         width: 1,
-                        color: Color.fromARGB(255, 196, 196, 196),
+                        color: const Color.fromARGB(255, 196, 196, 196),
                       ),
                     ),
-                    margin: EdgeInsets.symmetric(horizontal: 10),
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(flex: 1, child: Text("type_pv".tr)),
                           Expanded(
                             flex: 2,
-                            child: Container(
+                            child: SizedBox(
                                 width: Get.width / 1.5,
                                 child: TypePointVenteDropDown(
                                   select_text: "please select ...".tr,
@@ -281,7 +287,7 @@ class EditClient extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(
+                  const SizedBox(
                     height: 10,
                   ),
                   // Address du client
@@ -291,11 +297,11 @@ class EditClient extends StatelessWidget {
                             //only when GPS_loading
                             height: 156,
                             width: 156,
-                            padding: EdgeInsets.all(60),
-                            child: CircularProgressIndicator(),
+                            padding: const EdgeInsets.all(60),
+                            child: const CircularProgressIndicator(),
                           )
                         : !clientController.GPS_ready.value && !edit
-                            ? SizedBox(
+                            ? const SizedBox(
                                 // only when !edit and !GPS_ready and !GPS_loading
                                 height: 156,
                               )
@@ -305,12 +311,15 @@ class EditClient extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                         width: 1,
-                                        color: Color.fromARGB(
+                                        color: const Color.fromARGB(
                                             255, 196, 196, 196))),
-                                padding: EdgeInsets.symmetric(vertical: 30),
-                                margin: EdgeInsets.symmetric(horizontal: 10),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 30),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 10),
                                 child: Container(
-                                  margin: EdgeInsets.symmetric(horizontal: 20),
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 20),
                                   child: Column(
                                     children: [
                                       //Wilaya
@@ -326,7 +335,8 @@ class EditClient extends StatelessWidget {
                                             Expanded(
                                               flex: 2,
                                               child: Container(
-                                                  padding: EdgeInsets.symmetric(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
                                                       horizontal: 15),
                                                   child: Text(
                                                       "${clientController.Wilaya_Text!} - ${clientController.Country_Text!}")),
@@ -334,7 +344,7 @@ class EditClient extends StatelessWidget {
                                           ],
                                         ),
                                       ),
-                                      SizedBox(
+                                      const SizedBox(
                                         height: 20,
                                       ),
 
@@ -351,7 +361,8 @@ class EditClient extends StatelessWidget {
                                             Expanded(
                                               flex: 2,
                                               child: Container(
-                                                  padding: EdgeInsets.symmetric(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
                                                       horizontal: 15),
                                                   child: Text(clientController
                                                           .City_Text ??
@@ -360,7 +371,7 @@ class EditClient extends StatelessWidget {
                                           ],
                                         ),
                                       ),
-                                      SizedBox(
+                                      const SizedBox(
                                         height: 20,
                                       ),
                                       // Commune
@@ -376,7 +387,8 @@ class EditClient extends StatelessWidget {
                                             Expanded(
                                               flex: 2,
                                               child: Container(
-                                                  padding: EdgeInsets.symmetric(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
                                                       horizontal: 15),
                                                   child: Text(
                                                       "${clientController.Commune_Text ?? ""} ${clientController.Street_Text ?? ""}")),
@@ -396,9 +408,10 @@ class EditClient extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                             width: 1,
-                            color: Color.fromARGB(255, 196, 196, 196))),
-                    padding: EdgeInsets.symmetric(vertical: 30),
-                    margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                            color: const Color.fromARGB(255, 196, 196, 196))),
+                    padding: const EdgeInsets.symmetric(vertical: 30),
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
                     child: Obx(
                       () => Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -414,7 +427,7 @@ class EditClient extends StatelessWidget {
                               children: [
                                 Text(
                                   day.tr,
-                                  style: TextStyle(fontSize: 12),
+                                  style: const TextStyle(fontSize: 12),
                                 ),
                                 Checkbox(
                                     value: edit
@@ -427,19 +440,19 @@ class EditClient extends StatelessWidget {
                                                 (element) => element.day == day)
                                             .isNotEmpty,
                                     onChanged: (value) {
-                                      List<VisitDay> current_days = edit
+                                      List<VisitDay> currentDays = edit
                                           ? client!.visitdays!
                                           : clientController.visit_days;
 
-                                      if (current_days
+                                      if (currentDays
                                           .where(
                                               (element) => element.day == day)
                                           .isEmpty) {
-                                        current_days.add(
+                                        currentDays.add(
                                           VisitDay(day),
                                         );
                                       } else {
-                                        current_days.removeWhere(
+                                        currentDays.removeWhere(
                                             (element) => element.day == day);
                                       }
                                       print(clientController.visit_days.length);
@@ -460,11 +473,11 @@ class EditClient extends StatelessWidget {
                   ),
                   //Button Save
                   MaterialButton(
-                    shape: OutlineInputBorder(
+                    shape: const OutlineInputBorder(
                         borderRadius:
                             BorderRadius.vertical(top: Radius.circular(10)),
                         borderSide: BorderSide.none),
-                    color: Color.fromARGB(255, 109, 175, 111),
+                    color: const Color.fromARGB(255, 109, 175, 111),
                     minWidth: Get.width - 20,
                     height: 50,
                     onPressed: () async {
@@ -482,16 +495,16 @@ class EditClient extends StatelessWidget {
                     child: Obx(() {
                       switch (clientController.stepSave.value) {
                         case "start":
-                          return CircularProgressIndicator(
+                          return const CircularProgressIndicator(
                             color: Colors.white,
                           );
                         case "finished.success":
-                          return Icon(
+                          return const Icon(
                             Icons.check_circle_rounded,
                             color: Colors.white,
                           );
                         case "finished.error":
-                          return Icon(
+                          return const Icon(
                             Icons.error_sharp,
                             color: Colors.red,
                             size: 18,
@@ -499,7 +512,8 @@ class EditClient extends StatelessWidget {
                         default:
                           return Text(
                             "Save".tr,
-                            style: TextStyle(fontSize: 14, color: Colors.white),
+                            style: const TextStyle(
+                                fontSize: 14, color: Colors.white),
                           );
                       }
                     }),
@@ -508,7 +522,7 @@ class EditClient extends StatelessWidget {
                     alignment: Alignment.bottomLeft,
                     child: Obx(
                       () => Container(
-                        margin: EdgeInsets.symmetric(horizontal: 10),
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
                         height: 7,
                         width: clientController.progressLevel.value == 0
                             ? 0

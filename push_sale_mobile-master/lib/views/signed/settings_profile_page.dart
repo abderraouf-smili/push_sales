@@ -17,6 +17,8 @@ class SettingsProfilePage extends StatelessWidget {
   TextEditingController ln_Controller = TextEditingController();
   TextEditingController fn_Controller = TextEditingController();
   XFile? _file;
+
+  SettingsProfilePage({super.key});
   @override
   Widget build(BuildContext context) {
     ln_Controller.text = global.lastName;
@@ -28,24 +30,24 @@ class SettingsProfilePage extends StatelessWidget {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         body: SingleChildScrollView(
-          physics: BouncingScrollPhysics(),
+          physics: const BouncingScrollPhysics(),
           child: Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Color.fromARGB(255, 244, 250, 255),
             ),
-            padding: EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Form(
               key: settingProfile.keyForm,
               child: Column(
                 children: [
                   Image(
-                    image: AssetImage("assets/images/settingprofile.png"),
+                    image: const AssetImage("assets/images/settingprofile.png"),
                     width: Get.width / 3,
                   ),
                   //last name
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 10),
-                    child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
+                    child: SizedBox(
                       width: double.infinity,
                       child: TextFormField(
                         controller: ln_Controller,
@@ -60,8 +62,8 @@ class SettingsProfilePage extends StatelessWidget {
                   ),
                   //first name
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 10),
-                    child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
+                    child: SizedBox(
                       width: double.infinity,
                       child: TextFormField(
                         controller: fn_Controller,
@@ -74,18 +76,18 @@ class SettingsProfilePage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 30,
                   ),
 
                   //profile vendeur
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 10),
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text("Profile".tr),
-                        Container(
+                        SizedBox(
                             width: Get.width / 1.6,
                             child: ActorProfileDropDown(
                                 select_text: "select-profile".tr,
@@ -94,18 +96,18 @@ class SettingsProfilePage extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(
+                  const SizedBox(
                     height: 10,
                   ),
 
                   //wilaya
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 10),
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text("Wilaya".tr),
-                        Container(
+                        SizedBox(
                           width: Get.width / 1.6,
                           child: WilayaDropDown(
                             select_text: "Wilaya".tr,
@@ -115,18 +117,18 @@ class SettingsProfilePage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 10,
                   ),
 
                   // city
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 10),
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text("City".tr),
-                        Container(
+                        SizedBox(
                           width: Get.width / 1.6,
                           child: CityDropDown(
                             select_text: "City".tr,
@@ -137,48 +139,49 @@ class SettingsProfilePage extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(
+                  const SizedBox(
                     height: 10,
                   ),
 
-                  SizedBox(
+                  const SizedBox(
                     height: 10,
                   ),
 
                   //street
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    child: SizedBox(
                       width: double.infinity,
                       child: TextFormField(
                         onSaved: (newValue) {
                           settingProfile.street = newValue!;
                         },
-                        decoration: InputDecoration(labelText: "Street"),
+                        decoration: const InputDecoration(labelText: "Street"),
                       ),
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 10,
                   ),
                   //code postal
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    child: SizedBox(
                       width: double.infinity,
                       child: TextFormField(
                         onSaved: (newValue) {
                           settingProfile.zipcode = newValue!;
                         },
-                        decoration: InputDecoration(labelText: "Code Postal"),
+                        decoration:
+                            const InputDecoration(labelText: "Code Postal"),
                       ),
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 40,
                   ),
                   MaterialButton(
-                    color: Color.fromARGB(255, 77, 134, 75),
+                    color: const Color.fromARGB(255, 77, 134, 75),
                     shape: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
@@ -190,19 +193,19 @@ class SettingsProfilePage extends StatelessWidget {
                       settingProfile.state_id = dropController.WilayaID ?? 0;
                       settingProfile.city_id = dropController.DairaID ?? 0;
                       if (await settingProfile.SubmitFormActorCreate()) {
-                        await AwesomeDialog(
-                            btnOkOnPress: () {},
-                            context: Get.context!,
-                            dialogType: DialogType.info,
-                            title: "success".tr,
-                            desc: "profilesaved".tr)
-                          ..show();
+                        AwesomeDialog(
+                                btnOkOnPress: () {},
+                                context: Get.context!,
+                                dialogType: DialogType.info,
+                                title: "success".tr,
+                                desc: "profilesaved".tr)
+                            .show();
                         Get.offAllNamed("/HomePage");
                       }
                     },
                     child: Text(
                       "Save".tr,
-                      style: TextStyle(
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.normal),

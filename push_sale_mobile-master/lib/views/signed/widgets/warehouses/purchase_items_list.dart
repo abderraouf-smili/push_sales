@@ -15,8 +15,8 @@ class PurchaseItemsList extends StatelessWidget {
   PrinterController printerController = Get.find();
   ProductController productController = Get.find();
   PageController pageController = PageController();
-  var formatter = new NumberFormat("#,##0.00", "fr_FR");
-  PurchaseItemsList(this.pageController);
+  var formatter = NumberFormat("#,##0.00", "fr_FR");
+  PurchaseItemsList(this.pageController, {super.key});
   @override
   Widget build(BuildContext context) {
     productController.page.value = 0;
@@ -34,8 +34,7 @@ class PurchaseItemsList extends StatelessWidget {
                   btnOkOnPress: () {
                     purchaseController.saved.value = false;
                     Get.back();
-                  })
-                ..show();
+                  }).show();
             } else {
               AwesomeDialog(
                   dialogType: DialogType.question,
@@ -46,8 +45,7 @@ class PurchaseItemsList extends StatelessWidget {
                   btnOkOnPress: () {
                     purchaseController.saved.value = false;
                     Get.back();
-                  })
-                ..show();
+                  }).show();
             }
           } else {
             purchaseController.saved.value = false;
@@ -62,7 +60,7 @@ class PurchaseItemsList extends StatelessWidget {
               Expanded(
                 flex: 1, //orderController.hasChanged.value > 0
                 child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 10),
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
                   // decoration: BoxDecoration(
                   //   borderRadius: BorderRadius.circular(5),
                   //   border: Border.all(width: 0.2),
@@ -85,8 +83,7 @@ class PurchaseItemsList extends StatelessWidget {
                                     btnOkOnPress: () {
                                       purchaseController.saved.value = false;
                                       Get.back();
-                                    })
-                                  ..show();
+                                    }).show();
                               } else {
                                 AwesomeDialog(
                                     dialogType: DialogType.question,
@@ -97,16 +94,15 @@ class PurchaseItemsList extends StatelessWidget {
                                     btnOkOnPress: () {
                                       purchaseController.saved.value = false;
                                       Get.back();
-                                    })
-                                  ..show();
+                                    }).show();
                               }
                             } else {
                               purchaseController.saved.value = false;
                               Get.back();
                             }
                           },
-                          icon: Icon(Icons.arrow_back)),
-                      Text(
+                          icon: const Icon(Icons.arrow_back)),
+                      const Text(
                         "Bon de reception",
                         style: TextStyle(fontSize: 22),
                       ),
@@ -122,12 +118,12 @@ class PurchaseItemsList extends StatelessWidget {
                                     purchaseController.OrderCode =
                                         response.data["code"];
                                     AwesomeDialog(
-                                        dialogType: DialogType.success,
-                                        title: "sure".tr,
-                                        body: Text("succefully.saved".tr),
-                                        context: context,
-                                        btnOkOnPress: () {})
-                                      ..show();
+                                            dialogType: DialogType.success,
+                                            title: "sure".tr,
+                                            body: Text("succefully.saved".tr),
+                                            context: context,
+                                            btnOkOnPress: () {})
+                                        .show();
                                   } else if (response.data != null) {
                                     // AwesomeDialog(
                                     //     dialogType: DialogType.error,
@@ -143,12 +139,12 @@ class PurchaseItemsList extends StatelessWidget {
                                     // await productController.getProducts();
                                   } else {
                                     AwesomeDialog(
-                                        dialogType: DialogType.error,
-                                        title: "sure".tr,
-                                        body: Text("error.saved".tr),
-                                        context: context,
-                                        btnOkOnPress: () {})
-                                      ..show();
+                                            dialogType: DialogType.error,
+                                            title: "sure".tr,
+                                            body: Text("error.saved".tr),
+                                            context: context,
+                                            btnOkOnPress: () {})
+                                        .show();
                                   }
                                 }
                                 break;
@@ -164,22 +160,22 @@ class PurchaseItemsList extends StatelessWidget {
                                     switch (response) {
                                       case "ok":
                                         AwesomeDialog(
-                                            dialogType: DialogType.info,
-                                            title: "sure".tr,
-                                            body: Text("printing".tr),
-                                            context: context,
-                                            btnOkOnPress: () {})
-                                          ..show();
+                                                dialogType: DialogType.info,
+                                                title: "sure".tr,
+                                                body: Text("printing".tr),
+                                                context: context,
+                                                btnOkOnPress: () {})
+                                            .show();
                                         break;
                                       case "not_available":
                                         AwesomeDialog(
-                                            dialogType: DialogType.error,
-                                            title: "sure".tr,
-                                            body:
-                                                Text("print.not_available".tr),
-                                            context: context,
-                                            btnOkOnPress: () {})
-                                          ..show();
+                                                dialogType: DialogType.error,
+                                                title: "sure".tr,
+                                                body: Text(
+                                                    "print.not_available".tr),
+                                                context: context,
+                                                btnOkOnPress: () {})
+                                            .show();
                                         break;
                                       case "bluetooth_pb":
                                         AwesomeDialog(
@@ -190,8 +186,7 @@ class PurchaseItemsList extends StatelessWidget {
                                             btnOkOnPress: () {
                                               ShowButtomSheetPrinterConfig(
                                                   context: context);
-                                            })
-                                          ..show();
+                                            }).show();
 
                                         break;
                                       case "unknown":
@@ -204,8 +199,7 @@ class PurchaseItemsList extends StatelessWidget {
                                               ShowButtomSheetPrinterConfig(
                                                 context: context,
                                               );
-                                            })
-                                          ..show();
+                                            }).show();
 
                                         break;
                                       default:
@@ -230,7 +224,7 @@ class PurchaseItemsList extends StatelessWidget {
                             }
                           },
                           elevation: 5,
-                          icon: Icon(Icons.menu),
+                          icon: const Icon(Icons.menu),
                           itemBuilder: (context) {
                             return [
                               PopupMenuItem(
@@ -288,8 +282,10 @@ class PurchaseItemsList extends StatelessWidget {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text("printer.settings".tr,
-                                        style: TextStyle(color: Colors.black)),
-                                    Icon(Icons.bluetooth, color: Colors.blue),
+                                        style: const TextStyle(
+                                            color: Colors.black)),
+                                    const Icon(Icons.bluetooth,
+                                        color: Colors.blue),
                                   ],
                                 ),
                               ),
@@ -301,9 +297,10 @@ class PurchaseItemsList extends StatelessWidget {
                                   children: [
                                     Text(
                                       "close".tr,
-                                      style: TextStyle(color: Colors.black),
+                                      style:
+                                          const TextStyle(color: Colors.black),
                                     ),
-                                    Icon(Icons.close, color: Colors.blue),
+                                    const Icon(Icons.close, color: Colors.blue),
                                   ],
                                 ),
                               )
@@ -316,59 +313,59 @@ class PurchaseItemsList extends StatelessWidget {
               Expanded(
                 flex: 8,
                 child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 10),
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(5),
                     border: Border.all(width: 0.2),
                   ),
                   width: double.infinity,
                   child: ListView.builder(
-                      physics: BouncingScrollPhysics(),
+                      physics: const BouncingScrollPhysics(),
                       itemCount: purchaseController.orderitems.length,
                       itemBuilder: (context, index) {
-                        var _item = purchaseController.orderitems[index];
+                        var item = purchaseController.orderitems[index];
                         return Dismissible(
                           direction: DismissDirection.endToStart,
                           background: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             color: Colors.red,
-                            child: Align(
+                            child: const Align(
                               alignment: Alignment.centerRight,
                               child: Icon(Icons.delete, color: Colors.white),
                             ),
                           ),
                           onDismissed: (direction) {
                             if (direction == DismissDirection.endToStart) {
-                              purchaseController.removeItem(_item);
+                              purchaseController.removeItem(item);
                             }
                           },
-                          key: Key(_item.id.toString()),
+                          key: Key(item.id.toString()),
                           child: ListTile(
                             title: Text(
-                              _item.product_name,
+                              item.product_name,
                               style:
-                                  TextStyle(), // <<======================= change color for no stock
+                                  const TextStyle(), // <<======================= change color for no stock
                             ),
                             subtitle: Text(
-                              "${_item.variant_name_1}  ${_item.variant_name_2} ",
-                              style: TextStyle(
+                              "${item.variant_name_1}  ${item.variant_name_2} ",
+                              style: const TextStyle(
                                 fontSize: 12,
                               ), // <<======================= change color for no stock
                             ),
                             leading: CachedNetworkImage(
                               cacheManager: CacheManager(
                                 Config(
-                                  _item.image,
+                                  item.image,
                                   stalePeriod: const Duration(days: 7),
                                 ),
                               ),
-                              imageUrl: _item.image,
-                              placeholder: (context, url) =>
-                                  Container(child: CircularProgressIndicator()),
+                              imageUrl: item.image,
+                              placeholder: (context, url) => Container(
+                                  child: const CircularProgressIndicator()),
                               errorWidget: (context, url, error) =>
-                                  Icon(Icons.error),
+                                  const Icon(Icons.error),
                             ),
-                            trailing: Container(
+                            trailing: SizedBox(
                               width: 90,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -376,14 +373,13 @@ class PurchaseItemsList extends StatelessWidget {
                                   Text(
                                       formatter.format(purchaseController
                                           .orderitems[index].total),
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontFamily: 'alata',
                                         // <<======================= change color for no stock
                                       )),
                                   Text(
-                                    "${_item.quantity.toStringAsFixed(0)} " +
-                                        _item.unite.tr,
-                                    style: TextStyle(
+                                    "${item.quantity.toStringAsFixed(0)} ${item.unite.tr}",
+                                    style: const TextStyle(
                                         color: Color.fromARGB(255, 165, 165,
                                             165), // <<======================= change color for no stock
                                         fontWeight: FontWeight.bold),
@@ -399,8 +395,8 @@ class PurchaseItemsList extends StatelessWidget {
               Expanded(
                 flex: 1, //orderController.hasChanged.value > 0
                 child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 10),
-                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   width: Get.width,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(5),
@@ -413,11 +409,11 @@ class PurchaseItemsList extends StatelessWidget {
                           () => Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text("Total  "),
+                              const Text("Total  "),
                               Text(
                                 formatter
                                     .format(purchaseController.total.value),
-                                style: TextStyle(
+                                style: const TextStyle(
                                     fontSize: 16, fontFamily: 'alata'),
                               ),
                             ],
@@ -434,7 +430,7 @@ class PurchaseItemsList extends StatelessWidget {
                   () => productController.page.value == 0 &&
                           !purchaseController.saved.value
                       ? Container(
-                          margin: EdgeInsets.symmetric(vertical: 10),
+                          margin: const EdgeInsets.symmetric(vertical: 10),
                           child: FloatingActionButton(
                             onPressed: () {
                               pageController.jumpToPage(1);
@@ -444,7 +440,7 @@ class PurchaseItemsList extends StatelessWidget {
                             child: const Icon(Icons.add),
                           ),
                         )
-                      : SizedBox.shrink(),
+                      : const SizedBox.shrink(),
                 ),
               ),
             ]),

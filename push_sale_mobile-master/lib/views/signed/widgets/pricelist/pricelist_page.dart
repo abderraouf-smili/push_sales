@@ -5,6 +5,8 @@ import 'package:push_sale/views/signed/widgets/pricelist/pricelist_widget.dart';
 
 class PricelistPage extends StatelessWidget {
   PricelistController priceController = Get.put(PricelistController());
+
+  PricelistPage({super.key});
   @override
   Widget build(BuildContext context) {
     priceController.getPricelist();
@@ -25,7 +27,7 @@ class PricelistPage extends StatelessWidget {
                       var item = priceController.pricelist[index];
                       return PricelistWidget(item);
                     })
-                : Center(child: CircularProgressIndicator()),
+                : const Center(child: CircularProgressIndicator()),
           ),
         ),
       ),

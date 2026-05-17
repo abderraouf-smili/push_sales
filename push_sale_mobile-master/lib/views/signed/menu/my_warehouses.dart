@@ -7,6 +7,8 @@ import 'package:push_sale/views/signed/widgets/warehouses/show_my_warehouses.dar
 class MyWarehouses extends StatelessWidget {
   WarehouseController warehouseController = Get.put(WarehouseController());
   PageController pageController = PageController();
+
+  MyWarehouses({super.key});
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -16,7 +18,7 @@ class MyWarehouses extends StatelessWidget {
           return true;
         },
         child: PageView(
-          physics: NeverScrollableScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           controller: pageController,
           children: [
             ShowMyWarehouses(pageController),

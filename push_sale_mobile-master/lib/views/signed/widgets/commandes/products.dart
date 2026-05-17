@@ -12,7 +12,7 @@ import 'package:push_sale/views/signed/widgets/commandes/product_list.dart';
 
 class Products extends StatelessWidget {
   final Client _client;
-  Products(this._client);
+  Products(this._client, {super.key});
 
   ProductController productController = Get.find();
   OrderController orderController = Get.put(OrderController());
@@ -54,8 +54,7 @@ class Products extends StatelessWidget {
                       btnOkOnPress: () {
                         orderController.saved.value = false;
                         Get.back();
-                      })
-                    ..show();
+                      }).show();
                 } else {
                   AwesomeDialog(
                       dialogType: DialogType.question,
@@ -66,8 +65,7 @@ class Products extends StatelessWidget {
                       btnOkOnPress: () {
                         orderController.saved.value = false;
                         Get.back();
-                      })
-                    ..show();
+                      }).show();
                 }
               } else {
                 orderController.saved.value = false;
@@ -300,7 +298,7 @@ class Products extends StatelessWidget {
                         Container(
                           child:
                               Obx(() => productController.loadProductReady.value
-                                  ? Container(
+                                  ? SizedBox(
                                       height: Get.height - 200,
                                       child: Obx(
                                         () => ListView.builder(

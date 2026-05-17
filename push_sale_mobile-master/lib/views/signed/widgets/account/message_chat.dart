@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/key.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:get/get.dart';
 
 class MessageChat extends StatelessWidget {
-  const MessageChat({Key? key}) : super(key: key);
+  const MessageChat({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +11,7 @@ class MessageChat extends StatelessWidget {
         title: Text("chat".tr),
         centerTitle: true,
       ),
-      body: Container(
+      body: SizedBox(
         width: Get.width,
         height: Get.height - 120,
         child: ListView.builder(

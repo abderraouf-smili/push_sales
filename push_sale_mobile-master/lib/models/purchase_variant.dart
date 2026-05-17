@@ -61,9 +61,9 @@ class PurchaseVariant {
   }
 
   static List<PurchaseVariant> fromListMapToList(List<dynamic> value) {
-    List<PurchaseVariant> _list = [];
+    List<PurchaseVariant> list = [];
     for (var item in value) {
-      _list.add(PurchaseVariant(
+      list.add(PurchaseVariant(
         id: item["id"],
         sku: item["sku"],
         barcode: item["barcode"],
@@ -87,7 +87,7 @@ class PurchaseVariant {
             : double.parse(item["lastpurchaseprice"].toString()),
       ));
     }
-    return _list;
+    return list;
   }
 
   String getOptionName1(String locale) {

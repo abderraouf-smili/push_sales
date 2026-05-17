@@ -11,6 +11,8 @@ import 'package:push_sale/views/signed/widgets/promotions/promotions_list.dart';
 class CommercialMenu extends StatelessWidget {
   PermissionsController perm = Get.find();
   List<dynamic> menu = [];
+
+  CommercialMenu({super.key});
   @override
   Widget build(BuildContext context) {
     menu = [
@@ -18,7 +20,7 @@ class CommercialMenu extends StatelessWidget {
         "title": "my.listing".tr,
         "subtitle": "list.prices".tr,
         "icon": Icons.price_change,
-        "color": Color.fromARGB(255, 13, 116, 4),
+        "color": const Color.fromARGB(255, 13, 116, 4),
         "onTap": () {
           Get.to(() => PricelistPage());
         }
@@ -28,7 +30,7 @@ class CommercialMenu extends StatelessWidget {
               "title": "my.actors".tr,
               "subtitle": "actor.config".tr,
               "icon": Icons.groups_outlined,
-              "color": Color.fromARGB(255, 236, 116, 247),
+              "color": const Color.fromARGB(255, 236, 116, 247),
               "onTap": () {
                 Get.to(() => ActorsList());
               }
@@ -39,7 +41,7 @@ class CommercialMenu extends StatelessWidget {
               "title": "my.coupons".tr,
               "subtitle": "coupons.config".tr,
               "icon": Icons.redeem,
-              "color": Color.fromARGB(255, 172, 173, 75),
+              "color": const Color.fromARGB(255, 172, 173, 75),
               "onTap": () {
                 Get.to(() => CouponsList());
               }
@@ -61,20 +63,20 @@ class CommercialMenu extends StatelessWidget {
               "title": "receivables".tr,
               "subtitle": "customers_balance".tr,
               "icon": Icons.paid_sharp,
-              "color": Color.fromARGB(255, 174, 103, 231),
+              "color": const Color.fromARGB(255, 174, 103, 231),
               "onTap": () {
                 Get.to(() => MainCreancePage());
               }
             }
           : null,
-                perm.check(null, "admin")
+      perm.check(null, "admin")
           ? {
               "title": "credit".tr,
               "subtitle": "customers_credit".tr,
               "icon": Icons.money,
-              "color": Color.fromARGB(255, 242, 107, 94),
+              "color": const Color.fromARGB(255, 242, 107, 94),
               "onTap": () {
-                Get.to(() => MainCreditPage());
+                Get.to(() => const MainCreditPage());
               }
             }
           : null,
@@ -85,7 +87,7 @@ class CommercialMenu extends StatelessWidget {
         appBar: AppBar(
           title: Text(
             "commercial".tr,
-            style: TextStyle(
+            style: const TextStyle(
                 color: Color.fromARGB(255, 19, 21, 121),
                 fontSize: 25,
                 fontWeight: FontWeight.bold),
@@ -94,15 +96,15 @@ class CommercialMenu extends StatelessWidget {
         ),
         body: Column(children: [
           Container(
-            margin: EdgeInsets.symmetric(horizontal: 10),
+            margin: const EdgeInsets.symmetric(horizontal: 10),
             height: Get.height - 204,
             child: ListView.builder(
-                physics: BouncingScrollPhysics(),
+                physics: const BouncingScrollPhysics(),
                 itemCount: menu.length,
                 itemBuilder: (context, index) {
                   return menu[index] != null
                       ? menu[index]["divider"] != null
-                          ? Divider(
+                          ? const Divider(
                               height: 10,
                               thickness: 1,
                               endIndent: 50,
@@ -117,14 +119,15 @@ class CommercialMenu extends StatelessWidget {
                                 ),
                                 title: Text(
                                   menu[index]["title"],
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text(menu[index]["subtitle"]),
-                                trailing:
-                                    Icon(Icons.arrow_forward_ios_outlined),
+                                trailing: const Icon(
+                                    Icons.arrow_forward_ios_outlined),
                               ),
                             )
-                      : SizedBox.shrink();
+                      : const SizedBox.shrink();
                 }),
           )
         ]),

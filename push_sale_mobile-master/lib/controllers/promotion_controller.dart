@@ -109,7 +109,7 @@ class PromotionController extends GetxController {
   }
 
   String generateId() {
-    Uuid uuid = Uuid();
+    Uuid uuid = const Uuid();
     return uuid.v1();
   }
 

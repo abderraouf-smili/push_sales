@@ -61,19 +61,19 @@ class MyImagePicker extends FormBuilderField<List<dynamic>> {
   final BoxFit fit;
 
   MyImagePicker({
-    Key? key,
+    super.key,
     //From Super
-    required String name,
-    FormFieldValidator<List<dynamic>>? validator,
-    List<dynamic>? initialValue,
+    required super.name,
+    super.validator,
+    super.initialValue,
     InputDecoration decoration = const InputDecoration(),
-    ValueChanged<List<dynamic>?>? onChanged,
-    ValueTransformer<List<dynamic>?>? valueTransformer,
-    bool enabled = true,
-    FormFieldSetter<List<dynamic>>? onSaved,
-    AutovalidateMode autovalidateMode = AutovalidateMode.disabled,
-    VoidCallback? onReset,
-    FocusNode? focusNode,
+    super.onChanged,
+    super.valueTransformer,
+    super.enabled,
+    super.onSaved,
+    AutovalidateMode super.autovalidateMode = AutovalidateMode.disabled,
+    super.onReset,
+    super.focusNode,
     WidgetBuilder? loadingWidget,
     this.fit = BoxFit.cover,
     this.preventPop = false,
@@ -97,18 +97,6 @@ class MyImagePicker extends FormBuilderField<List<dynamic>> {
     this.placeholderImage,
   })  : assert(maxImages == null || maxImages >= 0),
         super(
-          key: key,
-          initialValue: initialValue,
-          name: name,
-          validator: validator,
-          valueTransformer: valueTransformer,
-          onChanged: onChanged,
-          autovalidateMode: autovalidateMode,
-          onSaved: onSaved,
-          enabled: enabled,
-          onReset: onReset,
-          // decoration: decoration,
-          focusNode: focusNode,
           builder: (FormFieldState<List<dynamic>?> field) {
             final state = field as _FormBuilderImagePickerState;
             final theme = Theme.of(state.context);
@@ -124,7 +112,7 @@ class MyImagePicker extends FormBuilderField<List<dynamic>> {
                 child: ListView.builder(
                   padding: EdgeInsets.zero,
                   scrollDirection: Axis.horizontal,
-                  physics: NeverScrollableScrollPhysics(),
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: value.length + (canUpload ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index < value.length) {
@@ -150,7 +138,7 @@ class MyImagePicker extends FormBuilderField<List<dynamic>> {
                         alignment: Alignment.bottomLeft,
                         children: <Widget>[
                           Container(
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               shape: BoxShape.circle,
                             ),
                             width: previewWidth,
@@ -274,12 +262,11 @@ class _FormBuilderImagePickerState
 
 class XFileImage extends StatefulWidget {
   const XFileImage(
-      {Key? key,
+      {super.key,
       required this.file,
       this.fit,
       this.loadingWidget,
-      required this.boxShape})
-      : super(key: key);
+      required this.boxShape});
   final XFile file;
   final BoxFit? fit;
   final BoxShape boxShape;
@@ -333,7 +320,7 @@ class ImageSourceBottomSheet extends StatefulWidget {
   final bool preventPop;
 
   const ImageSourceBottomSheet({
-    Key? key,
+    super.key,
     this.remainingImages,
     this.preventPop = false,
     this.maxHeight,
@@ -346,7 +333,7 @@ class ImageSourceBottomSheet extends StatefulWidget {
     this.cameraLabel,
     this.galleryLabel,
     this.bottomSheetPadding,
-  }) : super(key: key);
+  });
 
   @override
   _ImageSourceBottomSheetState createState() => _ImageSourceBottomSheetState();
@@ -383,6 +370,6 @@ class _ImageSourceBottomSheetState extends State<ImageSourceBottomSheet> {
       _onPickImage(ImageSource.camera);
       Navigator.pop(context);
     });
-    return SizedBox.shrink();
+    return const SizedBox.shrink();
   }
 }

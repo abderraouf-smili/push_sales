@@ -7,45 +7,45 @@ import 'package:push_sale/controllers/stock_operation_controller.dart';
 class ShowDetailTransfer extends StatelessWidget {
   StockOperationController stockController = Get.find();
   PageController pageController;
-  ShowDetailTransfer(this.pageController);
+  ShowDetailTransfer(this.pageController, {super.key});
   //
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: Get.height - 250,
       child: Column(
         children: [
           Container(
             height: 50,
             width: Get.width,
-            color: Color.fromARGB(255, 170, 217, 255),
+            color: const Color.fromARGB(255, 170, 217, 255),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
+                SizedBox(
                   width: 30,
                   child: IconButton(
                       onPressed: () {
                         pageController.jumpToPage(1);
                       },
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.arrow_back,
                         color: Colors.white,
                       )),
                 ),
-                Container(
+                SizedBox(
                   width: Get.width - 30,
                   child: Center(
                     child: Text(
                       stockController.itemSelected!.code!,
-                      style: TextStyle(color: Colors.white, fontSize: 22),
+                      style: const TextStyle(color: Colors.white, fontSize: 22),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          Container(
+          SizedBox(
             height: Get.height - 255,
             child: ListView.builder(
                 itemCount: stockController.itemSelected!.items.length,
@@ -73,13 +73,14 @@ class ShowDetailTransfer extends StatelessWidget {
                           ),
                         ),
                         imageUrl: item.image,
-                        placeholder: (context, url) => Container(
+                        placeholder: (context, url) => const SizedBox(
                             width: 30,
                             height: 30,
                             child: CircularProgressIndicator()),
-                        errorWidget: (context, url, error) => Icon(Icons.error),
+                        errorWidget: (context, url, error) =>
+                            const Icon(Icons.error),
                       ),
-                      subtitle: Text(item.variant_1 + " " + item.variant_2,
+                      subtitle: Text("${item.variant_1} ${item.variant_2}",
                           style: TextStyle(
                               color: stockController.stock_out.value &&
                                       stockController.unvalaibleProduct
@@ -93,9 +94,7 @@ class ShowDetailTransfer extends StatelessWidget {
                         children: [
                           Text(
                               item.quantity ~/ item.package != 0
-                                  ? (item.quantity ~/ item.package)
-                                          .toStringAsFixed(0) +
-                                      " Cart"
+                                  ? "${(item.quantity ~/ item.package).toStringAsFixed(0)} Cart"
                                   : "",
                               style: TextStyle(
                                   color: stockController.stock_out.value &&
@@ -108,9 +107,7 @@ class ShowDetailTransfer extends StatelessWidget {
                                       : null)),
                           Text(
                               item.quantity % item.package != 0
-                                  ? (item.quantity % item.package)
-                                          .toStringAsFixed(0) +
-                                      " Pcs"
+                                  ? "${(item.quantity % item.package).toStringAsFixed(0)} Pcs"
                                   : "",
                               style: TextStyle(
                                   color: stockController.stock_out.value &&

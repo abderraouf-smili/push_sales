@@ -37,7 +37,7 @@ class WarehouseController extends GetxController {
 
   Future<ResponseHttpRequest> adjustPriceStock() async {
     outOfStock.value = [];
-    List<int> _list = [];
+    List<int> list = [];
     Map<String, dynamic> data = {
       "prices": adjustedPrice.map((e) => e.toMap()).toList(),
       "stock": adjustedStock.map((e) => e.toMap()).toList(),
@@ -48,9 +48,9 @@ class WarehouseController extends GetxController {
     if (response.status == "SUCCESS") {
     } else {
       for (var item in response.data) {
-        _list.add(item);
+        list.add(item);
       }
-      outOfStock.value = _list;
+      outOfStock.value = list;
       print(response.message);
       print(response.data);
     }
@@ -157,7 +157,7 @@ class WarehouseController extends GetxController {
                 .replaceAll("è", "e")
                 .replaceAll("à", "a"),
             text2: item.quantity ~/ item.package != 0
-                ? (item.quantity ~/ item.package).toStringAsFixed(0) + " Cart"
+                ? "${(item.quantity ~/ item.package).toStringAsFixed(0)} Cart"
                 : "",
             size: 1,
             format: '%-30s %16s %n',
@@ -166,18 +166,10 @@ class WarehouseController extends GetxController {
         textPrint.add(
           LineTextPrinter(
             type: LineTextPrinter.TYPE_TEXT,
-            text1: "  " +
-                item.variant1_fr
-                    .replaceAll("é", "e")
-                    .replaceAll("è", "e")
-                    .replaceAll("à", "a") +
-                " " +
-                item.variant2_fr
-                    .replaceAll("é", "e")
-                    .replaceAll("è", "e")
-                    .replaceAll("à", "a"),
+            text1:
+                "  ${item.variant1_fr.replaceAll("é", "e").replaceAll("è", "e").replaceAll("à", "a")} ${item.variant2_fr.replaceAll("é", "e").replaceAll("è", "e").replaceAll("à", "a")}",
             text2: item.quantity % item.package != 0
-                ? (item.quantity % item.package).toStringAsFixed(0) + " Pcs "
+                ? "${(item.quantity % item.package).toStringAsFixed(0)} Pcs "
                 : "",
             size: 0,
             isSubTitle: true,

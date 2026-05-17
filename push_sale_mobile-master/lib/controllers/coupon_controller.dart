@@ -69,9 +69,7 @@ class CouponController extends GetxController {
   }
 
   Future<dynamic> sendAPI() async {
-    if (coupon_id == null) {
-      coupon_id = generateId();
-    }
+    coupon_id ??= generateId();
     Map<String, dynamic> data = {
       "id": coupon_id,
       "description": coupon_description,
@@ -96,7 +94,7 @@ class CouponController extends GetxController {
   }
 
   String generateId() {
-    Uuid uuid = Uuid();
+    Uuid uuid = const Uuid();
     return uuid.v1();
   }
 

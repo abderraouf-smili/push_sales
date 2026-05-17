@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/api/call_api.dart';
@@ -65,7 +63,7 @@ class SettingsProfileController extends GetxController {
   }
 
   void generateId() {
-    Uuid uuid = Uuid();
+    Uuid uuid = const Uuid();
     actor_id = uuid.v1();
   }
 }

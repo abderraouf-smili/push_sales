@@ -7,6 +7,8 @@ import 'package:push_sale/views/signed/widgets/tracking/tracking_detail.dart';
 class MainTrackingOrder extends StatelessWidget {
   PageController pageController = PageController();
   OrderController orderController = Get.put(OrderController(tag: "tracking"));
+
+  MainTrackingOrder({super.key});
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -14,20 +16,20 @@ class MainTrackingOrder extends StatelessWidget {
         if (orderController.page.value != 0) {
           orderController.page.value = orderController.page.value - 1;
           pageController.animateToPage(orderController.page.value,
-              duration: Duration(milliseconds: 300), curve: Curves.ease);
+              duration: const Duration(milliseconds: 300), curve: Curves.ease);
         }
         return false;
       },
-      child: Container(
+      child: SizedBox(
         width: Get.width,
         height: Get.height - 80,
         child: Column(
           children: [
-            Container(
+            SizedBox(
               width: Get.width,
               height: Get.height - 80,
               child: PageView(
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 controller: pageController,
                 onPageChanged: (value) {
                   orderController.page.value = value;

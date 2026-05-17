@@ -6,17 +6,17 @@ import 'package:push_sale/models/variant.dart';
 
 class ItemBigIcon extends StatelessWidget {
   Variant item;
-  ItemBigIcon(this.item);
+  ItemBigIcon(this.item, {super.key});
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.all(1),
+      margin: const EdgeInsets.all(1),
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: Color.fromARGB(255, 246, 251, 255)),
+          color: const Color.fromARGB(255, 246, 251, 255)),
       child: Column(
         children: [
-          Container(
+          SizedBox(
             width: Get.width / 2.5,
             height: Get.width / 2.5,
             child: CachedNetworkImage(
@@ -31,11 +31,11 @@ class ItemBigIcon extends StatelessWidget {
                   padding: EdgeInsets.symmetric(
                       horizontal: Get.width / 3 - 25,
                       vertical: (Get.height / 4.2) / 2 - 25),
-                  child: CircularProgressIndicator()),
-              errorWidget: (context, url, error) => Icon(Icons.error),
+                  child: const CircularProgressIndicator()),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
             ),
           ),
-          Container(
+          SizedBox(
             width: Get.width / 2.2,
             height: 50,
             child: Column(
@@ -43,14 +43,12 @@ class ItemBigIcon extends StatelessWidget {
                 Text(
                   item.product!
                       .getLongDescription(Get.deviceLocale!.languageCode),
-                  style: TextStyle(
+                  style: const TextStyle(
                       color: Color.fromARGB(255, 138, 138, 138), fontSize: 12),
                 ),
                 Text(
-                  item.getVariantName1(Get.deviceLocale!.languageCode) +
-                      " " +
-                      item.getVariantName2(Get.deviceLocale!.languageCode),
-                  style: TextStyle(
+                  "${item.getVariantName1(Get.deviceLocale!.languageCode)} ${item.getVariantName2(Get.deviceLocale!.languageCode)}",
+                  style: const TextStyle(
                       color: Color.fromARGB(255, 138, 138, 138), fontSize: 12),
                 )
               ],

@@ -1,7 +1,5 @@
 // ignore_for_file: prefer_interpolation_to_compose_strings, non_constant_identifier_names
 
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -54,12 +52,12 @@ class PurchaseOrderController extends GetxController {
   RxBool deliverySet = false.obs;
 
   generateId() {
-    Uuid uuid = Uuid();
+    Uuid uuid = const Uuid();
     purchaseorderId = uuid.v1();
   }
 
   generateTrackId() {
-    Uuid uuid = Uuid();
+    Uuid uuid = const Uuid();
     trackId = uuid.v1();
   }
 
@@ -92,21 +90,21 @@ class PurchaseOrderController extends GetxController {
     ));
     hasChanged.value++;
     total.value = 0;
-    orderitems.forEach((element) {
+    for (var element in orderitems) {
       total.value = total.value + element.total;
-    });
+    }
   }
 
-  removeItem(PurchaseOrderitem _item) {
-    orderitems.removeWhere((element) => element.id == _item.id);
+  removeItem(PurchaseOrderitem item) {
+    orderitems.removeWhere((element) => element.id == item.id);
     total.value = 0;
-    orderitems.forEach((element) {
+    for (var element in orderitems) {
       total.value = total.value + element.total;
-    });
+    }
   }
 
   String getItemId() {
-    Uuid uuid = Uuid();
+    Uuid uuid = const Uuid();
     return uuid.v1();
   }
 
@@ -186,13 +184,13 @@ class PurchaseOrderController extends GetxController {
       }
     }
     if (global.PackingWithBox) {
-      productsTransfer.forEach((element) {
+      for (var element in productsTransfer) {
         if (element.quantity % element.package != 0) {
           element.quantity = element.quantity -
               (element.quantity % element.package) +
               element.package;
         }
-      });
+      }
     }
     BonTransfert = StockOperation(
       id: Transert_id!,
@@ -224,13 +222,13 @@ class PurchaseOrderController extends GetxController {
   }
 
   String getNewId() {
-    Uuid uuid = Uuid();
+    Uuid uuid = const Uuid();
     return uuid.v1();
   }
 
   PrepareToPrint() {
     textPrint = [];
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
 
     textPrint.add(LineTextPrinter(
       type: LineTextPrinter.TYPE_TEXT,

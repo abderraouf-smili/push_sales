@@ -19,18 +19,18 @@ class Warehouse {
   });
 
   static Warehouse fromMap(Map<String, dynamic> value) {
-    double _total = 0;
+    double total = 0;
     List<ItemStock> itemlist = value["variants"] != null
         ? ItemStock.fromListMapToList(value["variants"])
         : [];
-    itemlist.forEach(
-      (element) => _total += element.quantity * element.stock_price,
-    );
+    for (var element in itemlist) {
+      total += element.quantity * element.stock_price;
+    }
     return Warehouse(
       id: value["id"],
       name: value["name"],
       code: value["code"],
-      total: _total,
+      total: total,
       address: Address.fromMap(value["address"]),
       items: itemlist,
     );

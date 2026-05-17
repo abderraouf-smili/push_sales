@@ -7,21 +7,21 @@ import 'package:timeline_tile/timeline_tile.dart';
 
 class TrackingDetail extends StatelessWidget {
   PageController pageController;
-  TrackingDetail(this.pageController);
+  TrackingDetail(this.pageController, {super.key});
   OrderController orderController = Get.find();
 
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     orderController.changeLoad.value = "nothing";
-    List<String> _date = [];
+    List<String> date0 = [];
     Map<String, List<TrackingOrder>> suiviParPO = {};
-    bool is_modifiable = true;
+    bool isModifiable = true;
     for (var suivi in orderController.orderToTrack!.tracking!) {
       if (suivi.state == "shipped" ||
           suivi.state == "paid" ||
           suivi.state == "partially_paid") {
-        is_modifiable = false;
+        isModifiable = false;
       }
 
       // Récupérer la valeur de purchase_order
@@ -31,7 +31,7 @@ class TrackingDetail extends StatelessWidget {
       if (!suiviParPO.containsKey(po)) {
         // Si non, créer une nouvelle liste pour ce purchase_order
         suiviParPO[po] = [];
-        _date.add("");
+        date0.add("");
       }
 
       // Ajouter l'information de suivi à la liste correspondante
@@ -48,19 +48,19 @@ class TrackingDetail extends StatelessWidget {
             IconButton(
                 onPressed: () {
                   pageController.animateToPage(1,
-                      duration: Duration(milliseconds: 300),
+                      duration: const Duration(milliseconds: 300),
                       curve: Curves.ease);
                 },
-                icon: Icon(
+                icon: const Icon(
                   Icons.arrow_back,
                   color: Colors.white,
                 )),
-            Container(
+            SizedBox(
               width: Get.width - 100,
               child: Center(
                 child: Text(
                   "track.order".tr,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                   ),
@@ -70,7 +70,7 @@ class TrackingDetail extends StatelessWidget {
           ],
         ),
       ),
-      Container(
+      SizedBox(
         height: 70,
         width: Get.width,
         child: Container(
@@ -81,12 +81,12 @@ class TrackingDetail extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.local_shipping_rounded),
-                  SizedBox(
+                  const Icon(Icons.local_shipping_rounded),
+                  const SizedBox(
                     width: 10,
                   ),
                   Text("delivery.planned.to".tr),
-                  SizedBox(
+                  const SizedBox(
                     width: 10,
                   ),
                   Obx(
@@ -98,7 +98,7 @@ class TrackingDetail extends StatelessWidget {
                               : orderController.finalDate!),
                     ),
                   ),
-                  is_modifiable
+                  isModifiable
                       ? Obx(
                           () => orderController.changeLoad.value == "nothing"
                               ? IconButton(
@@ -106,11 +106,11 @@ class TrackingDetail extends StatelessWidget {
                                     var date = await showDatePicker(
                                       locale: Get.locale,
                                       context: context,
-                                      initialDate:
-                                          DateTime.now().add(Duration(days: 1)),
+                                      initialDate: DateTime.now()
+                                          .add(const Duration(days: 1)),
                                       firstDate: DateTime.now(),
-                                      lastDate:
-                                          DateTime.now().add(Duration(days: 8)),
+                                      lastDate: DateTime.now()
+                                          .add(const Duration(days: 8)),
                                     );
                                     if (date != null) {
                                       var time = await showTimePicker(
@@ -139,23 +139,23 @@ class TrackingDetail extends StatelessWidget {
                                       }
                                     }
                                   },
-                                  icon: Icon(Icons.edit_calendar,
+                                  icon: const Icon(Icons.edit_calendar,
                                       color: Colors.red),
                                 )
                               : orderController.changeLoad.value == "sent"
-                                  ? Container(
+                                  ? const SizedBox(
                                       width: 16,
                                       height: 16,
                                       child: CircularProgressIndicator(
                                         color: Colors.blue,
                                       ),
                                     )
-                                  : Icon(
+                                  : const Icon(
                                       Icons.check_circle,
                                       color: Colors.green,
                                     ),
                         )
-                      : SizedBox.square(),
+                      : const SizedBox.square(),
                 ],
               ),
             ],
@@ -166,7 +166,7 @@ class TrackingDetail extends StatelessWidget {
         height: Get.height - 210,
         color: Colors.white,
         child: SingleChildScrollView(
-          child: Container(
+          child: SizedBox(
             height: Get.height - 210,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -175,16 +175,16 @@ class TrackingDetail extends StatelessWidget {
                 (i) {
                   var cle = suiviParPO.keys.elementAt(i);
                   var liste = suiviParPO[cle];
-                  return Container(
+                  return SizedBox(
                     height: (Get.height - 210 - 10) / suiviParPO.length,
                     child: ListView.builder(
                       itemCount: liste!.length,
                       itemBuilder: (context, index) {
                         var item = liste[index];
                         bool showDate = true;
-                        if (_date[i] !=
+                        if (date0[i] !=
                             DateFormat("dd/MM/y").format(item.date)) {
-                          _date[i] = DateFormat("dd/MM/y").format(item.date);
+                          date0[i] = DateFormat("dd/MM/y").format(item.date);
                         } else {
                           showDate = false;
                         }
@@ -203,20 +203,20 @@ class TrackingDetail extends StatelessWidget {
                                 fontSize: 25),
                           ),
                           startChild: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 showDate
-                                    ? Text(_date[i],
-                                        style: TextStyle(
+                                    ? Text(date0[i],
+                                        style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                         ))
-                                    : SizedBox.shrink(),
+                                    : const SizedBox.shrink(),
                                 Text(
                                   DateFormat("HH:mm").format(item.date),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -224,11 +224,11 @@ class TrackingDetail extends StatelessWidget {
                             ),
                           ),
                           endChild: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 15),
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
                             height: 100,
                             child: Row(
                               children: [
-                                Container(
+                                SizedBox(
                                   width: Get.width / 2.2,
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -236,22 +236,20 @@ class TrackingDetail extends StatelessWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        ("state." + item.state).tr,
-                                        style: TextStyle(
+                                        ("state.${item.state}").tr,
+                                        style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                       Row(
                                         children: [
-                                          Icon(
+                                          const Icon(
                                             Icons.person,
                                             size: 20,
                                           ),
                                           Text(
-                                            item.actor.firstname +
-                                                " " +
-                                                item.actor.lastname,
-                                            style: TextStyle(
+                                            "${item.actor.firstname} ${item.actor.lastname}",
+                                            style: const TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.bold),
                                           ),
@@ -260,7 +258,7 @@ class TrackingDetail extends StatelessWidget {
                                       Text(item.getDescription().tr),
                                       item.amount != null
                                           ? Text(formatter.format(item.amount))
-                                          : SizedBox.shrink()
+                                          : const SizedBox.shrink()
                                     ],
                                   ),
                                 ),
@@ -270,7 +268,7 @@ class TrackingDetail extends StatelessWidget {
                                         width: Get.width / 10,
                                         height: Get.height / 15,
                                       )
-                                    : SizedBox.shrink(),
+                                    : const SizedBox.shrink(),
                               ],
                             ),
                           ),

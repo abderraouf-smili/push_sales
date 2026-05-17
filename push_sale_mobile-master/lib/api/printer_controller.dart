@@ -40,7 +40,7 @@ class PrinterController extends GetxController {
 
       // print("=============>" + devices.first.connected.toString());
     } on PlatformException {}
-    await bluetoothPrint.onStateChanged().listen((state) {
+    bluetoothPrint.onStateChanged().listen((state) {
       exist.value = devices.isNotEmpty;
       switch (state) {
         case BlueThermalPrinter.CONNECTED:
@@ -120,10 +120,10 @@ class PrinterController extends GetxController {
 
   Future<String> StartPrinting(List<LineTextPrinter> list) async {
     BlueThermalPrinter bt = BlueThermalPrinter.instance;
-    BluetoothDevice _device = BluetoothDevice(name, address);
+    BluetoothDevice device = BluetoothDevice(name, address);
     if (!(await bt.isConnected)!) {
       try {
-        await bt.connect(_device);
+        await bt.connect(device);
       } catch (e) {
         print(e);
         return "unknown";
@@ -211,7 +211,7 @@ class PrinterController extends GetxController {
           }
         }
         if (line.type == "Code_Qr") {
-          print("QR ::::: " + line.text1);
+          print("QR ::::: ${line.text1}");
           bluetooth.printQRcode(line.text1, line.size, line.size, line.align);
         }
       }

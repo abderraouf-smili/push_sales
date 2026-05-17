@@ -79,7 +79,7 @@ class PricelistController extends GetxController {
       textPrint.add(
         LineTextPrinter(
           type: LineTextPrinter.TYPE_TEXT,
-          text1: "$i- ${variant}",
+          text1: "$i- $variant",
           text2: prix.toString(),
           format: '%-38s %9s\n',
           size: 1,

@@ -2,7 +2,6 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:geocoding/geocoding.dart';
@@ -237,16 +236,16 @@ class ClientController extends GetxController {
   }
 
   generateId() {
-    Uuid uuid = Uuid();
+    Uuid uuid = const Uuid();
     client_id = uuid.v1();
   }
 
-  Future<void> getCurrentOrders(String _client_id) async {
+  Future<void> getCurrentOrders(String client_id) async {
     current_orders_ready.value = false;
     current_orders = [];
     ResponseHttpRequest response = await CallApi.RequestHttp(
         global.getCurrentOrders,
-        data: {"client_id": _client_id});
+        data: {"client_id": client_id});
     if (response.status == "SUCCESS") {
       for (var item in response.data) {
         current_orders.add(Order.fromMap(item));

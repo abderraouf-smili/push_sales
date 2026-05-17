@@ -1,4 +1,3 @@
-import 'package:push_sale/models/address.dart';
 import 'package:push_sale/models/warehouse.dart';
 
 class Distributor {

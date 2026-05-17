@@ -20,7 +20,7 @@ import 'package:push_sale/const/globals.dart' as global;
 class OrderitemList extends StatelessWidget {
   Client _client;
   PageController pageController;
-  var formatter = new NumberFormat("#,##0.00", "fr_FR");
+  var formatter = NumberFormat("#,##0.00", "fr_FR");
   OrderitemList(this._client, this.pageController);
   PrinterController printerController = Get.put(PrinterController());
   OrderController orderController = Get.find();
@@ -49,7 +49,7 @@ class OrderitemList extends StatelessWidget {
     orderController.clientId = _client.id;
     productController.page.value = 0;
 
-    if (orderController.orderitems.length == 0) {
+    if (orderController.orderitems.isEmpty) {
       orderController.coupon = null;
       orderController.couponLoaded.value = 0;
     } else {
@@ -428,7 +428,7 @@ class OrderitemList extends StatelessWidget {
                             errorWidget: (context, url, error) =>
                                 Icon(Icons.error),
                           ),
-                          trailing: Container(
+                          trailing: SizedBox(
                             width: 120,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -475,8 +475,7 @@ class OrderitemList extends StatelessWidget {
                                   children: [
                                     SizedBox.shrink(),
                                     Text(
-                                      "${_item.quantity.toStringAsFixed(0)} " +
-                                          _item.unite.tr,
+                                      "${_item.quantity.toStringAsFixed(0)} ${_item.unite.tr}",
                                       style: TextStyle(
                                           color: orderController
                                                   .out_of_stock.value
@@ -597,9 +596,7 @@ class OrderitemList extends StatelessWidget {
                                   ],
                                 ),
                                 Text(
-                                  "-" +
-                                      formatter.format(
-                                          orderController.getCouponDiscount()),
+                                  "-${formatter.format(orderController.getCouponDiscount())}",
                                   style: TextStyle(
                                       fontSize: 14,
                                       fontFamily: 'alata',
@@ -658,7 +655,7 @@ showCouponWindow(BuildContext context, OrderController orderController) {
     context: context,
     builder: (BuildContext context) {
       TextEditingController moneyTextController = TextEditingController();
-      var formatter = new NumberFormat("#,##0.00", "fr_FR");
+      var formatter = NumberFormat("#,##0.00", "fr_FR");
       return AlertDialog(
         contentPadding: EdgeInsets.only(left: 30, right: 30, top: 40),
         titlePadding: EdgeInsets.zero,
@@ -682,7 +679,7 @@ showCouponWindow(BuildContext context, OrderController orderController) {
             ),
           ),
         ),
-        content: Container(
+        content: SizedBox(
           height: Get.height / 5,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -700,7 +697,7 @@ showCouponWindow(BuildContext context, OrderController orderController) {
                     height: 90,
                     child: Form(
                       key: orderController.formKeyCoupon,
-                      child: Container(
+                      child: SizedBox(
                         width: 100,
                         height: 50,
                         child: TextFormField(
@@ -754,7 +751,7 @@ showCouponWindow(BuildContext context, OrderController orderController) {
                 if (response != null) {
                   List<String> txt = response.split("@");
                   Flushbar(
-                    title: "coupon".tr + " " + "error".tr,
+                    title: "${"coupon".tr} ${"error".tr}",
                     message: txt[0].tr + (txt.length > 1 ? txt[1] : ""),
                     titleColor: Color.fromARGB(255, 255, 255, 255),
                     messageColor: Color.fromARGB(255, 253, 254, 255),

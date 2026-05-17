@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/stock_operation_controller.dart';
-import 'package:push_sale/views/signed/widgets/transfert/show_detail_transfer.dart';
 
 class TransferPage extends StatelessWidget {
   StockOperationController stockController = Get.find();
   PageController pageController;
 
-  TransferPage(this.pageController);
+  TransferPage(this.pageController, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,12 +25,13 @@ class TransferPage extends StatelessWidget {
                 pageController.jumpToPage(3);
               },
               child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                 decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 244, 248, 255),
+                  color: const Color.fromARGB(255, 244, 248, 255),
                   border: Border.all(
                     width: 1,
-                    color: Color.fromARGB(255, 199, 201, 228),
+                    color: const Color.fromARGB(255, 199, 201, 228),
                   ),
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -43,12 +43,12 @@ class TransferPage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.category,
                             size: 18,
                             color: Colors.amber,
                           ),
-                          SizedBox(
+                          const SizedBox(
                             width: 5,
                           ),
                           Text(item.items.length.toString()),

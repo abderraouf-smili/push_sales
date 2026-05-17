@@ -13,8 +13,8 @@ import 'package:push_sale/const/globals.dart' as global;
 class ShowDetailWarehouse extends StatelessWidget {
   WarehouseController warehouseController = Get.find();
   PageController pageController;
-  PageController _pageController = PageController();
-  ShowDetailWarehouse(this.pageController);
+  final PageController _pageController = PageController();
+  ShowDetailWarehouse(this.pageController, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -38,8 +38,8 @@ class ShowDetailWarehouse extends StatelessWidget {
                 switch (value) {
                   case 0:
                     {
-                      var response = await warehouseController
-                          .adjustPriceStock();
+                      var response =
+                          await warehouseController.adjustPriceStock();
                       if (response.status == "SUCCESS") {
                         AwesomeDialog(
                           dialogType: DialogType.success,
@@ -49,24 +49,27 @@ class ShowDetailWarehouse extends StatelessWidget {
                           btnOkOnPress: () async {
                             pageController.jumpToPage(0);
                           },
-                        )..show();
+                        ).show();
                       } else {
-                        if (warehouseController.adjustedPrice.length > 0) {
+                        if (warehouseController.adjustedPrice.isNotEmpty) {
                           Flushbar(
                             title: "info".tr,
                             message: "price.is.updated.if.changed".tr,
-                            titleColor: Color.fromARGB(255, 255, 255, 255),
-                            messageColor: Color.fromARGB(255, 253, 254, 255),
-                            duration: Duration(seconds: 3),
-                            icon: Icon(
+                            titleColor:
+                                const Color.fromARGB(255, 255, 255, 255),
+                            messageColor:
+                                const Color.fromARGB(255, 253, 254, 255),
+                            duration: const Duration(seconds: 3),
+                            icon: const Icon(
                               Icons.check,
                               color: Color.fromARGB(255, 255, 255, 255),
                             ),
-                            backgroundColor: Color.fromARGB(255, 122, 122, 122),
+                            backgroundColor:
+                                const Color.fromARGB(255, 122, 122, 122),
                             flushbarPosition: FlushbarPosition.TOP,
                             borderRadius: BorderRadius.circular(10),
                             // borderColor: Color.fromARGB(255, 186, 224, 255),
-                          )..show(context);
+                          ).show(context);
                         }
                         AwesomeDialog(
                           dialogType: DialogType.error,
@@ -74,7 +77,7 @@ class ShowDetailWarehouse extends StatelessWidget {
                           body: Text("quantity.not.available".tr),
                           context: context,
                           btnOkOnPress: () {},
-                        )..show();
+                        ).show();
                       }
                     }
                     break;
@@ -86,7 +89,7 @@ class ShowDetailWarehouse extends StatelessWidget {
                 }
               },
               elevation: 5,
-              icon: Icon(Icons.menu),
+              icon: const Icon(Icons.menu),
               itemBuilder: (context) {
                 return [
                   PopupMenuItem(
@@ -95,18 +98,18 @@ class ShowDetailWarehouse extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text("reception.product".tr),
-                        Icon(Icons.receipt_long, color: Colors.blue),
+                        const Icon(Icons.receipt_long, color: Colors.blue),
                       ],
                     ),
                   ),
                   PopupMenuItem(
                     value: 0,
-                    enabled: warehouseController.adjusted.length > 0,
+                    enabled: warehouseController.adjusted.isNotEmpty,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text("apply.adjust".tr),
-                        Icon(Icons.inventory_sharp, color: Colors.blue),
+                        const Icon(Icons.inventory_sharp, color: Colors.blue),
                       ],
                     ),
                   ),
@@ -116,7 +119,7 @@ class ShowDetailWarehouse extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text("print.stock".tr),
-                        Icon(Icons.print, color: Colors.blue),
+                        const Icon(Icons.print, color: Colors.blue),
                       ],
                     ),
                   ),
@@ -128,9 +131,9 @@ class ShowDetailWarehouse extends StatelessWidget {
                       children: [
                         Text(
                           "printer.settings".tr,
-                          style: TextStyle(color: Colors.black),
+                          style: const TextStyle(color: Colors.black),
                         ),
-                        Icon(Icons.bluetooth, color: Colors.blue),
+                        const Icon(Icons.bluetooth, color: Colors.blue),
                       ],
                     ),
                   ),
@@ -139,12 +142,12 @@ class ShowDetailWarehouse extends StatelessWidget {
             ),
           ],
         ),
-        body: Container(
+        body: SizedBox(
           width: Get.width,
           height: Get.height,
           child: Column(
             children: [
-              Container(
+              SizedBox(
                 height: Get.height - 146,
                 child: PageView(
                   controller: _pageController,
@@ -159,7 +162,7 @@ class ShowDetailWarehouse extends StatelessWidget {
                   ],
                 ),
               ),
-              Divider(height: 5),
+              const Divider(height: 5),
               Obx(
                 () => Container(
                   child: Row(
@@ -242,24 +245,24 @@ class ShowDetailWarehouse extends StatelessWidget {
 
   Color borderColor(int current, int selected) {
     if (current == selected) {
-      return Color.fromARGB(255, 213, 212, 255);
+      return const Color.fromARGB(255, 213, 212, 255);
     }
-    return Color.fromARGB(255, 249, 249, 255);
+    return const Color.fromARGB(255, 249, 249, 255);
   }
 
   Color bgColor(int current, int selected) {
     if (current == selected) {
-      return Color.fromARGB(255, 232, 228, 255);
+      return const Color.fromARGB(255, 232, 228, 255);
     }
-    return Color.fromARGB(255, 248, 248, 255);
+    return const Color.fromARGB(255, 248, 248, 255);
   }
 }
 
 class PageVariantDetail extends StatelessWidget {
   String filter;
-  PageVariantDetail({required this.filter});
+  PageVariantDetail({super.key, required this.filter});
   WarehouseController warehouseController = Get.find();
-  var formatter = new NumberFormat("#,##0.00", "fr_FR");
+  var formatter = NumberFormat("#,##0.00", "fr_FR");
   @override
   Widget build(BuildContext context) {
     List<ItemStock> list = [];
@@ -295,7 +298,7 @@ class PageVariantDetail extends StatelessWidget {
             !warehouseController.UniteIsCaisse.value;
       },
       child: ListView.builder(
-        physics: BouncingScrollPhysics(),
+        physics: const BouncingScrollPhysics(),
         itemCount: list.length,
         itemBuilder: (context, index) {
           var item = list[index];
@@ -306,15 +309,14 @@ class PageVariantDetail extends StatelessWidget {
           return Obx(
             () => Container(
               decoration: BoxDecoration(
-                color:
-                    warehouseController.adjusted
+                color: warehouseController.adjusted
                         .where((el) => el == item.variant_id)
                         .isNotEmpty
                     ? warehouseController.outOfStock
-                              .where((el) => el == item.variant_id)
-                              .isNotEmpty
-                          ? Color.fromARGB(255, 255, 212, 209)
-                          : Color.fromARGB(255, 189, 248, 191)
+                            .where((el) => el == item.variant_id)
+                            .isNotEmpty
+                        ? const Color.fromARGB(255, 255, 212, 209)
+                        : const Color.fromARGB(255, 189, 248, 191)
                     : null,
               ),
               child: ListTile(
@@ -337,7 +339,7 @@ class PageVariantDetail extends StatelessWidget {
                           title: Container(
                             width: Get.width,
                             height: 50,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               color: Colors.blue,
                               borderRadius: BorderRadius.vertical(
                                 top: Radius.circular(10),
@@ -350,20 +352,18 @@ class PageVariantDetail extends StatelessWidget {
                                   item.getShortDescription(
                                     Get.locale!.languageCode,
                                   ),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
                                   ),
                                 ),
                                 Text(
-                                  item.getVariantName1(
-                                        Get.locale!.languageCode,
-                                      ) +
-                                      " " +
-                                      item.getVariantName2(
-                                        Get.locale!.languageCode,
-                                      ),
-                                  style: TextStyle(
+                                  "${item.getVariantName1(
+                                    Get.locale!.languageCode,
+                                  )} ${item.getVariantName2(
+                                    Get.locale!.languageCode,
+                                  )}",
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
                                   ),
@@ -388,7 +388,7 @@ class PageVariantDetail extends StatelessWidget {
                                   priceController.text = exist.isNotEmpty
                                       ? exist.first.price.toString()
                                       : el.price.toString();
-                                  return Container(
+                                  return SizedBox(
                                     height: 60,
                                     child: Row(
                                       mainAxisAlignment:
@@ -396,7 +396,7 @@ class PageVariantDetail extends StatelessWidget {
                                       children: [
                                         Text("saleprice".tr),
                                         Container(
-                                          padding: EdgeInsets.symmetric(
+                                          padding: const EdgeInsets.symmetric(
                                             vertical: 5,
                                           ),
                                           width: Get.width / 4,
@@ -436,20 +436,17 @@ class PageVariantDetail extends StatelessWidget {
                                                   warehouseController
                                                       .adjustedPrice
                                                       .add(
-                                                        PriceItem(
-                                                          id: el.id,
-                                                          variant_id:
-                                                              el.variant_id,
-                                                          price: value != ""
-                                                              ? double.parse(
-                                                                  value
-                                                                      .toString(),
-                                                                )
-                                                              : 0,
-                                                          typepv_id:
-                                                              el.typepv_id,
-                                                        ),
-                                                      );
+                                                    PriceItem(
+                                                      id: el.id,
+                                                      variant_id: el.variant_id,
+                                                      price: value != ""
+                                                          ? double.parse(
+                                                              value.toString(),
+                                                            )
+                                                          : 0,
+                                                      typepv_id: el.typepv_id,
+                                                    ),
+                                                  );
                                                 } else {
                                                   warehouseController
                                                       .adjustedPrice
@@ -475,24 +472,24 @@ class PageVariantDetail extends StatelessWidget {
                                     ),
                                   );
                                 } else {
-                                  var exist = warehouseController.adjustedStock
-                                      .where(
-                                        (element) =>
-                                            element.variant_id ==
-                                            item.variant_id,
-                                      );
+                                  var exist =
+                                      warehouseController.adjustedStock.where(
+                                    (element) =>
+                                        element.variant_id == item.variant_id,
+                                  );
                                   quantityController.text = exist.isNotEmpty
                                       ? exist.first.quantity.toStringAsFixed(0)
                                       : item.quantity.toStringAsFixed(0);
                                   return Container(
-                                    padding: EdgeInsets.symmetric(vertical: 5),
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 5),
                                     height: 60,
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text("quantity".tr),
-                                        Container(
+                                        SizedBox(
                                           width: Get.width / 4,
                                           child: TextFormField(
                                             keyboardType: TextInputType.number,
@@ -521,26 +518,24 @@ class PageVariantDetail extends StatelessWidget {
                                                     warehouseController
                                                         .adjustedStock
                                                         .where(
-                                                          (element) =>
-                                                              element
-                                                                  .variant_id ==
-                                                              item.variant_id,
-                                                        );
+                                                  (element) =>
+                                                      element.variant_id ==
+                                                      item.variant_id,
+                                                );
                                                 if (toAdjust.isEmpty) {
                                                   warehouseController
                                                       .adjustedStock
                                                       .add(
-                                                        AdjutStockItem(
-                                                          variant_id:
-                                                              item.variant_id,
-                                                          quantity: value != ""
-                                                              ? double.parse(
-                                                                  value
-                                                                      .toString(),
-                                                                )
-                                                              : 0,
-                                                        ),
-                                                      );
+                                                    AdjutStockItem(
+                                                      variant_id:
+                                                          item.variant_id,
+                                                      quantity: value != ""
+                                                          ? double.parse(
+                                                              value.toString(),
+                                                            )
+                                                          : 0,
+                                                    ),
+                                                  );
                                                 } else {
                                                   toAdjust.first.updateStock(
                                                     value != ""
@@ -586,7 +581,7 @@ class PageVariantDetail extends StatelessWidget {
                               ),
                               child: Text(
                                 "adjust".tr,
-                                style: TextStyle(color: Colors.white),
+                                style: const TextStyle(color: Colors.white),
                               ),
                             ),
                           ],
@@ -599,13 +594,13 @@ class PageVariantDetail extends StatelessWidget {
                   item.getShortDescription(Get.locale!.languageCode),
                   style: TextStyle(
                     color: item.quantity == 0
-                        ? Color.fromARGB(255, 173, 173, 173)
+                        ? const Color.fromARGB(255, 173, 173, 173)
                         : (item.quantity / item.package) <= global.alertQuantity
-                        ? Colors.red
-                        : null,
+                            ? Colors.red
+                            : null,
                   ),
                 ),
-                leading: Container(
+                leading: SizedBox(
                   width: 40,
                   height: 40,
                   child: CachedNetworkImage(
@@ -614,25 +609,25 @@ class PageVariantDetail extends StatelessWidget {
                     ),
                     imageUrl: item.image,
                     placeholder: (context, url) => Container(
-                      padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                      child: CircularProgressIndicator(),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 2, vertical: 2),
+                      child: const CircularProgressIndicator(),
                     ),
-                    errorWidget: (context, url, error) => Icon(Icons.error),
+                    errorWidget: (context, url, error) =>
+                        const Icon(Icons.error),
                   ),
                 ),
                 subtitle: Text(
-                  item.getVariantName1(Get.locale!.languageCode) +
-                      " " +
-                      item.getVariantName2(Get.locale!.languageCode),
+                  "${item.getVariantName1(Get.locale!.languageCode)} ${item.getVariantName2(Get.locale!.languageCode)}",
                   style: TextStyle(
                     color: item.quantity == 0
-                        ? Color.fromARGB(255, 204, 204, 204)
+                        ? const Color.fromARGB(255, 204, 204, 204)
                         : (item.quantity / item.package) <= 5
-                        ? Color.fromARGB(255, 255, 157, 150)
-                        : null,
+                            ? const Color.fromARGB(255, 255, 157, 150)
+                            : null,
                   ),
                 ),
-                trailing: Container(
+                trailing: SizedBox(
                   width: Get.locale!.languageCode == "ar" ? 120 : 100,
                   height: 60,
                   child: Column(
@@ -647,37 +642,23 @@ class PageVariantDetail extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: item.quantity == 0
-                              ? Color.fromARGB(255, 204, 204, 204)
+                              ? const Color.fromARGB(255, 204, 204, 204)
                               : (item.quantity / item.package) <=
-                                    global.alertQuantity
-                              ? Colors.red
-                              : null,
+                                      global.alertQuantity
+                                  ? Colors.red
+                                  : null,
                         ),
                       ),
                       Text(
-                        "${warehouseController.UniteIsCaisse.value ? (item.quantity / item.package).ceil().toString() : item.quantity.ceil().toString()}" +
-                            (stockCh.isNotEmpty
-                                ? (Get.locale!.languageCode != "ar"
-                                          ? " → "
-                                          : " ← ") +
-                                      (warehouseController.UniteIsCaisse.value
-                                              ? (stockCh.first.quantity /
-                                                        item.package)
-                                                    .ceil()
-                                              : stockCh.first.quantity)
-                                          .toStringAsFixed(0)
-                                : "") +
-                            (warehouseController.UniteIsCaisse.value
-                                ? " " + "Cart".tr
-                                : " " + "Pcs".tr),
+                        "${warehouseController.UniteIsCaisse.value ? (item.quantity / item.package).ceil().toString() : item.quantity.ceil().toString()}${stockCh.isNotEmpty ? (Get.locale!.languageCode != "ar" ? " → " : " ← ") + (warehouseController.UniteIsCaisse.value ? (stockCh.first.quantity / item.package).ceil() : stockCh.first.quantity).toStringAsFixed(0) : ""}${warehouseController.UniteIsCaisse.value ? " ${"Cart".tr}" : " ${"Pcs".tr}"}",
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: item.quantity == 0
-                              ? Color.fromARGB(255, 223, 223, 223)
+                              ? const Color.fromARGB(255, 223, 223, 223)
                               : (item.quantity / item.package) <= 5
-                              ? Color.fromARGB(255, 255, 157, 150)
-                              : Colors.grey,
+                                  ? const Color.fromARGB(255, 255, 157, 150)
+                                  : Colors.grey,
                         ),
                       ),
                     ],

@@ -10,8 +10,10 @@ class PromotionSlide extends StatelessWidget {
   final PageController _pageController = PageController(initialPage: 0);
   Timer? _timer;
 
+  PromotionSlide({super.key});
+
   void reload() {
-    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (customerController.currentPageIndex.value < 2) {
         customerController.currentPageIndex.value++;
       } else {
@@ -19,7 +21,7 @@ class PromotionSlide extends StatelessWidget {
       }
       _pageController.animateToPage(
         customerController.currentPageIndex.value,
-        duration: Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
       );
     });
@@ -41,7 +43,7 @@ class PromotionSlide extends StatelessWidget {
           children: [
             Container(
               color: Colors.blue,
-              child: Center(
+              child: const Center(
                 child: Text(
                   'Page 1',
                   style: TextStyle(
@@ -53,7 +55,7 @@ class PromotionSlide extends StatelessWidget {
             ),
             Container(
               color: Colors.red,
-              child: Center(
+              child: const Center(
                 child: Text(
                   'Page 2',
                   style: TextStyle(
@@ -65,7 +67,7 @@ class PromotionSlide extends StatelessWidget {
             ),
             Container(
               color: Colors.green,
-              child: Center(
+              child: const Center(
                 child: Text(
                   'Page 3',
                   style: TextStyle(

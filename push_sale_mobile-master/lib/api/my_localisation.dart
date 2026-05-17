@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:dio/dio.dart';
@@ -60,12 +59,8 @@ class MyLocalisation {
   // return from google map direction
 
   static Future<dynamic> getRouteOptimale(List<String> waypoints) async {
-    String url = 'https://maps.googleapis.com/maps/api/directions/json?'
-            'origin=${waypoints.first}'
-            '&destination=${waypoints.last}'
-            '&waypoints=optimize:true|${waypoints.sublist(1, waypoints.length - 1).join('|')}' // Exclut la première et la dernière position
-            '&key=' +
-        global.maps_key;
+    String url =
+        'https://maps.googleapis.com/maps/api/directions/json?origin=${waypoints.first}&destination=${waypoints.last}&waypoints=optimize:true|${waypoints.sublist(1, waypoints.length - 1).join('|')}&key=${global.maps_key}';
     var response = await Dio().get(url);
     if (response.statusCode == 200) {
       Map<String, dynamic> data = response.data;
@@ -82,7 +77,7 @@ class MyLocalisation {
     Uint8List markIcons = await getImages("assets/images/order.png", 120);
     Set<Marker> pos = {};
     for (var client in clients) {
-      Marker _marker = Marker(
+      Marker marker = Marker(
           markerId: MarkerId(client.code),
           position: LatLng(client.address!.latitude, client.address!.longitude),
           icon: BitmapDescriptor.fromBytes(markIcons),
@@ -92,20 +87,20 @@ class MyLocalisation {
                   backgroundColor: Colors.transparent,
                   context: Get.context!,
                   builder: (context) {
-                    var formatter = new NumberFormat("#,##0.00", "fr_FR");
-                    List<PurchaseOrder> _orders = orderController.shippingOrders
+                    var formatter = NumberFormat("#,##0.00", "fr_FR");
+                    List<PurchaseOrder> orders = orderController.shippingOrders
                         .where((element) => element.client!.id == client.id)
                         .toList();
-                    return Container(
-                      height: (_orders.length * 75 >= Get.height / 3 - 45
+                    return SizedBox(
+                      height: (orders.length * 75 >= Get.height / 3 - 45
                               ? Get.height / 3 - 45
-                              : _orders.length * 75) +
+                              : orders.length * 75) +
                           120,
                       width: double.infinity,
                       child: Column(
                         children: [
                           Container(
-                            margin: EdgeInsets.symmetric(
+                            margin: const EdgeInsets.symmetric(
                                 horizontal: 2, vertical: 1),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
@@ -115,22 +110,22 @@ class MyLocalisation {
                             child: Center(
                               child: Text(
                                 client.name,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,
                                 ),
                               ),
                             ),
                           ),
-                          Container(
-                            height: (_orders.length * 75 >= Get.height / 3 - 45
+                          SizedBox(
+                            height: (orders.length * 75 >= Get.height / 3 - 45
                                 ? Get.height / 3 - 45
-                                : _orders.length * 75), //,
+                                : orders.length * 75), //,
                             child: ListView.builder(
                                 padding: EdgeInsets.zero,
-                                itemCount: _orders.length,
+                                itemCount: orders.length,
                                 itemBuilder: (context, index) {
-                                  var item = _orders[index];
+                                  var item = orders[index];
                                   return GestureDetector(
                                     onTap: () {
                                       // if (item.state != "paid") {
@@ -138,27 +133,27 @@ class MyLocalisation {
                                       orderController.pageController!
                                           .animateToPage(
                                               1,
-                                              duration:
-                                                  Duration(milliseconds: 250),
+                                              duration: const Duration(
+                                                  milliseconds: 250),
                                               curve: Curves.linear);
 
                                       // }
                                       Get.back();
                                     },
                                     child: Container(
-                                      margin: EdgeInsets.symmetric(
+                                      margin: const EdgeInsets.symmetric(
                                           horizontal: 2, vertical: 2),
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(10),
-                                        color:
-                                            Color.fromARGB(255, 216, 216, 216),
+                                        color: const Color.fromARGB(
+                                            255, 216, 216, 216),
                                       ),
                                       child: ListTile(
                                         title: Text(
                                           item.code,
-                                          style: TextStyle(fontSize: 16),
+                                          style: const TextStyle(fontSize: 16),
                                         ),
-                                        leading: Container(
+                                        leading: SizedBox(
                                             width: 50,
                                             height: 50,
                                             child: item.state == "paid"
@@ -166,7 +161,7 @@ class MyLocalisation {
                                                     "assets/images/paid.png",
                                                     width: 20,
                                                   )
-                                                : Icon(
+                                                : const Icon(
                                                     Icons
                                                         .local_shipping_outlined,
                                                     color: Colors.green,
@@ -174,7 +169,7 @@ class MyLocalisation {
                                                   )),
                                         trailing: Text(
                                           formatter.format(item.residual),
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontFamily: 'alata',
                                             fontSize: 18,
                                           ),
@@ -193,16 +188,16 @@ class MyLocalisation {
                             child: Container(
                               height: 55,
                               width: Get.width,
-                              margin: EdgeInsets.symmetric(
+                              margin: const EdgeInsets.symmetric(
                                   horizontal: 2, vertical: 2),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
-                                color: Color.fromARGB(255, 216, 216, 216),
+                                color: const Color.fromARGB(255, 216, 216, 216),
                               ),
                               child: Center(
                                 child: Text(
                                   "cancel".tr,
-                                  style: TextStyle(fontSize: 20),
+                                  style: const TextStyle(fontSize: 20),
                                 ),
                               ),
                             ),
@@ -213,21 +208,21 @@ class MyLocalisation {
                   });
             }
           });
-      pos.add(_marker);
+      pos.add(marker);
     }
     return pos;
   }
 
 // A supprimer cette fonction et remplacer son resultat par la fonction prececdente
   static List<RouteMaps> getRouteBetweenPoints(dynamic value) {
-    List<RouteMaps> _routes = [];
+    List<RouteMaps> routes = [];
     List<LatLng> polylineCoordinates = [];
     // parcours de toutes l'itinéraire à découper pour chaque leg
     for (var leg in value["routes"][0]["legs"]) {
       int distance = leg["distance"]["value"] as int;
       int time = leg["duration"]["value"] as int;
-      String start_address = leg["start_address"];
-      String end_address = leg["end_address"];
+      String startAddress = leg["start_address"];
+      String endAddress = leg["end_address"];
       polylineCoordinates = [];
       for (var coord in leg["steps"]) {
         String encodedPolyline = coord["polyline"]["points"];
@@ -237,22 +232,22 @@ class MyLocalisation {
           polylineCoordinates.add(LatLng(point.latitude, point.longitude));
         }
       }
-      Set<Polyline> mypolylines = Set<Polyline>();
+      Set<Polyline> mypolylines = <Polyline>{};
       mypolylines.add(Polyline(
           width: 2,
-          polylineId: PolylineId("polyline"),
+          polylineId: const PolylineId("polyline"),
           color: Colors.blue,
           points: polylineCoordinates));
-      _routes.add(RouteMaps(
-        startAdress: start_address,
-        endAdress: end_address,
+      routes.add(RouteMaps(
+        startAdress: startAddress,
+        endAdress: endAddress,
         distance: distance,
         time: time,
         Polylines: mypolylines,
       ));
     }
 
-    return _routes;
+    return routes;
   }
 
   static Future<Uint8List> getImages(String path, int width) async {

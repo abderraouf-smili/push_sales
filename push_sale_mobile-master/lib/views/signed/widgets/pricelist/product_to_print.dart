@@ -11,18 +11,18 @@ class ProductToPrint extends StatelessWidget {
   PrinterController printerController = Get.put(PrinterController());
   PricelistController pricelistController = Get.find();
 
-  ProductToPrint(this.item);
+  ProductToPrint(this.item, {super.key});
   PriceList item;
   List<Product> products = [];
   final Map<int, int> count = {};
   @override
   Widget build(BuildContext context) {
-    item.items.forEach((element) {
-      if (element.variant != null && !products.any((pro) =>
-           pro.id == element.variant!.product!.id)) {
+    for (var element in item.items) {
+      if (element.variant != null &&
+          !products.any((pro) => pro.id == element.variant!.product!.id)) {
         products.add(element.variant!.product!);
       }
-    });
+    }
 
     for (var itm in item.items) {
       if (itm.variant != null) {
@@ -62,10 +62,11 @@ class ProductToPrint extends StatelessWidget {
                   ),
                   imageUrl: pro.image,
                   placeholder: (context, url) => Container(
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 40),
-                    child: CircularProgressIndicator(),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 50, vertical: 40),
+                    child: const CircularProgressIndicator(),
                   ),
-                  errorWidget: (context, url, error) => Icon(Icons.error),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
               ),
               subtitle: Text("${count[pro.id]} elements"),
@@ -82,12 +83,13 @@ class ProductToPrint extends StatelessWidget {
           case 0:
             {
               Map<String, dynamic> lines = {};
-              item.items.forEach((element) {
-                if (element.variant != null && element.variant!.product!.id == pro.id) {
+              for (var element in item.items) {
+                if (element.variant != null &&
+                    element.variant!.product!.id == pro.id) {
                   lines["${element.variant!.variant1_fr} ${element.variant!.variant2_fr}"] =
                       element.price;
                 }
-              });
+              }
               pricelistController.PrepareToPrintListing(
                   pro.getLongDescription(Get.deviceLocale!.languageCode),
                   lines);
@@ -97,7 +99,7 @@ class ProductToPrint extends StatelessWidget {
         }
       },
       elevation: 5,
-      icon: Icon(Icons.menu),
+      icon: const Icon(Icons.menu),
       itemBuilder: (context) {
         return [
           PopupMenuItem(
@@ -107,7 +109,7 @@ class ProductToPrint extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text("print.prices".tr),
-                Icon(Icons.list_alt_sharp, color: Colors.blue),
+                const Icon(Icons.list_alt_sharp, color: Colors.blue),
               ],
             ),
           ),

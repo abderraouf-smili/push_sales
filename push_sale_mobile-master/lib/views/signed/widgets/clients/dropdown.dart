@@ -15,6 +15,7 @@ class WilayaDropDown extends StatelessWidget {
   double fontSize;
   Wilaya? wilaya;
   WilayaDropDown({
+    super.key,
     this.select_text = "Please select",
     this.error_validate = "No emtpy allowed",
     this.hasBorder = true,
@@ -35,7 +36,7 @@ class WilayaDropDown extends StatelessWidget {
                   borderRadius: BorderRadius.circular(15),
                 ), // Remplace `dropdownDecoration`
               ),
-              value: wilaya != null ? wilaya!.id : null,
+              value: wilaya?.id,
               key: dropController.dropdownStateWilaya,
               // selectedItemHighlightColor: Color.fromARGB(255, 206, 235, 255),
               // scrollbarTheme: true,
@@ -47,22 +48,22 @@ class WilayaDropDown extends StatelessWidget {
                     ? OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       )
-                    : OutlineInputBorder(borderSide: BorderSide.none),
+                    : const OutlineInputBorder(borderSide: BorderSide.none),
                 //Add more decoration as you want here
                 //Add label If you want but add hint outside the decoration to be aligned in the button perfectly.
               ),
               isExpanded: true,
               hint: Text(select_text, style: TextStyle(fontSize: fontSize)),
-              iconStyleData: IconStyleData(
+              iconStyleData: const IconStyleData(
                 icon: Icon(
                   Icons.arrow_drop_down,
                   color: Colors.black45,
                 ), // Remplace `icon`
                 iconSize: 24, // Remplace `iconSize`
               ),
-              buttonStyleData: ButtonStyleData(
+              buttonStyleData: const ButtonStyleData(
                 height: 50,
-                padding: const EdgeInsets.only(left: 15, right: 10),
+                padding: EdgeInsets.only(left: 15, right: 10),
               ),
               items: [
                 for (Wilaya item in dropController.wilayat)
@@ -84,16 +85,18 @@ class WilayaDropDown extends StatelessWidget {
                 if (value == null) {
                   return error_validate;
                 }
+                return null;
               },
               onChanged: (value) async {
                 dropController.WilayaID = value as int;
                 dropController.stateId.value = value;
                 await dropController.getCities();
                 dropController.initialCity = null;
-                if (dropController.initialCity != null)
+                if (dropController.initialCity != null) {
                   dropController.dropdownStateCity.currentState!.didChange(
                     dropController.initialCity,
                   );
+                }
               },
               onSaved: (value) {
                 dropController.WilayaID = value as int;
@@ -110,6 +113,7 @@ class CityDropDown extends StatelessWidget {
   double fontSize;
   City? city;
   CityDropDown({
+    super.key,
     this.select_text = "Please select",
     this.error_validate = "No emtpy allowed",
     this.hasBorder = true,
@@ -136,22 +140,22 @@ class CityDropDown extends StatelessWidget {
                     ? OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       )
-                    : OutlineInputBorder(borderSide: BorderSide.none),
+                    : const OutlineInputBorder(borderSide: BorderSide.none),
                 //Add more decoration as you want here
                 //Add label If you want but add hint outside the decoration to be aligned in the button perfectly.
               ),
               isExpanded: true,
-              hint: Text(select_text, style: TextStyle(fontSize: 14)),
-              iconStyleData: IconStyleData(
+              hint: Text(select_text, style: const TextStyle(fontSize: 14)),
+              iconStyleData: const IconStyleData(
                 icon: Icon(
                   Icons.arrow_drop_down,
                   color: Colors.black45,
                 ), // Remplace `icon`
                 iconSize: 24, // Remplace `iconSize`
               ),
-              buttonStyleData: ButtonStyleData(
+              buttonStyleData: const ButtonStyleData(
                 height: 50,
-                padding: const EdgeInsets.only(left: 15, right: 10),
+                padding: EdgeInsets.only(left: 15, right: 10),
               ),
               items: [
                 for (City item in dropController.dairat)
@@ -167,6 +171,7 @@ class CityDropDown extends StatelessWidget {
                 if (value == null) {
                   return 'Please select city.';
                 }
+                return null;
               },
               onChanged: (value) {
                 dropController.DairaID = value as int;
@@ -182,6 +187,7 @@ class CityDropDown extends StatelessWidget {
 class TypePointVenteDropDown extends StatelessWidget {
   // GlobalKey dropdownStateTPV = GlobalKey<FormFieldState>();
   TypePointVenteDropDown({
+    super.key,
     this.select_text = "Please select pointe de vente",
     this.error_validate = "Please select Type de point de vente.",
   });
@@ -215,16 +221,16 @@ class TypePointVenteDropDown extends StatelessWidget {
               ),
               isExpanded: true,
               hint: Text(select_text),
-              iconStyleData: IconStyleData(
+              iconStyleData: const IconStyleData(
                 icon: Icon(
                   Icons.arrow_drop_down,
                   color: Colors.black45,
                 ), // Remplace `icon`
                 iconSize: 24, // Remplace `iconSize`
               ),
-              buttonStyleData: ButtonStyleData(
+              buttonStyleData: const ButtonStyleData(
                 height: 50,
-                padding: const EdgeInsets.only(left: 15, right: 10),
+                padding: EdgeInsets.only(left: 15, right: 10),
               ),
               items: [
                 for (TypePointVente item in dropController.listTPV)
@@ -240,6 +246,7 @@ class TypePointVenteDropDown extends StatelessWidget {
                 if (value == null) {
                   return error_validate;
                 }
+                return null;
               },
               onChanged: (value) async {
                 dropController.TpvID = value as int;
@@ -256,6 +263,7 @@ class ActorProfileDropDown extends StatelessWidget {
   String select_text;
   String error_validate;
   ActorProfileDropDown({
+    super.key,
     this.select_text = "Please select",
     this.error_validate = "No empty allowed",
   });
@@ -278,17 +286,17 @@ class ActorProfileDropDown extends StatelessWidget {
                 ),
               ),
               isExpanded: true,
-              hint: Text(select_text, style: TextStyle(fontSize: 14)),
-              iconStyleData: IconStyleData(
+              hint: Text(select_text, style: const TextStyle(fontSize: 14)),
+              iconStyleData: const IconStyleData(
                 icon: Icon(
                   Icons.arrow_drop_down,
                   color: Colors.black45,
                 ), // Remplace `icon`
                 iconSize: 24, // Remplace `iconSize`
               ),
-              buttonStyleData: ButtonStyleData(
+              buttonStyleData: const ButtonStyleData(
                 height: 50,
-                padding: const EdgeInsets.only(left: 15, right: 10),
+                padding: EdgeInsets.only(left: 15, right: 10),
               ),
               items: [
                 for (ActorProfile item in dropController.listAP)
@@ -304,6 +312,7 @@ class ActorProfileDropDown extends StatelessWidget {
                 if (value == null) {
                   return error_validate;
                 }
+                return null;
               },
               onChanged: (value) async {
                 dropController.ActProID = value as int;
@@ -320,14 +329,15 @@ class EmptyDropDown extends StatelessWidget {
   String text;
   bool hasBorder;
   double fontSize;
-  EmptyDropDown(this.text, {this.hasBorder = true, this.fontSize = 14});
+  EmptyDropDown(this.text,
+      {super.key, this.hasBorder = true, this.fontSize = 14});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       height: 45,
-      padding: EdgeInsets.only(left: 30, right: 10, top: 2),
+      padding: const EdgeInsets.only(left: 30, right: 10, top: 2),
       decoration: hasBorder
           ? BoxDecoration(
               borderRadius: BorderRadius.circular(10),
@@ -340,11 +350,11 @@ class EmptyDropDown extends StatelessWidget {
           Text(
             text,
             style: TextStyle(
-              color: Color.fromARGB(115, 77, 77, 77),
+              color: const Color.fromARGB(115, 77, 77, 77),
               fontSize: fontSize,
             ),
           ),
-          Icon(
+          const Icon(
             Icons.arrow_drop_down,
             color: Color.fromARGB(115, 116, 116, 116),
             size: 30,
@@ -356,7 +366,7 @@ class EmptyDropDown extends StatelessWidget {
 }
 
 class TypePVSearchDropDown extends StatelessWidget {
-  TypePVSearchDropDown({this.select_text = "Pointe de vente"});
+  TypePVSearchDropDown({super.key, this.select_text = "Pointe de vente"});
   String select_text;
 
   GlobalKey<FormFieldState>? dropState;
@@ -369,7 +379,7 @@ class TypePVSearchDropDown extends StatelessWidget {
           ? EmptyDropDown("loading ...", hasBorder: false)
           : DropdownButtonFormField2(
               key: filterController.searchKeyTPV,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 color: Color.fromARGB(255, 85, 179, 255),
               ),
@@ -388,13 +398,13 @@ class TypePVSearchDropDown extends StatelessWidget {
               // buttonPadding: const EdgeInsets.only(left: 0, right: 10),
               iconStyleData: IconStyleData(
                 icon: filterController.filter_button.value
-                    ? Icon(Icons.arrow_drop_down, color: Colors.black45)
-                    : SizedBox.shrink(), // Remplace `icon`
+                    ? const Icon(Icons.arrow_drop_down, color: Colors.black45)
+                    : const SizedBox.shrink(), // Remplace `icon`
                 iconSize: 30, // Remplace `iconSize`
               ),
-              buttonStyleData: ButtonStyleData(
+              buttonStyleData: const ButtonStyleData(
                 height: 45,
-                padding: const EdgeInsets.only(left: 15, right: 10),
+                padding: EdgeInsets.only(left: 15, right: 10),
               ),
               items: [
                 for (TypePointVente item in filterController.listTPV)
@@ -419,7 +429,7 @@ class TypePVSearchDropDown extends StatelessWidget {
 }
 
 class CitiesSearchDropDown extends StatelessWidget {
-  CitiesSearchDropDown({this.select_text = "cities"});
+  CitiesSearchDropDown({super.key, this.select_text = "cities"});
   String select_text;
 
   FilterController filterController = Get.find<FilterController>();
@@ -431,7 +441,7 @@ class CitiesSearchDropDown extends StatelessWidget {
           ? EmptyDropDown("loading ...", hasBorder: false)
           : DropdownButtonFormField2(
               key: filterController.searchKeyCity,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 color: Color.fromARGB(255, 85, 179, 255),
               ),
@@ -451,11 +461,11 @@ class CitiesSearchDropDown extends StatelessWidget {
               // buttonPadding: const EdgeInsets.only(left: 0, right: 10),
               iconStyleData: IconStyleData(
                 icon: filterController.filter_button.value
-                    ? Icon(Icons.arrow_drop_down, color: Colors.black45)
-                    : SizedBox.shrink(), // Remplace `icon`
+                    ? const Icon(Icons.arrow_drop_down, color: Colors.black45)
+                    : const SizedBox.shrink(), // Remplace `icon`
                 iconSize: 30, // Remplace `iconSize`
               ),
-              buttonStyleData: ButtonStyleData(
+              buttonStyleData: const ButtonStyleData(
                 height: 45,
                 // padding: const EdgeInsets.only(left: 15, right: 10),
               ),

@@ -4,20 +4,21 @@ import 'package:get/get.dart';
 class OrderWidget extends StatelessWidget {
   int number;
   String state;
-  OrderWidget({required this.number, required this.state});
+  OrderWidget({super.key, required this.number, required this.state});
 
   @override
   Widget build(BuildContext context) {
     Icon myIcon = getIcon(state);
     return Container(
-      margin: EdgeInsets.all(1),
+      margin: const EdgeInsets.all(1),
       decoration: BoxDecoration(
-        color: Color.fromARGB(255, 252, 254, 255),
-        border: Border.all(color: Color.fromARGB(255, 213, 221, 253), width: 1),
+        color: const Color.fromARGB(255, 252, 254, 255),
+        border: Border.all(
+            color: const Color.fromARGB(255, 213, 221, 253), width: 1),
       ),
       child: Column(
         children: [
-          SizedBox(
+          const SizedBox(
             height: 10,
           ),
           Text(
@@ -29,12 +30,12 @@ class OrderWidget extends StatelessWidget {
             ),
           ),
           Container(
-            margin: EdgeInsets.symmetric(horizontal: 10),
+            margin: const EdgeInsets.symmetric(horizontal: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  ("state." + state).tr,
+                  ("state.$state").tr,
                   style: TextStyle(
                       fontFamily: "Xolonium",
                       fontSize: 14,
@@ -53,62 +54,62 @@ class OrderWidget extends StatelessWidget {
 Icon getIcon(String state) {
   switch (state) {
     case "new":
-      return Icon(
+      return const Icon(
         Icons.shopping_cart_outlined,
         color: Color.fromARGB(255, 55, 235, 39),
         size: 24,
       );
     case "taken":
-      return Icon(
+      return const Icon(
         Icons.delivery_dining_sharp,
         color: Colors.orange,
         size: 24,
       );
 
     case "taken_partial":
-      return Icon(
+      return const Icon(
         Icons.delivery_dining_sharp,
         color: Colors.orange,
         size: 24,
       );
     case "in_way":
-      return Icon(
+      return const Icon(
         Icons.local_shipping_outlined,
         color: Color.fromARGB(255, 53, 81, 243),
         size: 24,
       );
     case "shipped":
-      return Icon(
+      return const Icon(
         Icons.child_friendly_outlined,
         color: Color.fromARGB(255, 203, 67, 221),
         size: 24,
       );
     case "paid":
-      return Icon(
+      return const Icon(
         Icons.check_circle,
         color: Color.fromARGB(255, 5, 97, 17),
         size: 24,
       );
     case "partially_paid":
-      return Icon(
+      return const Icon(
         Icons.local_pharmacy_outlined,
         color: Color.fromARGB(255, 5, 97, 17),
         size: 24,
       );
     case "cancelled":
-      return Icon(
+      return const Icon(
         Icons.cancel_schedule_send_rounded,
         color: Color.fromARGB(255, 212, 55, 55),
         size: 24,
       );
     case "expired":
-      return Icon(
+      return const Icon(
         Icons.free_cancellation_rounded,
         color: Color.fromARGB(255, 212, 55, 55),
         size: 24,
       );
     default:
-      return Icon(Icons.radio_button_unchecked_rounded);
+      return const Icon(Icons.radio_button_unchecked_rounded);
   }
 }
 

@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:another_flushbar/flushbar.dart';
@@ -24,6 +22,8 @@ class MainTransferPage extends StatelessWidget {
       Get.put(WarehouseController(tag: "delivery"));
   PrinterController printerController = Get.put(PrinterController());
 
+  MainTransferPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     stockController.page.value = 0;
@@ -31,7 +31,7 @@ class MainTransferPage extends StatelessWidget {
       onWillPop: () async {
         return false;
       },
-      child: Container(
+      child: SizedBox(
         width: Get.width,
         height: Get.height - 80,
         child: Column(
@@ -43,12 +43,13 @@ class MainTransferPage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
+                  SizedBox(
                     width: Get.width - 50,
                     child: Center(
                       child: Text(
                         "orders.ready.toship".tr,
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 18),
                       ),
                     ),
                   ),
@@ -66,18 +67,19 @@ class MainTransferPage extends StatelessWidget {
                               Flushbar(
                                 title: "success".tr,
                                 message: "transfer.is.ready.to.confirm".tr,
-                                titleColor: Color.fromARGB(255, 255, 255, 255),
+                                titleColor:
+                                    const Color.fromARGB(255, 255, 255, 255),
                                 messageColor:
-                                    Color.fromARGB(255, 253, 254, 255),
-                                duration: Duration(seconds: 3),
-                                icon: Icon(Icons.check,
+                                    const Color.fromARGB(255, 253, 254, 255),
+                                duration: const Duration(seconds: 3),
+                                icon: const Icon(Icons.check,
                                     color: Color.fromARGB(255, 255, 255, 255)),
                                 backgroundColor:
-                                    Color.fromARGB(255, 122, 122, 122),
+                                    const Color.fromARGB(255, 122, 122, 122),
                                 flushbarPosition: FlushbarPosition.TOP,
                                 borderRadius: BorderRadius.circular(10),
                                 // borderColor: Color.fromARGB(255, 186, 224, 255),
-                              )..show(context);
+                              ).show(context);
                               await stockController.getBonChargement();
                               await warehouseController.getCurrentStockMobile();
                             } else {
@@ -115,29 +117,30 @@ class MainTransferPage extends StatelessWidget {
                                     Flushbar(
                                       title: "print".tr,
                                       message: "printing".tr,
-                                      titleColor:
-                                          Color.fromARGB(255, 255, 255, 255),
-                                      messageColor:
-                                          Color.fromARGB(255, 253, 254, 255),
-                                      duration: Duration(seconds: 3),
-                                      icon: Icon(Icons.check,
+                                      titleColor: const Color.fromARGB(
+                                          255, 255, 255, 255),
+                                      messageColor: const Color.fromARGB(
+                                          255, 253, 254, 255),
+                                      duration: const Duration(seconds: 3),
+                                      icon: const Icon(Icons.check,
                                           color: Color.fromARGB(
                                               255, 255, 255, 255)),
-                                      backgroundColor:
-                                          Color.fromARGB(255, 122, 122, 122),
+                                      backgroundColor: const Color.fromARGB(
+                                          255, 122, 122, 122),
                                       flushbarPosition: FlushbarPosition.TOP,
                                       borderRadius: BorderRadius.circular(10),
                                       // borderColor: Color.fromARGB(255, 186, 224, 255),
-                                    )..show(context);
+                                    ).show(context);
                                     break;
                                   case "not_available":
                                     AwesomeDialog(
-                                        dialogType: DialogType.error,
-                                        title: "print".tr,
-                                        body: Text("print.not_available".tr),
-                                        context: context,
-                                        btnOkOnPress: () {})
-                                      ..show();
+                                            dialogType: DialogType.error,
+                                            title: "print".tr,
+                                            body:
+                                                Text("print.not_available".tr),
+                                            context: context,
+                                            btnOkOnPress: () {})
+                                        .show();
                                     break;
                                   case "bluetooth_pb":
                                     AwesomeDialog(
@@ -148,8 +151,7 @@ class MainTransferPage extends StatelessWidget {
                                         btnOkOnPress: () {
                                           ShowButtomSheetPrinterConfig(
                                               context: context);
-                                        })
-                                      ..show();
+                                        }).show();
 
                                     break;
                                   case "unknown":
@@ -162,8 +164,7 @@ class MainTransferPage extends StatelessWidget {
                                           ShowButtomSheetPrinterConfig(
                                             context: context,
                                           );
-                                        })
-                                      ..show();
+                                        }).show();
 
                                     break;
                                   default:
@@ -187,17 +188,19 @@ class MainTransferPage extends StatelessWidget {
                             Flushbar(
                               title: "success".tr,
                               message: "transfer.confirmed".tr,
-                              titleColor: Color.fromARGB(255, 255, 255, 255),
-                              messageColor: Color.fromARGB(255, 253, 254, 255),
-                              duration: Duration(seconds: 3),
-                              icon: Icon(Icons.check,
+                              titleColor:
+                                  const Color.fromARGB(255, 255, 255, 255),
+                              messageColor:
+                                  const Color.fromARGB(255, 253, 254, 255),
+                              duration: const Duration(seconds: 3),
+                              icon: const Icon(Icons.check,
                                   color: Color.fromARGB(255, 255, 255, 255)),
                               backgroundColor:
-                                  Color.fromARGB(255, 122, 122, 122),
+                                  const Color.fromARGB(255, 122, 122, 122),
                               flushbarPosition: FlushbarPosition.TOP,
                               borderRadius: BorderRadius.circular(10),
                               // borderColor: Color.fromARGB(255, 186, 224, 255),
-                            )..show(context);
+                            ).show(context);
                             await stockController.getBonChargement();
                             await warehouseController.getCurrentStockMobile();
                           } else {
@@ -206,14 +209,14 @@ class MainTransferPage extends StatelessWidget {
                               message: "quantity.not.available".tr,
                               titleColor: Colors.red,
                               messageColor: Colors.red,
-                              duration: Duration(seconds: 3),
-                              icon: Icon(Icons.error, color: Colors.red),
+                              duration: const Duration(seconds: 3),
+                              icon: const Icon(Icons.error, color: Colors.red),
                               backgroundColor:
-                                  Color.fromARGB(255, 206, 206, 206),
+                                  const Color.fromARGB(255, 206, 206, 206),
                               flushbarPosition: FlushbarPosition.TOP,
                               borderRadius: BorderRadius.circular(10),
                               // borderColor: Color.fromARGB(255, 186, 224, 255),
-                            )..show(context);
+                            ).show(context);
                             stockController.unvalaibleProduct = response.data;
                             stockController.stock_out.value = true;
                             print(response.message);
@@ -223,7 +226,7 @@ class MainTransferPage extends StatelessWidget {
                       }
                     },
                     elevation: 5,
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.menu,
                       color: Colors.white,
                     ),
@@ -236,9 +239,9 @@ class MainTransferPage extends StatelessWidget {
                             children: [
                               Text(
                                 "refresh".tr,
-                                style: TextStyle(color: Colors.black),
+                                style: const TextStyle(color: Colors.black),
                               ),
-                              Icon(Icons.refresh, color: Colors.blue),
+                              const Icon(Icons.refresh, color: Colors.blue),
                             ],
                           ),
                         ),
@@ -257,7 +260,7 @@ class MainTransferPage extends StatelessWidget {
                                         ? Colors.black
                                         : Colors.grey),
                               ),
-                              Icon(Icons.precision_manufacturing_sharp,
+                              const Icon(Icons.precision_manufacturing_sharp,
                                   color: Colors.blue),
                             ],
                           ),
@@ -284,7 +287,7 @@ class MainTransferPage extends StatelessWidget {
                                         ? Colors.black
                                         : Colors.grey),
                               ),
-                              Icon(Icons.print, color: Colors.blue),
+                              const Icon(Icons.print, color: Colors.blue),
                             ],
                           ),
                         ),
@@ -295,8 +298,8 @@ class MainTransferPage extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text("printer.settings".tr,
-                                  style: TextStyle(color: Colors.black)),
-                              Icon(Icons.bluetooth, color: Colors.blue),
+                                  style: const TextStyle(color: Colors.black)),
+                              const Icon(Icons.bluetooth, color: Colors.blue),
                             ],
                           ),
                         ),
@@ -317,7 +320,7 @@ class MainTransferPage extends StatelessWidget {
                                         ? Colors.black
                                         : Colors.grey),
                               ),
-                              Icon(Icons.check, color: Colors.green),
+                              const Icon(Icons.check, color: Colors.green),
                             ],
                           ),
                         ),
@@ -327,11 +330,11 @@ class MainTransferPage extends StatelessWidget {
                 ],
               ),
             ),
-            Container(
+            SizedBox(
                 width: double.infinity,
                 height: Get.height - 204,
                 child: PageView(
-                  physics: NeverScrollableScrollPhysics(),
+                  physics: const NeverScrollableScrollPhysics(),
                   controller: pageController,
                   onPageChanged: (value) {
                     stockController.page.value = value;
@@ -343,7 +346,7 @@ class MainTransferPage extends StatelessWidget {
                     ShowDetailTransfer(pageController),
                   ],
                 )),
-            Container(
+            SizedBox(
                 width: Get.width,
                 height: 65,
                 child: Obx(
@@ -353,13 +356,13 @@ class MainTransferPage extends StatelessWidget {
                       GestureDetector(
                         onTap: () {
                           pageController.animateToPage(0,
-                              duration: Duration(milliseconds: 250),
+                              duration: const Duration(milliseconds: 250),
                               curve: Curves.linear);
                         },
                         child: Stack(
                           children: [
                             Container(
-                              margin: EdgeInsets.only(top: 15),
+                              margin: const EdgeInsets.only(top: 15),
                               width: Get.width / 3,
                               height: double.infinity,
                               decoration: BoxDecoration(
@@ -390,7 +393,7 @@ class MainTransferPage extends StatelessWidget {
                                     child: Container(
                                       width: 30,
                                       height: 30,
-                                      decoration: BoxDecoration(
+                                      decoration: const BoxDecoration(
                                         color: Colors.orange,
                                         shape: BoxShape.circle,
                                       ),
@@ -402,26 +405,26 @@ class MainTransferPage extends StatelessWidget {
                                                 : purchaseController
                                                     .ordersReadyToShip.length)
                                             .toString(),
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                         ),
                                       )),
                                     ),
                                   )
-                                : SizedBox.shrink(),
+                                : const SizedBox.shrink(),
                           ],
                         ),
                       ),
                       GestureDetector(
                         onTap: () {
                           pageController.animateToPage(1,
-                              duration: Duration(milliseconds: 250),
+                              duration: const Duration(milliseconds: 250),
                               curve: Curves.linear);
                         },
                         child: Stack(
                           children: [
                             Container(
-                              margin: EdgeInsets.only(top: 15),
+                              margin: const EdgeInsets.only(top: 15),
                               width: Get.width / 3,
                               height: double.infinity,
                               decoration: BoxDecoration(
@@ -457,7 +460,7 @@ class MainTransferPage extends StatelessWidget {
                                       () => Container(
                                         width: 30,
                                         height: 30,
-                                        decoration: BoxDecoration(
+                                        decoration: const BoxDecoration(
                                           color: Colors.orange,
                                           shape: BoxShape.circle,
                                         ),
@@ -477,27 +480,27 @@ class MainTransferPage extends StatelessWidget {
                                                           "new")
                                                       .length)
                                               .toString(),
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             color: Colors.white,
                                           ),
                                         )),
                                       ),
                                     ),
                                   )
-                                : SizedBox.shrink(),
+                                : const SizedBox.shrink(),
                           ],
                         ),
                       ),
                       GestureDetector(
                         onTap: () {
                           pageController.animateToPage(2,
-                              duration: Duration(milliseconds: 250),
+                              duration: const Duration(milliseconds: 250),
                               curve: Curves.linear);
                         },
                         child: Stack(
                           children: [
                             Container(
-                              margin: EdgeInsets.only(top: 15),
+                              margin: const EdgeInsets.only(top: 15),
                               width: Get.width / 3,
                               height: double.infinity,
                               decoration: BoxDecoration(
@@ -523,11 +526,11 @@ class MainTransferPage extends StatelessWidget {
                                     child: Container(
                                       width: 30,
                                       height: 30,
-                                      decoration: BoxDecoration(
+                                      decoration: const BoxDecoration(
                                         color: Colors.red,
                                         shape: BoxShape.circle,
                                       ),
-                                      child: Center(
+                                      child: const Center(
                                           child: Text(
                                         "!",
                                         style: TextStyle(
@@ -536,7 +539,7 @@ class MainTransferPage extends StatelessWidget {
                                       )),
                                     ),
                                   )
-                                : SizedBox.shrink())
+                                : const SizedBox.shrink())
                           ],
                         ),
                       ),
@@ -551,15 +554,15 @@ class MainTransferPage extends StatelessWidget {
 
   Color borderColor(int current, int selected) {
     if (current == selected || (current == 1 && selected == 3)) {
-      return Color.fromARGB(255, 213, 212, 255);
+      return const Color.fromARGB(255, 213, 212, 255);
     }
-    return Color.fromARGB(255, 249, 249, 255);
+    return const Color.fromARGB(255, 249, 249, 255);
   }
 
   Color bgColor(int current, int selected) {
     if (current == selected || (current == 1 && selected == 3)) {
-      return Color.fromARGB(255, 232, 228, 255);
+      return const Color.fromARGB(255, 232, 228, 255);
     }
-    return Color.fromARGB(255, 248, 248, 255);
+    return const Color.fromARGB(255, 248, 248, 255);
   }
 }

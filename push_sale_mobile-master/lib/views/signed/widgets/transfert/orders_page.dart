@@ -7,12 +7,14 @@ import 'package:push_sale/controllers/purchaseorder_controller.dart';
 class OrdersPage extends StatelessWidget {
   PurchaseOrderController purchaseController = Get.find();
 
+  OrdersPage({super.key});
+
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     return Column(
       children: [
-        Container(
+        SizedBox(
           width: Get.width,
           height: Get.height - 255,
           child: RefreshIndicator(
@@ -25,27 +27,28 @@ class OrdersPage extends StatelessWidget {
                   var item = purchaseController.ordersReadyToShip[index];
                   return Obx(() {
                     return Container(
-                      margin:
-                          EdgeInsets.symmetric(horizontal: 2, vertical: 0.5),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 2, vertical: 0.5),
                       decoration: purchaseController.BLs.value
                               .where((element) => element == item.id)
                               .isNotEmpty
                           ? BoxDecoration(
                               border: Border.all(
                                   width: 1,
-                                  color: Color.fromARGB(255, 185, 224, 255)),
+                                  color:
+                                      const Color.fromARGB(255, 185, 224, 255)),
                               borderRadius: BorderRadius.circular(5),
-                              color: Color.fromARGB(255, 239, 248, 255))
+                              color: const Color.fromARGB(255, 239, 248, 255))
                           : BoxDecoration(
                               border: Border.all(
                                 width: 1,
-                                color: Color.fromARGB(255, 209, 209, 209),
+                                color: const Color.fromARGB(255, 209, 209, 209),
                               ),
                               borderRadius: BorderRadius.circular(5),
-                              color: Color.fromARGB(255, 255, 255, 255)),
+                              color: const Color.fromARGB(255, 255, 255, 255)),
                       child: ListTile(
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 0, vertical: 0),
                         onTap: () {
                           if (purchaseController.selectedOrders
                               .where((element) => element.id == item.id)
@@ -65,12 +68,11 @@ class OrdersPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              item.client!.address!.city.name +
-                                  " - " +
-                                  item.client!.address!.wilaya.name,
+                              "${item.client!.address!.city.name} - ${item.client!.address!.wilaya.name}",
                             ),
                             Text(item.warehouse!.name,
-                                style: TextStyle(fontWeight: FontWeight.bold))
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold))
                           ],
                         ),
                         leading: Container(
@@ -88,31 +90,31 @@ class OrdersPage extends StatelessWidget {
                             ),
                           ),
                         ),
-                        trailing: Container(
+                        trailing: SizedBox(
                           width: 90,
                           height: 45,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(formatter.format(item.total_amount),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'alata')),
                               Container(
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.category,
                                       size: 16,
                                       color: Colors.green,
                                     ),
-                                    SizedBox(
+                                    const SizedBox(
                                       width: 5,
                                     ),
                                     Text(
                                       item.orderitems.length.toString(),
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
                                   ],
@@ -129,13 +131,13 @@ class OrdersPage extends StatelessWidget {
             ),
           ),
         ),
-        Divider(
+        const Divider(
           height: 0,
           thickness: 1,
         ),
         Obx(() {
           double total = 0;
-          List<int> total_var = [];
+          List<int> totalVar = [];
           purchaseController.ordersReadyToShip
               .where((element) => purchaseController.BLs.where(
                   (selected) => element.id == selected).isNotEmpty)
@@ -144,16 +146,16 @@ class OrdersPage extends StatelessWidget {
             total += element.total_amount;
 
             for (var item in element.orderitems) {
-              if (total_var
+              if (totalVar
                   .where((variant) => variant == item.variant_id)
                   .isEmpty) {
-                total_var.add(item.variant_id);
+                totalVar.add(item.variant_id);
               }
             }
           });
 
           return Container(
-            margin: EdgeInsets.symmetric(horizontal: 20),
+            margin: const EdgeInsets.symmetric(horizontal: 20),
             width: Get.width,
             height: 50,
             child: Row(
@@ -161,31 +163,31 @@ class OrdersPage extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.category,
                         color: Colors.green,
                       ),
-                      SizedBox(
+                      const SizedBox(
                         width: 10,
                       ),
                       Text(
-                        total_var.length.toString(),
-                        style: TextStyle(
+                        totalVar.length.toString(),
+                        style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.receipt,
                         color: Colors.orange,
                       ),
-                      SizedBox(
+                      const SizedBox(
                         width: 10,
                       ),
                       Text(purchaseController.BLs.value.length.toString(),
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold)),
                     ],
                   ),
@@ -195,11 +197,12 @@ class OrdersPage extends StatelessWidget {
                         "assets/images/solde.png",
                         width: 24,
                       ),
-                      SizedBox(
+                      const SizedBox(
                         width: 10,
                       ),
                       Text(formatter.format(total),
-                          style: TextStyle(fontSize: 16, fontFamily: 'alata')),
+                          style: const TextStyle(
+                              fontSize: 16, fontFamily: 'alata')),
                     ],
                   ),
                 ]),

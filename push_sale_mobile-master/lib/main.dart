@@ -23,7 +23,7 @@ void main() async {
   // testDomainAccess();
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: FirebaseOptions(
+    options: const FirebaseOptions(
       apiKey: "AIzaSyCVRFwJ9fko-vJ9VhYg6TWQ96xU1K7Rraw",
       appId: "1:908812739457:android:b40dbd59692694c9d77e80",
       messagingSenderId: "908812739457",
@@ -41,12 +41,12 @@ class PushSaleApp extends StatelessWidget {
   CompteMenuController compteController = Get.put(CompteMenuController());
   final String initialPage;
 
-  PushSaleApp(this.initialPage);
+  PushSaleApp(this.initialPage, {super.key});
   @override
   Widget build(BuildContext context) {
     List<String> supportedLocales = ['ar', 'en', 'fr'];
     return GetMaterialApp(
-      localizationsDelegates: [
+      localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         // ajoutez vos délégués de localisation ici
@@ -72,12 +72,12 @@ class PushSaleApp extends StatelessWidget {
       initialRoute: initialPage,
 
       getPages: [
-        GetPage(name: "/", page: () => WelcomePage()),
+        GetPage(name: "/", page: () => const WelcomePage()),
         GetPage(name: "/LoginPage", page: () => LoginPage()),
         GetPage(
             name: "/SettingsProfilePage", page: () => SettingsProfilePage()),
         GetPage(name: "/ForgotPasswordPage", page: () => ForgotPasswordPage()),
-        GetPage(name: "/SignupPage", page: () => SignupPage()),
+        GetPage(name: "/SignupPage", page: () => const SignupPage()),
         GetPage(
             name: "/HomePage",
             page: () => HomePage(
@@ -87,7 +87,7 @@ class PushSaleApp extends StatelessWidget {
             name: "/Clients",
             page: () => Clients(
                 Get.arguments != null ? Get.arguments["client_id"] : "0")),
-        GetPage(name: "/InternetError", page: () => InternetError()),
+        GetPage(name: "/InternetError", page: () => const InternetError()),
       ],
       locale: Locale(compteController.currentLangue.value),
       translations: SoftStarterLocale(),

@@ -1,10 +1,8 @@
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:another_flushbar/flushbar.dart';
 import 'package:get/get.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/order_controller.dart';
 import 'package:push_sale/api/printer_controller.dart';
@@ -15,11 +13,11 @@ class ShowOrderDetail extends StatelessWidget {
   PrinterController printerController = Get.put(PrinterController());
   OrderController orderController = Get.put(OrderController());
   Order order;
-  ShowOrderDetail(this.order);
+  ShowOrderDetail(this.order, {super.key});
 
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     return SafeArea(
         child: Scaffold(
       appBar: AppBar(
@@ -42,62 +40,74 @@ class ShowOrderDetail extends StatelessWidget {
                           Flushbar(
                             title: "print".tr,
                             message: "printing".tr,
-                            titleColor: Color.fromARGB(255, 255, 255, 255),
-                            messageColor: Color.fromARGB(255, 253, 254, 255),
-                            duration: Duration(seconds: 3),
-                            icon: Icon(Icons.check,
+                            titleColor:
+                                const Color.fromARGB(255, 255, 255, 255),
+                            messageColor:
+                                const Color.fromARGB(255, 253, 254, 255),
+                            duration: const Duration(seconds: 3),
+                            icon: const Icon(Icons.check,
                                 color: Color.fromARGB(255, 255, 255, 255)),
-                            backgroundColor: Color.fromARGB(255, 122, 122, 122),
+                            backgroundColor:
+                                const Color.fromARGB(255, 122, 122, 122),
                             flushbarPosition: FlushbarPosition.TOP,
                             borderRadius: BorderRadius.circular(10),
                             // borderColor: Color.fromARGB(255, 186, 224, 255),
-                          )..show(context);
+                          ).show(context);
                           break;
                         case "not_available":
                           Flushbar(
                             title: "print".tr,
                             message: "print.not_available".tr,
-                            titleColor: Color.fromARGB(255, 255, 255, 255),
-                            messageColor: Color.fromARGB(255, 253, 254, 255),
-                            duration: Duration(seconds: 3),
-                            icon: Icon(Icons.check,
+                            titleColor:
+                                const Color.fromARGB(255, 255, 255, 255),
+                            messageColor:
+                                const Color.fromARGB(255, 253, 254, 255),
+                            duration: const Duration(seconds: 3),
+                            icon: const Icon(Icons.check,
                                 color: Color.fromARGB(255, 255, 255, 255)),
-                            backgroundColor: Color.fromARGB(255, 122, 122, 122),
+                            backgroundColor:
+                                const Color.fromARGB(255, 122, 122, 122),
                             flushbarPosition: FlushbarPosition.TOP,
                             borderRadius: BorderRadius.circular(10),
                             // borderColor: Color.fromARGB(255, 186, 224, 255),
-                          )..show(context);
+                          ).show(context);
                           break;
                         case "bluetooth_pb":
                           Flushbar(
                             title: "print".tr,
                             message: "bluetooth.problem".tr,
-                            titleColor: Color.fromARGB(255, 255, 255, 255),
-                            messageColor: Color.fromARGB(255, 253, 254, 255),
-                            duration: Duration(seconds: 3),
-                            icon: Icon(Icons.check,
+                            titleColor:
+                                const Color.fromARGB(255, 255, 255, 255),
+                            messageColor:
+                                const Color.fromARGB(255, 253, 254, 255),
+                            duration: const Duration(seconds: 3),
+                            icon: const Icon(Icons.check,
                                 color: Color.fromARGB(255, 255, 255, 255)),
-                            backgroundColor: Color.fromARGB(255, 122, 122, 122),
+                            backgroundColor:
+                                const Color.fromARGB(255, 122, 122, 122),
                             flushbarPosition: FlushbarPosition.TOP,
                             borderRadius: BorderRadius.circular(10),
                             // borderColor: Color.fromARGB(255, 186, 224, 255),
-                          )..show(context);
+                          ).show(context);
 
                           break;
                         case "unknown":
                           Flushbar(
                             title: "print".tr,
                             message: "printer.pb.link".tr,
-                            titleColor: Color.fromARGB(255, 255, 255, 255),
-                            messageColor: Color.fromARGB(255, 253, 254, 255),
-                            duration: Duration(seconds: 3),
-                            icon: Icon(Icons.check,
+                            titleColor:
+                                const Color.fromARGB(255, 255, 255, 255),
+                            messageColor:
+                                const Color.fromARGB(255, 253, 254, 255),
+                            duration: const Duration(seconds: 3),
+                            icon: const Icon(Icons.check,
                                 color: Color.fromARGB(255, 255, 255, 255)),
-                            backgroundColor: Color.fromARGB(255, 122, 122, 122),
+                            backgroundColor:
+                                const Color.fromARGB(255, 122, 122, 122),
                             flushbarPosition: FlushbarPosition.TOP,
                             borderRadius: BorderRadius.circular(10),
                             // borderColor: Color.fromARGB(255, 186, 224, 255),
-                          )..show(context);
+                          ).show(context);
 
                           break;
                         default:
@@ -114,7 +124,7 @@ class ShowOrderDetail extends StatelessWidget {
               }
             },
             elevation: 5,
-            icon: Icon(Icons.menu),
+            icon: const Icon(Icons.menu),
             itemBuilder: (context) {
               return [
                 PopupMenuItem(
@@ -123,8 +133,9 @@ class ShowOrderDetail extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("print".tr, style: TextStyle(color: Colors.black)),
-                      Icon(Icons.print, color: Colors.blue),
+                      Text("print".tr,
+                          style: const TextStyle(color: Colors.black)),
+                      const Icon(Icons.print, color: Colors.blue),
                     ],
                   ),
                 ),
@@ -135,8 +146,8 @@ class ShowOrderDetail extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text("printer.settings".tr,
-                          style: TextStyle(color: Colors.black)),
-                      Icon(Icons.bluetooth, color: Colors.blue),
+                          style: const TextStyle(color: Colors.black)),
+                      const Icon(Icons.bluetooth, color: Colors.blue),
                     ],
                   ),
                 ),
@@ -150,7 +161,8 @@ class ShowOrderDetail extends StatelessWidget {
                         "export".tr,
                         style: TextStyle(color: Colors.black.withOpacity(0.5)),
                       ),
-                      Icon(Icons.picture_as_pdf_sharp, color: Colors.blue),
+                      const Icon(Icons.picture_as_pdf_sharp,
+                          color: Colors.blue),
                     ],
                   ),
                 ),
@@ -164,7 +176,7 @@ class ShowOrderDetail extends StatelessWidget {
                         "send".tr,
                         style: TextStyle(color: Colors.black.withOpacity(0.5)),
                       ),
-                      Icon(Icons.send, color: Colors.blue),
+                      const Icon(Icons.send, color: Colors.blue),
                     ],
                   ),
                 ),
@@ -175,7 +187,7 @@ class ShowOrderDetail extends StatelessWidget {
       ),
       body: Column(
         children: [
-          Container(
+          SizedBox(
             width: double.infinity,
             height: Get.height * 3 / 4,
             child: ListView.builder(
@@ -185,11 +197,10 @@ class ShowOrderDetail extends StatelessWidget {
                   return ListTile(
                     title: Text(item.product_name +
                         (item.discount != 0
-                            ? " (-" + item.discount.toStringAsFixed(0) + "%)"
+                            ? " (-${item.discount.toStringAsFixed(0)}%)"
                             : "")),
-                    subtitle: Text(item.variant_name_1 +
-                        " " +
-                        (item.variant_name_2 ?? "")),
+                    subtitle: Text(
+                        "${item.variant_name_1} ${item.variant_name_2 ?? ""}"),
                     leading: CachedNetworkImage(
                       cacheManager: CacheManager(
                         Config(
@@ -199,21 +210,22 @@ class ShowOrderDetail extends StatelessWidget {
                       ),
                       imageUrl: item.image,
                       placeholder: (context, url) =>
-                          Container(child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) => Icon(Icons.error),
+                          Container(child: const CircularProgressIndicator()),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
                     ),
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(formatter.format(item.total)),
                         Text(
-                            item.quantity.toStringAsFixed(0) + " " + item.unite)
+                            "${item.quantity.toStringAsFixed(0)} ${item.unite}")
                       ],
                     ),
                   );
                 }),
           ),
-          Container(
+          SizedBox(
             width: double.infinity,
             height: Get.height * 0.10,
           ),

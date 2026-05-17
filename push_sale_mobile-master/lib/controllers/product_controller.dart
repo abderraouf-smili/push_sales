@@ -71,14 +71,14 @@ class ProductController extends GetxController {
 
   Future<void> getFullPromotion() async {
     print("call Full Promotions --------------");
-    List<PromoShow> _list = [];
+    List<PromoShow> list = [];
     ResponseHttpRequest response =
         await CallApi.RequestHttp(global.fullPromotion, data: {
       "typepv_id": client!.typepv!.id,
     });
     if (response.status == "SUCCESS") {
       for (var item in response.data) {
-        _list.add(
+        list.add(
           PromoShow(
             description: item["description"],
             discount: double.parse(item["discount"].toString()),
@@ -101,15 +101,15 @@ class ProductController extends GetxController {
       print(response.message);
     }
     loadVariantReady.value = true;
-    listPromo = _list;
+    listPromo = list;
   }
 
   List<Variant> getPromotions() {
-    var _list = listVariant;
-    _list = listVariant
+    var list = listVariant;
+    list = listVariant
         .where((element) => element.promotion_typepv_id == client!.typepv!.id)
         .toList();
-    return _list;
+    return list;
   }
 
   Future<void> getProducts() async {
@@ -126,11 +126,11 @@ class ProductController extends GetxController {
     if (response.status == "SUCCESS") {
       listProducts = [];
       for (var element in response.data) {
-        Product tmp_pro = Product.fromMap(element);
-        if ((tmp_pro.variants != null && tmp_pro.variants!.isNotEmpty) ||
-            (tmp_pro.purchasevariants != null &&
-                tmp_pro.purchasevariants!.isNotEmpty)) {
-          listProducts.add(tmp_pro);
+        Product tmpPro = Product.fromMap(element);
+        if ((tmpPro.variants != null && tmpPro.variants!.isNotEmpty) ||
+            (tmpPro.purchasevariants != null &&
+                tmpPro.purchasevariants!.isNotEmpty)) {
+          listProducts.add(tmpPro);
         }
       }
       loadProductReady.value = true;

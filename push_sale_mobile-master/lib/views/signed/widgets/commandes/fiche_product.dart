@@ -14,7 +14,7 @@ import 'dart:math';
 
 class FicheProduct extends StatelessWidget {
   PageController pageController;
-  FicheProduct(this.pageController);
+  FicheProduct(this.pageController, {super.key});
 
   ProductController productController = Get.find();
   OrderController orderController = Get.find();
@@ -36,17 +36,17 @@ class FicheProduct extends StatelessWidget {
 
     product = productController.productSelected!;
 
-    List<Variant> _variants = List.from(productController
+    List<Variant> variants = List.from(productController
         .getVariantsLowPrice()
         .where((article) => !orderController.orderitems
             .any((item) => item.variant_id == article.id))
         .toList());
 
-    List<String> var1 = productController.getOption(_variants, 1);
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    List<String> var1 = productController.getOption(variants, 1);
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     return Column(
       children: [
-        Container(
+        SizedBox(
           width: double.infinity,
           child: Align(
             alignment: Get.locale!.languageCode == "ar"
@@ -69,7 +69,7 @@ class FicheProduct extends StatelessWidget {
           () => Stack(
             children: [
               Positioned(
-                child: Container(
+                child: SizedBox(
                   width: double.infinity,
                   height: Get.height / 3.2,
                   child: CachedNetworkImage(
@@ -165,7 +165,7 @@ class FicheProduct extends StatelessWidget {
                 thickness: 1,
               ),
               // Long description of article
-              Container(
+              SizedBox(
                 height: 40,
                 child: Text(
                   product.getLongDescription(Get.locale!.languageCode),
@@ -180,8 +180,8 @@ class FicheProduct extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      _variants.length > 0
-                          ? _variants.first
+                      variants.isNotEmpty
+                          ? variants.first
                               .getOptionName1(Get.locale!.languageCode)
                           : "",
                       style: TextStyle(
@@ -204,8 +204,8 @@ class FicheProduct extends StatelessWidget {
                 ),
               ),
               //Liste des variant 1
-              _variants.length > 0
-                  ? Container(
+              variants.isNotEmpty
+                  ? SizedBox(
                       width: Get.width,
                       height: 40.0 * (var1.length / 4).ceil(),
                       child: GridView.builder(
@@ -226,7 +226,7 @@ class FicheProduct extends StatelessWidget {
                                 productController.opt1.value = false;
                                 productController.selectedVariantReady.value =
                                     false;
-                                productController.option1 = _variants
+                                productController.option1 = variants
                                     .where((element) =>
                                         element.getVariantName1(
                                             Get.locale!.languageCode) ==
@@ -332,7 +332,7 @@ class FicheProduct extends StatelessWidget {
                               .getOptionName2(Get.locale!.languageCode) !=
                           "")
                   ? SizedBox.shrink()
-                  : Container(
+                  : SizedBox(
                       height:
                           40.0 * (productController.option1.length / 4).ceil(),
                       child: GridView.builder(
@@ -456,7 +456,7 @@ class FicheProduct extends StatelessWidget {
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        Container(
+                        SizedBox(
                           width: Get.width / 3,
                           child: Obx(
                             () => DropdownButtonFormField2(
@@ -553,7 +553,7 @@ class FicheProduct extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              Container(
+                              SizedBox(
                                 width: 29,
                                 child: IconButton(
                                   onPressed: () {
@@ -597,7 +597,7 @@ class FicheProduct extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              Container(
+                              SizedBox(
                                 // color: Color.fromARGB(255, 192, 227, 255),
                                 width: 29,
                                 child: IconButton(
@@ -678,7 +678,7 @@ class FicheProduct extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                "total".tr + " : ",
+                                "${"total".tr} : ",
                               ),
                               Text(" ",
                                   style: TextStyle(
@@ -809,9 +809,7 @@ class FicheProduct extends StatelessWidget {
             height: 50,
             child: Center(
               child: Text(
-                'quantity'.tr +
-                    " x" +
-                    productController.selectedVariant.package.toString(),
+                "${'quantity'.tr} x${productController.selectedVariant.package}",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -819,12 +817,12 @@ class FicheProduct extends StatelessWidget {
               ),
             ),
           ),
-          content: Container(
+          content: SizedBox(
             height: Get.height / 6,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: TextFormField(
@@ -839,26 +837,26 @@ class FicheProduct extends StatelessWidget {
                     ),
                     onChanged: (value) {
                       first = false;
-                      var qty_caisse = double.parse(
+                      var qtyCaisse = double.parse(
                           qtyCaisseController.text != ""
                               ? qtyCaisseController.text
                               : "0");
 
-                      var qty_pcs = int.parse(qtyPcsController.text != ""
+                      var qtyPcs = int.parse(qtyPcsController.text != ""
                           ? qtyPcsController.text
                           : "0");
 
                       int package = productController.selectedVariant.package;
 
                       orderController.quantityItem.value =
-                          qty_caisse * package + qty_pcs;
+                          qtyCaisse * package + qtyPcs;
                     },
                   ),
                 ),
                 SizedBox(
                   height: 10,
                 ),
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: TextFormField(
@@ -873,19 +871,19 @@ class FicheProduct extends StatelessWidget {
                     ),
                     onChanged: (value) {
                       first = false;
-                      var qty_caisse = double.parse(
+                      var qtyCaisse = double.parse(
                           qtyCaisseController.text != ""
                               ? qtyCaisseController.text
                               : "0");
 
-                      var qty_pcs = int.parse(qtyPcsController.text != ""
+                      var qtyPcs = int.parse(qtyPcsController.text != ""
                           ? qtyPcsController.text
                           : "0");
 
                       int package = productController.selectedVariant.package;
 
                       orderController.quantityItem.value =
-                          qty_caisse * package + qty_pcs;
+                          qtyCaisse * package + qtyPcs;
                     },
                   ),
                 ),
@@ -923,28 +921,28 @@ class FicheProduct extends StatelessWidget {
               ),
               onPressed: () {
                 if (orderController.quantityItem.value != 0) {
-                  var qty_caisse = double.parse(qtyCaisseController.text != ""
+                  var qtyCaisse = double.parse(qtyCaisseController.text != ""
                       ? qtyCaisseController.text
                       : "0");
 
-                  var qty_pcs = int.parse(qtyPcsController.text != ""
+                  var qtyPcs = int.parse(qtyPcsController.text != ""
                       ? qtyPcsController.text
                       : "0");
 
                   int package = productController.selectedVariant.package;
-                  if ((qty_caisse * package + qty_pcs) % package == 0) {
+                  if ((qtyCaisse * package + qtyPcs) % package == 0) {
                     orderController.keyUnite!.currentState!.didChange("Cart");
                     orderController.uniteItem.value = "Cart";
                     orderController.quantityItem.value =
-                        (qty_caisse * package + qty_pcs) / package;
+                        (qtyCaisse * package + qtyPcs) / package;
                     qtyController.text =
-                        ((qty_caisse * package + qty_pcs) / package)
+                        ((qtyCaisse * package + qtyPcs) / package)
                             .toStringAsFixed(0);
                   } else {
                     orderController.quantityItem.value =
-                        qty_caisse * package + qty_pcs;
+                        qtyCaisse * package + qtyPcs;
                     qtyController.text =
-                        (qty_caisse * package + qty_pcs).toStringAsFixed(0);
+                        (qtyCaisse * package + qtyPcs).toStringAsFixed(0);
                     orderController.keyUnite!.currentState!.didChange("Pcs");
                     orderController.uniteItem.value = "Pcs";
                   }

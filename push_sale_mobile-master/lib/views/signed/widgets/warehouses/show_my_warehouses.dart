@@ -6,7 +6,7 @@ import 'package:push_sale/models/warehouse.dart';
 import 'package:push_sale/const/globals.dart' as global;
 
 class ShowMyWarehouses extends StatelessWidget {
-  ShowMyWarehouses(this.pageController);
+  ShowMyWarehouses(this.pageController, {super.key});
   WarehouseController warehouseController = Get.find();
   PageController pageController;
 
@@ -20,7 +20,7 @@ class ShowMyWarehouses extends StatelessWidget {
       ),
       body: Obx(() => warehouseController.ready.value
           ? ListView.builder(
-              physics: BouncingScrollPhysics(),
+              physics: const BouncingScrollPhysics(),
               itemCount: warehouseController.warehouses.length,
               itemBuilder: (context, index) {
                 var item = warehouseController.warehouses[index];
@@ -31,8 +31,8 @@ class ShowMyWarehouses extends StatelessWidget {
                     },
                     child: warehouseLine(item));
               })
-          : Center(
-              child: Container(
+          : const Center(
+              child: SizedBox(
                 width: 60,
                 height: 60,
                 child: CircularProgressIndicator(),
@@ -44,23 +44,23 @@ class ShowMyWarehouses extends StatelessWidget {
 
 class warehouseLine extends StatelessWidget {
   Warehouse warehouse;
-  warehouseLine(this.warehouse);
+  warehouseLine(this.warehouse, {super.key});
 
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 3),
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      margin: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       width: double.infinity,
       height: Get.height / 6,
       decoration: BoxDecoration(
           border: Border.all(
             width: 0.5,
-            color: Color.fromARGB(255, 150, 208, 255),
+            color: const Color.fromARGB(255, 150, 208, 255),
           ),
-          color: Color.fromARGB(255, 245, 250, 255)),
+          color: const Color.fromARGB(255, 245, 250, 255)),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -69,10 +69,10 @@ class warehouseLine extends StatelessWidget {
             children: [
               Text(
                 warehouse.address.city.name,
-                style: TextStyle(fontSize: 18, fontFamily: 'alata'),
+                style: const TextStyle(fontSize: 18, fontFamily: 'alata'),
               ),
               Text(warehouse.address.wilaya.name,
-                  style: TextStyle(fontSize: 18, fontFamily: 'alata')),
+                  style: const TextStyle(fontSize: 18, fontFamily: 'alata')),
             ],
           ),
           Row(
@@ -80,11 +80,12 @@ class warehouseLine extends StatelessWidget {
             children: [
               Text(
                 warehouse.name,
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               Text(
                 formatter.format(warehouse.total),
-                style: TextStyle(fontSize: 18, fontFamily: 'alata'),
+                style: const TextStyle(fontSize: 18, fontFamily: 'alata'),
               ),
             ],
           ),
@@ -93,16 +94,16 @@ class warehouseLine extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.category,
                     color: Colors.blue,
                   ),
-                  SizedBox(
+                  const SizedBox(
                     width: 10,
                   ),
                   Text(
                     "${warehouse.items.length}",
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontFamily: 'alata', fontSize: 22, color: Colors.blue),
                   ),
                 ],
@@ -114,11 +115,11 @@ class warehouseLine extends StatelessWidget {
                       .isNotEmpty
                   ? Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.notification_important_rounded,
                           color: Colors.red,
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 10,
                         ),
                         Text(
@@ -128,14 +129,14 @@ class warehouseLine extends StatelessWidget {
                                   global.alertQuantity)
                               .length
                               .toString(),
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontFamily: 'alata',
                               fontSize: 22,
                               color: Colors.red),
                         ),
                       ],
                     )
-                  : SizedBox.shrink(),
+                  : const SizedBox.shrink(),
             ],
           )
         ],

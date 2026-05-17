@@ -20,16 +20,16 @@ class PushSaleUser {
     //
   }
 
-  static Map<String, dynamic> toMap(PushSaleUser _user) {
+  static Map<String, dynamic> toMap(PushSaleUser user) {
     Map<String, dynamic> u = {};
-    u["fbuid"] = _user.id;
-    u["email"] = _user.mail;
-    u["name"] = _user.name;
-    u["phone"] = _user.phone;
-    u["device_id"] = _user.device_id;
-    u["password"] = _user.password;
-    u["fcmtoken"] = _user.fcmtoken;
-    u["provider"] = _user.provider;
+    u["fbuid"] = user.id;
+    u["email"] = user.mail;
+    u["name"] = user.name;
+    u["phone"] = user.phone;
+    u["device_id"] = user.device_id;
+    u["password"] = user.password;
+    u["fcmtoken"] = user.fcmtoken;
+    u["provider"] = user.provider;
     return u;
   }
 }

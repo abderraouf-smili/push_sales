@@ -32,7 +32,7 @@ class AuthentificationController extends GetxController {
     var formdata = keyFormLogin.currentState;
     if (formdata!.validate()) {
       formdata.save();
-      FocusScope.of(Get.context!).requestFocus(new FocusNode());
+      FocusScope.of(Get.context!).requestFocus(FocusNode());
       //on success
       return await SigninWithMail();
     }
@@ -69,15 +69,14 @@ class AuthentificationController extends GetxController {
         if (response.status == "SUCCESS") {
           if (response.data["userinfo"]["name"].split(" ").length > 1) {
             global.lastName = response.data["userinfo"]["name"].split(" ")[0];
-            String tmp_firstname = "";
+            String tmpFirstname = "";
             for (int i = 1;
                 i < response.data["userinfo"]["name"].split(" ").length;
                 i++) {
-              tmp_firstname = tmp_firstname +
-                  " " +
+              tmpFirstname = "$tmpFirstname " +
                   response.data["userinfo"]["name"].split(" ")[i];
             }
-            global.firstName = tmp_firstname;
+            global.firstName = tmpFirstname;
           } else {
             global.lastName = response.data["fullname"];
             global.firstName = "";
@@ -104,7 +103,7 @@ class AuthentificationController extends GetxController {
     var formdata = keyFormCreate.currentState;
     if (formdata!.validate()) {
       formdata.save();
-      FocusScope.of(Get.context!).requestFocus(new FocusNode());
+      FocusScope.of(Get.context!).requestFocus(FocusNode());
       //on success
       return await CreateUserWithMail();
     }
@@ -120,42 +119,40 @@ class AuthentificationController extends GetxController {
       userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email!, password: password!);
       // Utilisateur s'est bien enregistré, envoyer le mail de confirmation
-      if (userCredential!.user!.uid != null) {
-        final fcmToken = await FirebaseMessaging.instance.getToken();
-        String? deviceId = ""; // await PlatformDeviceId.getDeviceId;
-        PushSaleUser _user = PushSaleUser(
-          id: userCredential!.user!.uid,
-          mail: email!,
-          name: name!,
-          phone: '-',
-          device_id: deviceId,
-          password: password!,
-          fcmtoken: fcmToken!,
-          provider: "email",
-        );
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      String? deviceId = ""; // await PlatformDeviceId.getDeviceId;
+      PushSaleUser user = PushSaleUser(
+        id: userCredential!.user!.uid,
+        mail: email!,
+        name: name!,
+        phone: '-',
+        device_id: deviceId,
+        password: password!,
+        fcmtoken: fcmToken!,
+        provider: "email",
+      );
 
-        ResponseHttpRequest responseUser = await CallApi.RequestHttp(
-          global.registerUser,
-          data: PushSaleUser.toMap(_user),
-        );
-        if (responseUser.status == "SUCCESS") {
-          if (!userCredential!.user!.emailVerified) {
-            await userCredential!.user!.sendEmailVerification();
-          }
-          return {
-            "response": "create",
-            "provider": "email",
-            "hasactor": false,
-            "name": _user.name,
-            "email": _user.mail,
-          };
-        } else {
-          return {
-            "response": responseUser.status,
-            "code": responseUser.code,
-            "message": responseUser.message,
-          };
+      ResponseHttpRequest responseUser = await CallApi.RequestHttp(
+        global.registerUser,
+        data: PushSaleUser.toMap(user),
+      );
+      if (responseUser.status == "SUCCESS") {
+        if (!userCredential!.user!.emailVerified) {
+          await userCredential!.user!.sendEmailVerification();
         }
+        return {
+          "response": "create",
+          "provider": "email",
+          "hasactor": false,
+          "name": user.name,
+          "email": user.mail,
+        };
+      } else {
+        return {
+          "response": responseUser.status,
+          "code": responseUser.code,
+          "message": responseUser.message,
+        };
       }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
@@ -191,8 +188,8 @@ class AuthentificationController extends GetxController {
         email: email!,
         password: password!,
       );
-      User firebase_user = userCredential!.user!;
-      if (!firebase_user.emailVerified) {
+      User firebaseUser = userCredential!.user!;
+      if (!firebaseUser.emailVerified) {
         return {
           "response": "error",
           "code": "mail-not-verified",
@@ -223,8 +220,7 @@ class AuthentificationController extends GetxController {
               for (int i = 1;
                   i < response.data["name"].split(" ").length;
                   i++) {
-                global.firstName = global.firstName +
-                    " " +
+                global.firstName = "${global.firstName} " +
                     response.data["name"].split(" ")[i];
               }
             } else {
@@ -308,7 +304,7 @@ class AuthentificationController extends GetxController {
 
       final User? user = userCredential.user;
       final fcmToken = await FirebaseMessaging.instance.getToken();
-      PushSaleUser _user = PushSaleUser(
+      PushSaleUser user0 = PushSaleUser(
         id: user!.uid,
         mail: user.email!,
         name: user.displayName!,
@@ -334,8 +330,8 @@ class AuthentificationController extends GetxController {
           if (response.data["provider"] == "gmail") {
             // token = await PushSaleUser.getUserToken(_user.mail, _user.password);
             Map<String, dynamic> UserLogin = {
-              "email": _user.mail,
-              "password": _user.password,
+              "email": user0.mail,
+              "password": user0.password,
             };
             ResponseHttpRequest responseToken = await CallApi.RequestHttp(
               global.login,
@@ -351,8 +347,7 @@ class AuthentificationController extends GetxController {
                 for (int i = 1;
                     i < response.data["name"].split(" ").length;
                     i++) {
-                  global.firstName = global.firstName +
-                      " " +
+                  global.firstName = "${global.firstName} " +
                       response.data["name"].split(" ")[i];
                 }
               } else {
@@ -363,8 +358,8 @@ class AuthentificationController extends GetxController {
                 "response": "logged",
                 "provider": "gmail",
                 "hasactor": response.data["hasactor"] == 1,
-                "name": _user.name,
-                "email": _user.mail,
+                "name": user0.name,
+                "email": user0.mail,
               };
             } else {
               return {
@@ -386,15 +381,15 @@ class AuthentificationController extends GetxController {
           // var reponseUser = await _user.create();
           ResponseHttpRequest reponseUser = await CallApi.RequestHttp(
             global.registerUser,
-            data: PushSaleUser.toMap(_user),
+            data: PushSaleUser.toMap(user0),
           );
 
           if (reponseUser.status == "SUCCESS") {
             // token = await PushSaleUser.getUserToken(_user.mail, _user.password);
 
             Map<String, dynamic> UserLogin = {
-              "email": _user.mail,
-              "password": _user.password,
+              "email": user0.mail,
+              "password": user0.password,
             };
             ResponseHttpRequest responseToken = await CallApi.RequestHttp(
               global.login,
@@ -406,15 +401,14 @@ class AuthentificationController extends GetxController {
               await Prefs.setString("userToken", responseToken.data);
               if (reponseUser.data["name"].split(" ").length > 1) {
                 global.lastName = reponseUser.data["name"].split(" ")[0];
-                String tmp_firstname = "";
+                String tmpFirstname = "";
                 for (int i = 1;
                     i < reponseUser.data["name"].split(" ").length;
                     i++) {
-                  tmp_firstname = tmp_firstname +
-                      " " +
-                      reponseUser.data["name"].split(" ")[i];
+                  tmpFirstname =
+                      "$tmpFirstname " + reponseUser.data["name"].split(" ")[i];
                 }
-                global.firstName = tmp_firstname;
+                global.firstName = tmpFirstname;
               } else {
                 global.lastName = reponseUser.data["name"];
                 global.firstName = "";
@@ -424,8 +418,8 @@ class AuthentificationController extends GetxController {
                 "response": "create",
                 "provider": "gmail",
                 "hasactor": false,
-                "name": _user.name,
-                "email": _user.mail,
+                "name": user0.name,
+                "email": user0.mail,
               };
             } else {
               //error responseToken
@@ -477,7 +471,7 @@ class AuthentificationController extends GetxController {
       String? deviceId = ""; // await PlatformDeviceId.getDeviceId;
       final fcmToken = await FirebaseMessaging.instance.getToken();
 
-      PushSaleUser _user = PushSaleUser(
+      PushSaleUser user0 = PushSaleUser(
         id: user.uid,
         mail: userCredential!.user!.email!,
         name: userCredential!.user!.displayName!,
@@ -500,8 +494,8 @@ class AuthentificationController extends GetxController {
           if (response.data["provider"] == "facebook") {
             // token = await PushSaleUser.getUserToken(_user.mail, _user.password);
             Map<String, dynamic> UserLogin = {
-              "email": _user.mail,
-              "password": _user.password,
+              "email": user0.mail,
+              "password": user0.password,
             };
             ResponseHttpRequest responseToken = await CallApi.RequestHttp(
               global.login,
@@ -513,14 +507,14 @@ class AuthentificationController extends GetxController {
 
               if (response.data["name"].split(" ").length > 1) {
                 global.lastName = response.data["name"].split(" ")[0];
-                String tmp_firstname = "";
+                String tmpFirstname = "";
                 for (int i = 1;
                     i < response.data["name"].split(" ").length;
                     i++) {
-                  tmp_firstname =
-                      tmp_firstname + " " + response.data["name"].split(" ")[i];
+                  tmpFirstname =
+                      "$tmpFirstname " + response.data["name"].split(" ")[i];
                 }
-                global.firstName = tmp_firstname;
+                global.firstName = tmpFirstname;
               } else {
                 global.lastName = response.data["name"];
                 global.firstName = "";
@@ -530,8 +524,8 @@ class AuthentificationController extends GetxController {
                 "response": "logged",
                 "provider": "facebook",
                 "hasactor": response.data["hasactor"] == 1,
-                "name": _user.name,
-                "email": _user.mail,
+                "name": user0.name,
+                "email": user0.mail,
               };
             } else {
               //error responseToken
@@ -555,13 +549,13 @@ class AuthentificationController extends GetxController {
           // var reponseUser = await _user.create();
           ResponseHttpRequest responseUser = await CallApi.RequestHttp(
             global.registerUser,
-            data: PushSaleUser.toMap(_user),
+            data: PushSaleUser.toMap(user0),
           );
 
           if (responseUser.status == "SUCCESS") {
             Map<String, dynamic> UserLogin = {
-              "email": _user.mail,
-              "password": _user.password,
+              "email": user0.mail,
+              "password": user0.password,
             };
             ResponseHttpRequest responseToken = await CallApi.RequestHttp(
               global.login,
@@ -570,16 +564,16 @@ class AuthentificationController extends GetxController {
             if (responseToken.status == "SUCCESS") {
               SharedPreferences Prefs = await SharedPreferences.getInstance();
               await Prefs.setString("userToken", responseToken.data);
-              global.lastName = _user.name.split(" ")[0];
-              global.firstName = _user.name.split(" ").length > 1
-                  ? _user.name.split(" ")[1]
+              global.lastName = user0.name.split(" ")[0];
+              global.firstName = user0.name.split(" ").length > 1
+                  ? user0.name.split(" ")[1]
                   : "";
               return {
                 "response": "create",
                 "provider": "facebook",
                 "hasactor": false,
-                "name": _user.name,
-                "email": _user.mail,
+                "name": user0.name,
+                "email": user0.mail,
               };
             } else {
               //error responseToken

@@ -3,24 +3,25 @@ import 'package:get/get.dart';
 import 'package:push_sale/controllers/order_controller.dart';
 import 'package:push_sale/views/signed/widgets/delivery/orders_to_ship.dart';
 import 'package:push_sale/views/signed/widgets/delivery/shipping_order_detail.dart';
-import 'package:push_sale/const/globals.dart' as global;
 
 class MainDeliveryPage extends StatelessWidget {
   PageController pageController = PageController();
   OrderController orderController = Get.put(OrderController(tag: "shipping"));
 
+  MainDeliveryPage({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
         width: Get.width,
         height: Get.height - 60,
         child: Column(children: [
-          Container(
+          SizedBox(
             width: double.infinity,
             height: Get.height - 60,
             child: Stack(children: [
               PageView(
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 controller: pageController,
                 onPageChanged: (value) {
                   orderController.page.value = value;
@@ -35,7 +36,7 @@ class MainDeliveryPage extends StatelessWidget {
                         orderController.page.value == 1 &&
                         (orderController.selectedPO != null &&
                             orderController.selectedPO!.state == 'in_way') &&
-                        orderController.restant.length > 0
+                        orderController.restant.isNotEmpty
                     ? Positioned(
                         bottom: 55,
                         left: Get.deviceLocale!.languageCode == "ar"
@@ -51,7 +52,7 @@ class MainDeliveryPage extends StatelessWidget {
                           },
                         ),
                       )
-                    : SizedBox.shrink(),
+                    : const SizedBox.shrink(),
               ),
             ]),
           ),
@@ -64,10 +65,10 @@ showRestantProduct(BuildContext context, OrderController orderController) {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        contentPadding: EdgeInsets.only(top: 15),
+        contentPadding: const EdgeInsets.only(top: 15),
         titlePadding: EdgeInsets.zero,
         title: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Color.fromARGB(255, 43, 87, 124),
           ),
           width: double.infinity,
@@ -80,7 +81,7 @@ showRestantProduct(BuildContext context, OrderController orderController) {
               child: Center(
                 child: Text(
                   "restant.product.sell".tr,
-                  style: TextStyle(color: Colors.white, fontSize: 18),
+                  style: const TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ),
             ),

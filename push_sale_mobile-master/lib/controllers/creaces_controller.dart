@@ -86,19 +86,19 @@ class CreancesController extends GetxController {
   }
 
   List<Widget> showSoldeCash(ReceivaleLine item) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
     List<Widget> reslut = [];
     if (item.cashed != null && item.cashed! > 0) {
       reslut.add(Text(formatter.format(item.solde),
-          style: TextStyle(
+          style: const TextStyle(
               fontFamily: 'alata', decoration: TextDecoration.lineThrough)));
       if (item.solde != item.cashed!) {
         reslut.add(Text(formatter.format(item.solde - item.cashed!),
-            style: TextStyle(fontFamily: 'alata')));
+            style: const TextStyle(fontFamily: 'alata')));
       }
     } else {
       reslut.add(Text(formatter.format(item.solde),
-          style: TextStyle(fontFamily: 'alata')));
+          style: const TextStyle(fontFamily: 'alata')));
     }
     return reslut;
   }
@@ -122,7 +122,7 @@ class CreancesController extends GetxController {
       pageController.animateToPage(
         0,
         curve: Curves.linear,
-        duration: Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 200),
       );
       saved.value = "success";
     } else {

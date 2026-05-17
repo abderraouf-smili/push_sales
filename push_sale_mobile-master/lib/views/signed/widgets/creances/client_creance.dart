@@ -6,11 +6,11 @@ import 'package:push_sale/models/receivable.dart';
 
 class ClientCreance extends StatelessWidget {
   Receivale client;
-  ClientCreance(this.client);
+  ClientCreance(this.client, {super.key});
   @override
   Widget build(BuildContext context) {
-    var formatter = new NumberFormat("#,##0.00", "fr_FR");
-    return Container(
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
+    return SizedBox(
       width: double.infinity,
       height: Get.height / 12,
       child: Row(
@@ -19,12 +19,12 @@ class ClientCreance extends StatelessWidget {
           Row(
             children: [
               Container(
-                margin: EdgeInsets.all(3),
+                margin: const EdgeInsets.all(3),
                 width: Get.width / 6,
                 height: Get.height / 14,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: Color.fromARGB(255, 165, 165, 165),
                       blurRadius: 2,
@@ -41,7 +41,7 @@ class ClientCreance extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 5),
                 width: Get.width / 1.8,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,17 +49,17 @@ class ClientCreance extends StatelessWidget {
                   children: [
                     Text(
                       client.client_name,
-                      style: TextStyle(
+                      style: const TextStyle(
                           fontFamily: "alata",
                           fontSize: 15,
                           fontWeight: FontWeight.bold),
                     ),
-                    Text(client.city_name + " - " + client.state_code,
-                        style: TextStyle(
+                    Text("${client.city_name} - ${client.state_code}",
+                        style: const TextStyle(
                             fontFamily: "alata",
                             color: Color.fromARGB(255, 139, 139, 139))),
-                    Text("Acteur : " + client.actor_name,
-                        style: TextStyle(
+                    Text("Acteur : ${client.actor_name}",
+                        style: const TextStyle(
                             fontFamily: "alata",
                             fontSize: 13,
                             color: Color.fromARGB(255, 83, 84, 134))),
@@ -69,10 +69,10 @@ class ClientCreance extends StatelessWidget {
             ],
           ),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 5),
             child: Text(
               formatter.format(client.total_vendu - client.total_paye),
-              style: TextStyle(fontFamily: 'alata', fontSize: 15),
+              style: const TextStyle(fontFamily: 'alata', fontSize: 15),
             ),
           ),
         ],

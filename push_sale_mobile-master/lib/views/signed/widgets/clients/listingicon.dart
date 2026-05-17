@@ -10,17 +10,17 @@ class ListingIcon extends StatelessWidget {
   final List<Client> listing;
   String? posted_id;
   ClientController clientController = Get.find();
-  ListingIcon(this.listing, {this.posted_id});
+  ListingIcon(this.listing, {super.key, this.posted_id});
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(physics: BouncingScrollPhysics(), slivers: [
+    return CustomScrollView(physics: const BouncingScrollPhysics(), slivers: [
       CupertinoSliverRefreshControl(
         refreshTriggerPullDistance: 180,
         onRefresh: () => clientController.getClients(),
       ),
       SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2, childAspectRatio: 0.95),
         delegate: SliverChildBuilderDelegate(
           (context, index) => iconClient(
@@ -37,22 +37,22 @@ class ListingIcon extends StatelessWidget {
 class iconClient extends StatelessWidget {
   Client client;
   String? posted_id;
-  iconClient(this.client, {this.posted_id});
+  iconClient(this.client, {super.key, this.posted_id});
 
   @override
   Widget build(BuildContext context) {
-    var _color = posted_id != 0 && posted_id == client.id
-        ? Color.fromARGB(255, 241, 249, 255)
+    var color = posted_id != 0 && posted_id == client.id
+        ? const Color.fromARGB(255, 241, 249, 255)
         : Colors.white;
     return GestureDetector(
       onTap: () => Get.to(() => FicheClient(client)),
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+        margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
         decoration: BoxDecoration(
-            color: _color,
+            color: color,
             borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              const BoxShadow(
+            boxShadow: const [
+              BoxShadow(
                 color: Color.fromARGB(255, 173, 218, 255),
                 blurRadius: 5,
                 offset: Offset(0, 3),
@@ -64,7 +64,8 @@ class iconClient extends StatelessWidget {
               width: double.infinity,
               height: Get.height / 5.8,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(15)),
                 image: DecorationImage(
                   fit: BoxFit.cover,
                   image: CachedNetworkImageProvider(
@@ -82,13 +83,13 @@ class iconClient extends StatelessWidget {
                   children: [
                     Container(
                       alignment: Alignment.bottomLeft,
-                      margin: EdgeInsets.symmetric(horizontal: 5),
+                      margin: const EdgeInsets.symmetric(horizontal: 5),
                       child: Text(
                         "${client.name.substring(
                           0,
                           client.name.length > 14 ? 14 : client.name.length,
                         )} ${client.name.length > 14 ? "..." : ""}",
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: "kodchasan",
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -96,10 +97,10 @@ class iconClient extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      margin: EdgeInsets.symmetric(horizontal: 5),
+                      margin: const EdgeInsets.symmetric(horizontal: 5),
                       child: Text(
                         client.address!.city.getName(Get.locale!.languageCode),
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 11,
                             fontFamily: "kodchasan",
                             color: Colors.grey),
@@ -108,10 +109,10 @@ class iconClient extends StatelessWidget {
                   ],
                 ),
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: 10),
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
                   child: Text(
                     client.address!.wilaya.code,
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 11,
                         fontFamily: "kodchasan",
                         fontWeight: FontWeight.bold),

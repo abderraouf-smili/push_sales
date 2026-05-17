@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/controllers/authentification_controller.dart';
-import 'package:push_sale/main.dart';
 
 class InternetError extends StatelessWidget {
+  const InternetError({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -13,10 +14,10 @@ class InternetError extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text("you.are.disconnected".tr,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontFamily: "kodchasan",
                       fontSize: 30,
                       color: Color.fromARGB(255, 35, 109, 170))),

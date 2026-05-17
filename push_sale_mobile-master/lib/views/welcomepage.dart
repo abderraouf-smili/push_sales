@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 import 'auth/loginpage.dart';
 
 class WelcomePage extends StatelessWidget {
-  const WelcomePage({Key? key}) : super(key: key);
+  const WelcomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,7 @@ class WelcomePage extends StatelessWidget {
           height: double.infinity,
           child: Column(
             children: [
-              Expanded(
+              const Expanded(
                 flex: 7,
                 child: SizedBox.shrink(),
               ),
@@ -49,7 +49,7 @@ class WelcomePage extends StatelessWidget {
                   children: [
                     Text(
                       "welcome".tr,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 44,
                         fontFamily: "kodchasan",
@@ -57,7 +57,7 @@ class WelcomePage extends StatelessWidget {
                     ),
                     Text(
                       "to_our_service".tr,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 44,
                         fontFamily: "kodchasan",
@@ -65,7 +65,7 @@ class WelcomePage extends StatelessWidget {
                     ),
                     Text(
                       "slogan".tr,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Color.fromARGB(255, 173, 173, 173),
                         fontSize: 16,
                         fontFamily: "kodchasan",
@@ -76,23 +76,24 @@ class WelcomePage extends StatelessWidget {
               ),
               Container(
                 height: 65,
-                margin: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
                 child: MaterialButton(
                     minWidth: double.infinity,
                     shape: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
                     ),
-                    color: Color.fromARGB(255, 83, 177, 117),
+                    color: const Color.fromARGB(255, 83, 177, 117),
                     onPressed: () {
                       Get.to(() => LoginPage());
                     },
                     child: Text(
                       "get_started".tr,
-                      style: TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white),
                     )),
               ),
-              Expanded(child: SizedBox.shrink()),
+              const Expanded(child: SizedBox.shrink()),
             ],
           ),
         ),

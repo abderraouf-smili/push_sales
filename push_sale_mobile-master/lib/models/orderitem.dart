@@ -1,5 +1,3 @@
-import 'package:push_sale/models/order.dart';
-
 class Orderitem {
   final String id;
   final String order_id;
@@ -93,11 +91,11 @@ class Orderitem {
   }
 
   static List<Orderitem> fromListMapToList(List<dynamic> value) {
-    List<Orderitem> _list = [];
+    List<Orderitem> list = [];
     for (var item in value) {
-      _list.add(Orderitem.fromMap(item));
+      list.add(Orderitem.fromMap(item));
     }
-    return _list;
+    return list;
   }
 
   setDiscount(double value) {

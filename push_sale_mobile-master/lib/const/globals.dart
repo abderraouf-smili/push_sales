@@ -1,8 +1,8 @@
-library push_sale.globals;
+﻿library push_sale.globals;
 
 // String urlAPI = "https://softstarter.dz/api/push_sale/public";
 // String urlAPI = "https://google.com/api/push_sale/public";
-String urlAPI = "http://192.168.1.100/push_sale";
+String urlAPI = "http://192.168.1.20:8000";
 
 String version = "2.0.0";
 String build = "18/05/2026";
@@ -110,3 +110,11 @@ List<String> weekdays = [
   "wednesday",
   "friday"
 ];
+
+
+
+
+
+
+
+

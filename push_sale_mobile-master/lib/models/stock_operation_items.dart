@@ -1,5 +1,3 @@
-import 'package:push_sale/models/stock_operation.dart';
-
 class StockOperationItems {
   final String id;
   final int variant_id;
@@ -48,11 +46,11 @@ class StockOperationItems {
   }
 
   static List<StockOperationItems> fromListMapToList(List<dynamic> value) {
-    List<StockOperationItems> _list = [];
+    List<StockOperationItems> list = [];
     for (var item in value) {
-      _list.add(StockOperationItems.fromMap(item));
+      list.add(StockOperationItems.fromMap(item));
     }
-    return _list;
+    return list;
   }
 
   Map<String, dynamic> toMap() {

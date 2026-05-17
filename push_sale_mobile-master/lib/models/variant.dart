@@ -120,25 +120,25 @@ class Variant {
   }
 
   static List<Variant> fromListMapToList(List<dynamic> value) {
-    List<Variant> _list = [];
+    List<Variant> list = [];
     for (var item in value) {
-      _list.add(Variant.fromMap(item));
+      list.add(Variant.fromMap(item));
     }
-    var a = _list
+    var a = list
         .where(
-          (element) => _list.any((all_element) =>
-              all_element != element &&
-              all_element.id == element.id &&
-              all_element.warehouse_id == element.warehouse_id),
+          (element) => list.any((allElement) =>
+              allElement != element &&
+              allElement.id == element.id &&
+              allElement.warehouse_id == element.warehouse_id),
         )
         .toList();
-    _list.removeWhere((element) => a.any(
+    list.removeWhere((element) => a.any(
           (doublon) =>
               element.id == doublon.id &&
               element.warehouse_id == doublon.warehouse_id &&
               element.promotion_id == null,
         ));
-    return _list;
+    return list;
   }
 
   String getOptionName1(String locale) {

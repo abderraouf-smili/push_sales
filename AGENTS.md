@@ -5,8 +5,8 @@
 Ce repository contient le projet **Push Sales** avec deux parties principales :
 
 ```text
-push_sale-master/push_sale-master                  # Backend Laravel API
-push_sale_mobile-master/push_sale_mobile-master    # Application mobile Flutter
+push_sale-master                  # Backend Laravel API
+push_sale_mobile-master    # Application mobile Flutter
 ```
 
 Objectif global : faire evoluer Push Sales vers une solution moderne, securisee et professionnelle, avec :

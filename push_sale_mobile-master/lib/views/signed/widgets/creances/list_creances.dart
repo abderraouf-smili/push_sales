@@ -5,7 +5,7 @@ import 'package:push_sale/views/signed/widgets/creances/client_creance.dart';
 
 class ListCreances extends StatelessWidget {
   PageController pageController;
-  ListCreances(this.pageController);
+  ListCreances(this.pageController, {super.key});
   CreancesController creancesController = Get.find();
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class ListCreances extends StatelessWidget {
                 pageController.animateToPage(
                   1,
                   curve: Curves.linear,
-                  duration: Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 200),
                 );
               },
               child: ClientCreance(item),

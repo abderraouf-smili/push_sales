@@ -38,13 +38,13 @@ class PromotionLines {
   }
 
   static List<PromotionLines> fromMapToList(List<dynamic> list) {
-    List<PromotionLines> _list = [];
+    List<PromotionLines> list0 = [];
     if (list.isNotEmpty) {
       for (var value in list) {
-        _list.add(PromotionLines.fromMap(value));
+        list0.add(PromotionLines.fromMap(value));
       }
     }
-    return _list;
+    return list0;
   }
 
   Map<String, dynamic> toMap() {
@@ -53,9 +53,9 @@ class PromotionLines {
       "discount": discount,
       "minimum": minimum,
       "unite": unite,
-      "category_id": category != null ? category!.id : null,
-      "product_id": product != null ? product!.id : null,
-      "variant_id": variant != null ? variant!.id : null,
+      "category_id": category?.id,
+      "product_id": product?.id,
+      "variant_id": variant?.id,
     };
     return ret;
   }

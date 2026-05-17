@@ -12,7 +12,7 @@ import 'package:push_sale/views/signed/widgets/promotions/promotions_list.dart';
 
 class EditPromotion extends StatelessWidget {
   Promotion? promotion;
-  EditPromotion({this.promotion});
+  EditPromotion({super.key, this.promotion});
   PromotionController promotionController = Get.find();
   ProductController productController = Get.put(ProductController());
   TextEditingController descriptionController = TextEditingController();
@@ -80,17 +80,16 @@ class EditPromotion extends StatelessWidget {
                                 btnOkOnPress: () {
                                   promotionController.dispose();
                                   Get.offAll(() => PromotionsList());
-                                })
-                              ..show();
+                                }).show();
                           } else {
                             //echec
                             AwesomeDialog(
-                                dialogType: DialogType.error,
-                                title: "sure".tr,
-                                body: Text("error.saved".tr),
-                                context: context,
-                                btnOkOnPress: () {})
-                              ..show();
+                                    dialogType: DialogType.error,
+                                    title: "sure".tr,
+                                    body: Text("error.saved".tr),
+                                    context: context,
+                                    btnOkOnPress: () {})
+                                .show();
                           }
                         }
                         break;
@@ -132,7 +131,7 @@ class EditPromotion extends StatelessWidget {
                   })
             ],
           ),
-          body: Container(
+          body: SizedBox(
             width: double.infinity,
             // padding: EdgeInsets.symmetric(horizontal: 40),
             height: Get.height - 100,
@@ -145,7 +144,7 @@ class EditPromotion extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
+                      SizedBox(
                         width: Get.width / 4,
                         child: Text(
                           "description".tr,
@@ -185,22 +184,22 @@ class EditPromotion extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
+                      SizedBox(
                         width: Get.width / 4,
                         child: const Align(
                           alignment: Alignment.centerLeft,
-                          child: const Icon(Icons.calendar_month_outlined,
+                          child: Icon(Icons.calendar_month_outlined,
                               color: Color.fromARGB(255, 122, 122, 122)),
                         ),
                       ),
-                      Container(
+                      SizedBox(
                         width: Get.width / 1.6,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             GestureDetector(
                               onTap: () async {
-                                var date_start = await showDatePicker(
+                                var dateStart = await showDatePicker(
                                   locale:
                                       Locale(Get.deviceLocale!.languageCode),
                                   context: context,
@@ -210,8 +209,8 @@ class EditPromotion extends StatelessWidget {
                                   lastDate: DateTime.now()
                                       .add(const Duration(days: 365)),
                                 );
-                                if (date_start != null) {
-                                  promotionController.setStartDate(date_start);
+                                if (dateStart != null) {
+                                  promotionController.setStartDate(dateStart);
                                 }
                               },
                               child: Container(
@@ -237,8 +236,7 @@ class EditPromotion extends StatelessWidget {
                                     style: const TextStyle(
                                       fontSize: 16,
                                       // fontWeight: FontWeight.bold,
-                                      color: const Color.fromARGB(
-                                          255, 122, 122, 122),
+                                      color: Color.fromARGB(255, 122, 122, 122),
                                     ),
                                   ),
                                 ),
@@ -249,7 +247,7 @@ class EditPromotion extends StatelessWidget {
                             ),
                             GestureDetector(
                               onTap: () async {
-                                var date_end = await showDatePicker(
+                                var dateEnd = await showDatePicker(
                                   locale:
                                       Locale(Get.deviceLocale!.languageCode),
                                   context: context,
@@ -259,8 +257,8 @@ class EditPromotion extends StatelessWidget {
                                   lastDate: DateTime.now()
                                       .add(const Duration(days: 365)),
                                 );
-                                if (date_end != null) {
-                                  promotionController.setEndDate(date_end);
+                                if (dateEnd != null) {
+                                  promotionController.setEndDate(dateEnd);
                                 }
                               },
                               child: Container(
@@ -286,8 +284,7 @@ class EditPromotion extends StatelessWidget {
                                     style: const TextStyle(
                                       fontSize: 16,
                                       // fontWeight: FontWeight.bold,
-                                      color: const Color.fromARGB(
-                                          255, 122, 122, 122),
+                                      color: Color.fromARGB(255, 122, 122, 122),
                                     ),
                                   ),
                                 ),
@@ -305,10 +302,10 @@ class EditPromotion extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
+                      SizedBox(
                         width: Get.width / 4,
                         child: const Text("Type",
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 16,
                                 color: Color.fromARGB(255, 97, 97, 97))),
                       ),
@@ -334,7 +331,7 @@ class EditPromotion extends StatelessWidget {
                                 child: Row(
                                   children: [
                                     Text("discount_price".tr),
-                                    Container(
+                                    SizedBox(
                                       width: 40,
                                       height: 20,
                                       child: Radio(
@@ -377,7 +374,7 @@ class EditPromotion extends StatelessWidget {
                   ),
                 ),
                 const Divider(thickness: 1),
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: Get.height / 1.5,
                   child: Obx(
@@ -418,16 +415,12 @@ class EditPromotion extends StatelessWidget {
                                           : item.product!.purchasevariants!
                                               .length)
                                       .toString()
-                                  : item.variant!.variant1_fr +
-                                      " " +
-                                      item.variant!.variant2_fr),
+                                  : "${item.variant!.variant1_fr} ${item.variant!.variant2_fr}"),
                               trailing: Column(
                                 children: [
-                                  Text("-" + item.discount.toString() + "%"),
-                                  Text("min " +
-                                      item.minimum.toStringAsFixed(0) +
-                                      " " +
-                                      item.unite),
+                                  Text("-${item.discount}%"),
+                                  Text(
+                                      "min ${item.minimum.toStringAsFixed(0)} ${item.unite}"),
                                 ],
                               ),
                               leading: CachedNetworkImage(
@@ -587,10 +580,10 @@ showWindowProductAdd(
                       //product
                       ? Obx(
                           () => !productController.loadProductReady.value
-                              ? Container(
+                              ? const SizedBox(
                                   width: 40,
                                   height: 40,
-                                  child: const Center(
+                                  child: Center(
                                       child: CircularProgressIndicator()),
                                 )
                               : ListView.builder(
@@ -741,16 +734,14 @@ showWindowProductAdd(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                Container(
+                                SizedBox(
                                   width: 29,
                                   child: IconButton(
                                     onPressed: () {
                                       if (promotionController.pourcentage > 1) {
                                         promotionController.pourcentage--;
                                         discountController.text =
-                                            promotionController.pourcentage
-                                                    .toString() +
-                                                "%";
+                                            "${promotionController.pourcentage}%";
                                       }
                                     },
                                     icon: const Icon(
@@ -782,7 +773,7 @@ showWindowProductAdd(
                                     ),
                                   ),
                                 ),
-                                Container(
+                                SizedBox(
                                   // color: Color.fromARGB(255, 192, 227, 255),
                                   width: 29,
                                   child: IconButton(
@@ -795,9 +786,7 @@ showWindowProductAdd(
                                           99) {
                                         promotionController.pourcentage++;
                                         discountController.text =
-                                            promotionController.pourcentage
-                                                    .toString() +
-                                                "%";
+                                            "${promotionController.pourcentage}%";
                                       }
                                     },
                                   ),
@@ -811,7 +800,7 @@ showWindowProductAdd(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text("minimum".tr),
-                          Container(
+                          SizedBox(
                             width: 150,
                             height: 37,
                             child: DropdownButtonFormField2(
@@ -837,32 +826,32 @@ showWindowProductAdd(
                                 "Unité",
                                 style: TextStyle(fontSize: 12),
                               ),
-                              iconStyleData: IconStyleData(
-                                icon: const Icon(
+                              iconStyleData: const IconStyleData(
+                                icon: Icon(
                                   Icons.arrow_drop_down,
                                   size: 30,
                                   color: Colors.grey,
                                 ),
                               ),
-                              buttonStyleData: ButtonStyleData(
+                              buttonStyleData: const ButtonStyleData(
                                 height: 45,
                               ),
-                              items: [
+                              items: const [
                                 DropdownMenuItem<String>(
                                   value: "Pcs",
-                                  child: const Text(
+                                  child: Text(
                                     "Paquet",
                                     style: TextStyle(
                                       fontSize: 14,
                                     ),
                                   ),
                                 ),
-                                const DropdownMenuItem<String>(
+                                DropdownMenuItem<String>(
                                   value: "Cart",
                                   enabled: true,
                                   child: Text(
                                     "Caisse",
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 14,
                                     ),
                                   ),
@@ -886,7 +875,7 @@ showWindowProductAdd(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                Container(
+                                SizedBox(
                                   width: 29,
                                   child: IconButton(
                                     onPressed: () {
@@ -906,7 +895,7 @@ showWindowProductAdd(
                                 Container(
                                   // padding: EdgeInsets.,
                                   decoration: const BoxDecoration(
-                                      border: const Border.symmetric(
+                                      border: Border.symmetric(
                                           vertical: BorderSide(width: 0.1))),
                                   width: 35,
                                   height: 25,
@@ -926,7 +915,7 @@ showWindowProductAdd(
                                     ),
                                   ),
                                 ),
-                                Container(
+                                SizedBox(
                                   // color: Color.fromARGB(255, 192, 227, 255),
                                   width: 29,
                                   child: IconButton(
