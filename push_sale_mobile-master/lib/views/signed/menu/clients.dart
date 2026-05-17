@@ -41,6 +41,7 @@ class ListClients extends StatelessWidget {
   final PermissionsController perm = Get.find();
   final PageController pageController = PageController();
   final TextEditingController searchController = TextEditingController();
+  final RxString selectedVisitDay = "".obs;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +59,7 @@ class ListClients extends StatelessWidget {
             clientController: clientController,
             filterController: filterController,
             pageController: pageController,
+            selectedVisitDay: selectedVisitDay,
             countBuilder: () => _filteredClients().length,
           ),
           Expanded(
@@ -96,6 +98,7 @@ class ListClients extends StatelessWidget {
                                 clientController.visit_day_only.value = false;
                                 filterController.selectedCity.value = 0;
                                 filterController.selectedTPV.value = 0;
+                                selectedVisitDay.value = "";
                                 clientController.filter = "";
                                 searchController.clear();
                                 clientController.ready.refresh();
@@ -166,6 +169,7 @@ class ListClients extends StatelessWidget {
   List<Client> _filteredClients() {
     final nowDay = DateFormat("EEEE").format(DateTime.now()).toLowerCase();
     final query = clientController.filter.trim().toLowerCase();
+    final selectedDay = selectedVisitDay.value;
 
     return clientController.clientsList.where((client) {
       final matchesSearch =
@@ -177,7 +181,14 @@ class ListClients extends StatelessWidget {
       final matchesVisitDay = !clientController.visit_day_only.value ||
           (client.visitdays != null &&
               client.visitdays!.any((item) => item.day == nowDay));
-      return matchesSearch && matchesCity && matchesType && matchesVisitDay;
+      final matchesSelectedDay = selectedDay.isEmpty ||
+          (client.visitdays != null &&
+              client.visitdays!.any((item) => item.day == selectedDay));
+      return matchesSearch &&
+          matchesCity &&
+          matchesType &&
+          matchesVisitDay &&
+          matchesSelectedDay;
     }).toList();
   }
 }
@@ -187,6 +198,7 @@ class _SearchAndFilters extends StatelessWidget {
   final ClientController clientController;
   final FilterController filterController;
   final PageController pageController;
+  final RxString selectedVisitDay;
   final int Function() countBuilder;
 
   const _SearchAndFilters({
@@ -194,6 +206,7 @@ class _SearchAndFilters extends StatelessWidget {
     required this.clientController,
     required this.filterController,
     required this.pageController,
+    required this.selectedVisitDay,
     required this.countBuilder,
   });
 
@@ -261,6 +274,8 @@ class _SearchAndFilters extends StatelessWidget {
               duration: const Duration(milliseconds: 180),
             ),
           ),
+          const SizedBox(height: AppSpacing.sm),
+          _WeekdayScroller(selectedVisitDay: selectedVisitDay),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
@@ -348,6 +363,82 @@ class _SearchAndFilters extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WeekdayScroller extends StatelessWidget {
+  final RxString selectedVisitDay;
+
+  const _WeekdayScroller({required this.selectedVisitDay});
+
+  static const days = [
+    ("saturday", "Samedi"),
+    ("sunday", "Dimanche"),
+    ("monday", "Lundi"),
+    ("tuesday", "Mardi"),
+    ("wednesday", "Mercredi"),
+    ("thursday", "Jeudi"),
+    ("friday", "Vendredi"),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Obx(
+          () => Row(
+            children: [
+              _DayChip(
+                label: "Tous",
+                selected: selectedVisitDay.value.isEmpty,
+                onTap: () => selectedVisitDay.value = "",
+              ),
+              ...days.map(
+                (day) => _DayChip(
+                  label: day.$2,
+                  selected: selectedVisitDay.value == day.$1,
+                  onTap: () => selectedVisitDay.value =
+                      selectedVisitDay.value == day.$1 ? "" : day.$1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DayChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _DayChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        selectedColor: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        labelStyle: AppTextStyles.caption.copyWith(
+          color: selected ? Colors.white : AppColors.ink,
+          fontWeight: FontWeight.w800,
+        ),
+        side: BorderSide(color: selected ? AppColors.primary : AppColors.line),
+        onSelected: (_) => onTap(),
       ),
     );
   }

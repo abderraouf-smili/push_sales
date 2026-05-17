@@ -10,6 +10,10 @@
 - Depots : fond clair force et chargement unique pour eviter l'ecran noir/refresh repetitif.
 - Depots/reception : actions depot transformees en barre lisible, cartes stock modernisees et etat vide ajoute.
 - Bon de reception : header, total, ajouter/enregistrer/imprimer/imprimante rendus visibles; suppression de hauteurs fixes responsables d'overflows.
+- Module clients : liste et grille modernisees avec badges stock/visite/ventes, filtres rapides par jour et cartes anti-overflow.
+- Fiche client : nouvelle interface a onglets `Info / Commandes / Historique` avec resume client, credit, telephone, etats commandes, jours de visite, historique et action terrain.
+- Visites : dialogue de raison de non-vente modernise, scrollable et plus lisible sur petit smartphone.
+- Validation : APK debug VPN reconstruit et lance sur SM A165F (`10.212.134.4:37055`).
 - Liste de prix : correction du chargement infini et parsing plus robuste des donnees backend.
 - Theme : rendu sombre legacy neutralise temporairement pour eviter les ecrans noirs sur les anciens widgets.
 - Validation : APK debug VPN reconstruit et lance sur SM A165F.

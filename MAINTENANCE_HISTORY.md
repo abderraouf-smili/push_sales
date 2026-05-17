@@ -371,3 +371,29 @@ Resultats :
 
 Risque :
 - Moyen pour les ecrans UI profonds; impact metier nul.
+
+# 2026-05-17 - Modernisation module clients terrain
+
+Fichiers modifies :
+- `push_sale_mobile-master/lib/views/signed/menu/clients.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/clients/listinglist.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/clients/listingicon.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/clients/ficheclient.dart`
+
+Commandes executees :
+- `dart format push_sale_mobile-master/lib/views/signed/widgets/clients/ficheclient.dart push_sale_mobile-master/lib/views/signed/widgets/clients/listinglist.dart push_sale_mobile-master/lib/views/signed/widgets/clients/listingicon.dart push_sale_mobile-master/lib/views/signed/menu/clients.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter devices`
+- `flutter run -d 10.212.134.4:37055 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- Liste clients modernisee avec cartes, badges stock/visite/ventes et jours de visite.
+- Ajout de filtres rapides par jour de visite sans masquer les clients par defaut.
+- Fiche client remplacee par une page a onglets `Info`, `Commandes`, `Historique`.
+- Dialogue de raison de non-vente rendu responsive et plus clair.
+- APK debug genere, installe et lance sur SM A165F.
+- `flutter analyze --no-fatal-infos --no-fatal-warnings` OK; warnings stricts historiques toujours presents.
+
+Risque :
+- Moyen-faible; aucune route API, aucun JSON et aucune logique metier n'ont ete changes.

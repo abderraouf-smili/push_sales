@@ -1,5 +1,16 @@
 # PROJECT_HISTORY
 
+## 2026-05-17 - Modernisation fiche client et liste clients terrain
+
+- Zone modifiee : Flutter clients, liste clients, grille clients, fiche client detail.
+- Objectif : rapprocher le module clients des maquettes fournies : liste plus lisible, filtres par jours, fiche client moderne avec informations, commandes et historique.
+- Resume : ajout de chips de jours de visite sans filtrage obligatoire par defaut; refonte des cartes liste/grille avec badges stock, ventes, jours et derniere visite; remplacement de l'ancien panneau coulissant de fiche client par une page a onglets `Info / Commandes / Historique`; ajout de cartes client, metriques telephone/credit/commandes, etat de visite modifiable, jours planifies, promotions et historique de visites; modernisation du dialogue de raison de non-vente pour eviter les overflows.
+- Risque : moyen-faible, car les changements touchent des widgets profonds du parcours client mais ne modifient aucune route API, aucun format JSON et aucun calcul metier.
+- Impact logique metier : aucun changement volontaire; les actions existantes restent `Products`, `EditClient`, `getCurrentOrders` et `saveVisit`.
+- Tests effectues : `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, `flutter devices` OK, `flutter run -d 10.212.134.4:37055 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK.
+- Tests a faire : validation visuelle sur scrcpy des filtres jours, ouverture fiche client, onglets commandes/historique, changement etat de visite et creation commande depuis la fiche.
+- Prochaine etape : poursuivre la modernisation du detail commande client et du parcours ajout client apres test manuel.
+
 ## 2026-05-17 - Clients, tracking, sidebar et deconnexion propre
 
 - Zone modifiee : Flutter HomePage/navigation, clients, nouveau client, tracking, depots, session/logout.

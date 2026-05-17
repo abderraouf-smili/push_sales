@@ -4,12 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/controllers/client_controller.dart';
 import 'package:push_sale/models/client.dart';
+import 'package:push_sale/theme/app_colors.dart';
+import 'package:push_sale/theme/app_spacing.dart';
+import 'package:push_sale/theme/app_text_styles.dart';
 import 'package:push_sale/views/signed/widgets/clients/ficheclient.dart';
+import 'package:push_sale/widgets/common/app_status_chip.dart';
 
 class ListingList extends StatelessWidget {
   final List<Client> listing;
-  String? posted_id;
-  ClientController clientController = Get.find();
+  final String? posted_id;
+  final ClientController clientController = Get.find();
+
   ListingList(this.listing, {super.key, this.posted_id});
 
   @override
@@ -18,15 +23,23 @@ class ListingList extends StatelessWidget {
       physics: const BouncingScrollPhysics(),
       slivers: [
         CupertinoSliverRefreshControl(
-          refreshTriggerPullDistance: 180,
+          refreshTriggerPullDistance: 160,
           onRefresh: () => clientController.getClients(),
         ),
-        SliverFixedExtentList(
-          itemExtent: 112,
-          delegate: SliverChildBuilderDelegate(
-            (context, index) =>
-                itemClient(listing[index], posted_id: posted_id),
-            childCount: listing.length,
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.xs,
+            AppSpacing.lg,
+            96,
+          ),
+          sliver: SliverList.separated(
+            itemCount: listing.length,
+            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+            itemBuilder: (context, index) => ItemClient(
+              listing[index],
+              posted_id: posted_id,
+            ),
           ),
         ),
       ],
@@ -34,132 +47,182 @@ class ListingList extends StatelessWidget {
   }
 }
 
-class itemClient extends StatelessWidget {
-  Client client;
-  String? posted_id;
-  itemClient(this.client, {super.key, this.posted_id});
+class ItemClient extends StatelessWidget {
+  final Client client;
+  final String? posted_id;
+
+  const ItemClient(this.client, {super.key, this.posted_id});
 
   @override
   Widget build(BuildContext context) {
-    var color = posted_id != null && posted_id == client.id
-        ? const Color.fromARGB(255, 255, 235, 235)
-        : Colors.white;
-    return GestureDetector(
+    final locale = Get.locale?.languageCode ?? "fr";
+    final isPosted = posted_id != null && posted_id == client.id;
+    final city = client.address?.city.getName(locale) ?? "-";
+    final wilaya = client.address?.wilaya.getName(locale) ?? "-";
+    final type = client.typepv?.getName(locale) ?? "Point de vente";
+    final lastVisit =
+        client.visits?.isNotEmpty == true ? client.visits!.first : null;
+    final hasStockStatus = lastVisit?.code == "S.D";
+    final sales = client.sales ?? 0;
+
+    return InkWell(
       onTap: () => Get.to(() => FicheClient(client)),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: color,
-          boxShadow: const [
+          color: isPosted ? AppColors.softBlue : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          border: Border.all(
+            color: isPosted ? AppColors.primary : AppColors.line,
+          ),
+          boxShadow: [
             BoxShadow(
-              color: Color.fromARGB(255, 173, 218, 255),
-              blurRadius: 5,
-              offset: Offset(0, 3),
-            )
+              color: AppColors.ink.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
           ],
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
-              width: Get.width / 4.5,
-              height: double.infinity,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color.fromARGB(255, 165, 165, 165),
-                      blurRadius: 2,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                  image: DecorationImage(
-                    fit: BoxFit.cover,
-                    image: CachedNetworkImageProvider(
-                      client.image,
-                      cacheKey: client.image,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            _ClientThumb(client: client),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      client.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: "alata",
-                        fontSize: 18,
-                        height: 1.15,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(client.typepv!.getName(Get.deviceLocale!.languageCode),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontFamily: "alata",
-                            fontSize: 12,
-                            height: 1.15,
-                            color: Colors.grey)),
-                    const SizedBox(height: 5),
-                    Text(
-                        "${client.address!.city.getName(Get.deviceLocale!.languageCode)}, ${client.address!.wilaya.getName(Get.deviceLocale!.languageCode)}",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontFamily: "alata",
-                            fontSize: 14,
-                            height: 1.15,
-                            color: Colors.grey)),
-                  ],
-                ),
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-              width: 34,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.local_grocery_store_rounded,
-                    color: client.sales != 0
-                        ? const Color.fromARGB(255, 100, 173, 103)
-                        : const Color.fromARGB(255, 231, 231, 231),
-                    size: Get.width / 20,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              client.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.title.copyWith(fontSize: 16),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              type,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.caption,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded,
+                          color: AppColors.muted),
+                    ],
                   ),
-                  Icon(
-                    Icons.remove_red_eye,
-                    color: client.sales != 0 || client.visits != null
-                        ? const Color.fromARGB(255, 134, 162, 238)
-                        : const Color.fromARGB(255, 231, 231, 231),
-                    size: Get.width / 20,
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      const Icon(Icons.place_outlined,
+                          color: AppColors.muted, size: 16),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          "$city, $wilaya",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Icon(
-                    Icons.restart_alt,
-                    color: client.visits != null &&
-                            client.visits!
-                                .where((element) => element.revisit)
-                                .isNotEmpty
-                        ? const Color.fromARGB(255, 228, 159, 113)
-                        : const Color.fromARGB(255, 231, 231, 231),
-                    size: Get.width / 20,
+                  const SizedBox(height: AppSpacing.md),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      AppStatusChip(
+                        label: hasStockStatus
+                            ? "Stock disponible"
+                            : lastVisit?.getDescription(locale) ?? "Non visite",
+                        icon: hasStockStatus
+                            ? Icons.check_circle_outline_rounded
+                            : Icons.info_outline_rounded,
+                        color: hasStockStatus
+                            ? AppColors.success
+                            : AppColors.muted,
+                      ),
+                      AppStatusChip(
+                        label: "$sales vente${sales > 1 ? "s" : ""}",
+                        icon: Icons.shopping_cart_outlined,
+                        color:
+                            sales > 0 ? AppColors.secondary : AppColors.muted,
+                      ),
+                      if ((client.visitdays ?? []).isNotEmpty)
+                        AppStatusChip(
+                          label: _visitDaysLabel(client),
+                          icon: Icons.event_available_rounded,
+                          color: AppColors.info,
+                        ),
+                    ],
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  String _visitDaysLabel(Client client) {
+    final days = client.visitdays ?? [];
+    final labels = days.take(2).map((day) => day.day.tr).join(", ");
+    if (days.length <= 2) {
+      return labels;
+    }
+    return "$labels +${days.length - 2}";
+  }
+}
+
+class _ClientThumb extends StatelessWidget {
+  final Client client;
+
+  const _ClientThumb({required this.client});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: SizedBox(
+        width: 62,
+        height: 72,
+        child: client.hasImage
+            ? CachedNetworkImage(
+                imageUrl: client.image,
+                fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => const _StoreIcon(),
+              )
+            : const _StoreIcon(),
+      ),
+    );
+  }
+}
+
+class _StoreIcon extends StatelessWidget {
+  const _StoreIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.softBlue,
+      child: const Icon(
+        Icons.storefront_rounded,
+        color: AppColors.primary,
+        size: 30,
       ),
     );
   }

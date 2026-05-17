@@ -4,121 +4,136 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/controllers/client_controller.dart';
 import 'package:push_sale/models/client.dart';
+import 'package:push_sale/theme/app_colors.dart';
+import 'package:push_sale/theme/app_spacing.dart';
+import 'package:push_sale/theme/app_text_styles.dart';
 import 'package:push_sale/views/signed/widgets/clients/ficheclient.dart';
+import 'package:push_sale/widgets/common/app_status_chip.dart';
 
 class ListingIcon extends StatelessWidget {
   final List<Client> listing;
-  String? posted_id;
-  ClientController clientController = Get.find();
+  final String? posted_id;
+  final ClientController clientController = Get.find();
+
   ListingIcon(this.listing, {super.key, this.posted_id});
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(physics: const BouncingScrollPhysics(), slivers: [
-      CupertinoSliverRefreshControl(
-        refreshTriggerPullDistance: 180,
-        onRefresh: () => clientController.getClients(),
-      ),
-      SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, childAspectRatio: 0.95),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) => iconClient(
-            listing[index],
-            posted_id: posted_id,
-          ),
-          childCount: listing.length,
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        CupertinoSliverRefreshControl(
+          refreshTriggerPullDistance: 160,
+          onRefresh: () => clientController.getClients(),
         ),
-      ),
-    ]);
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.sm,
+            AppSpacing.xs,
+            AppSpacing.sm,
+            96,
+          ),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 240,
+              mainAxisSpacing: AppSpacing.md,
+              crossAxisSpacing: AppSpacing.md,
+              childAspectRatio: 0.86,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => IconClient(
+                listing[index],
+                posted_id: posted_id,
+              ),
+              childCount: listing.length,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
-class iconClient extends StatelessWidget {
-  Client client;
-  String? posted_id;
-  iconClient(this.client, {super.key, this.posted_id});
+class IconClient extends StatelessWidget {
+  final Client client;
+  final String? posted_id;
+
+  const IconClient(this.client, {super.key, this.posted_id});
 
   @override
   Widget build(BuildContext context) {
-    var color = posted_id != 0 && posted_id == client.id
-        ? const Color.fromARGB(255, 241, 249, 255)
-        : Colors.white;
-    return GestureDetector(
+    final locale = Get.locale?.languageCode ?? "fr";
+    final isPosted = posted_id != null && posted_id == client.id;
+    final city = client.address?.city.getName(locale) ?? "-";
+    final lastVisit =
+        client.visits?.isNotEmpty == true ? client.visits!.first : null;
+    final stockOk = lastVisit?.code == "S.D";
+
+    return InkWell(
       onTap: () => Get.to(() => FicheClient(client)),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
         decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: const [
-              BoxShadow(
-                color: Color.fromARGB(255, 173, 218, 255),
-                blurRadius: 5,
-                offset: Offset(0, 3),
-              )
-            ]),
+          color: isPosted ? AppColors.softBlue : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          border:
+              Border.all(color: isPosted ? AppColors.primary : AppColors.line),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.ink.withValues(alpha: 0.05),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              height: Get.height / 5.8,
-              decoration: BoxDecoration(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(15)),
-                image: DecorationImage(
-                  fit: BoxFit.cover,
-                  image: CachedNetworkImageProvider(
-                    client.image,
-                    cacheKey: client.image,
-                  ),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppSpacing.radiusLg),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: client.hasImage
+                      ? CachedNetworkImage(
+                          imageUrl: client.image,
+                          fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) => const _StorePoster(),
+                        )
+                      : const _StorePoster(),
                 ),
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      alignment: Alignment.bottomLeft,
-                      margin: const EdgeInsets.symmetric(horizontal: 5),
-                      child: Text(
-                        "${client.name.substring(
-                          0,
-                          client.name.length > 14 ? 14 : client.name.length,
-                        )} ${client.name.length > 14 ? "..." : ""}",
-                        style: const TextStyle(
-                          fontFamily: "kodchasan",
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 5),
-                      child: Text(
-                        client.address!.city.getName(Get.locale!.languageCode),
-                        style: const TextStyle(
-                            fontSize: 11,
-                            fontFamily: "kodchasan",
-                            color: Colors.grey),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Text(
-                    client.address!.wilaya.code,
-                    style: const TextStyle(
-                        fontSize: 11,
-                        fontFamily: "kodchasan",
-                        fontWeight: FontWeight.bold),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    client.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.title.copyWith(fontSize: 15),
                   ),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    city,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  AppStatusChip(
+                    label: stockOk ? "Stock OK" : "${client.sales ?? 0} vente",
+                    icon: stockOk
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.shopping_cart_outlined,
+                    color: stockOk ? AppColors.success : AppColors.muted,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -127,15 +142,20 @@ class iconClient extends StatelessWidget {
   }
 }
 
-              // Container(
-              //   decoration: BoxDecoration(
-              //     borderRadius: BorderRadius.circular(20),
-              //     image: DecorationImage(
-              //       fit: BoxFit.fill,
-              //       image: NetworkImage(
-              //         "http://192.168.1.100/push_sale${listing[index].image}",
-              //       ),
-              //     ),
-              //   ),
-              //   margin: EdgeInsets.all(10),
-              // )
+class _StorePoster extends StatelessWidget {
+  const _StorePoster();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.softBlue,
+      child: const Center(
+        child: Icon(
+          Icons.storefront_rounded,
+          color: AppColors.primary,
+          size: 42,
+        ),
+      ),
+    );
+  }
+}
