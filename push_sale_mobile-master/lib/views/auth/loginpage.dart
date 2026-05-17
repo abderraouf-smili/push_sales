@@ -2,9 +2,15 @@ import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/controllers/authentification_controller.dart';
+import 'package:push_sale/theme/app_colors.dart';
+import 'package:push_sale/theme/app_spacing.dart';
+import 'package:push_sale/theme/app_text_styles.dart';
 import 'package:push_sale/views/auth/checklogin.dart';
 import 'package:push_sale/views/auth/passwordforgetpage.dart';
 import 'package:push_sale/views/auth/signuppage.dart';
+import 'package:push_sale/widgets/common/app_button.dart';
+import 'package:push_sale/widgets/common/app_card.dart';
+import 'package:push_sale/widgets/common/app_text_field.dart';
 
 class LoginPage extends StatelessWidget {
   TextEditingController mailController = TextEditingController();
@@ -20,245 +26,203 @@ class LoginPage extends StatelessWidget {
     return SafeArea(
         bottom: false,
         child: Scaffold(
-          resizeToAvoidBottomInset: false,
-          body: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                //logo
-                Expanded(
-                  flex: 3,
-                  child: Center(
-                    child: Image.asset(
-                      "assets/images/icon_transp.png",
-                      width: 160,
-                    ),
-                  ),
+          resizeToAvoidBottomInset: true,
+          body: PageView(
+            controller: loginPageController,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
                 ),
-                Expanded(
-                  flex: 7,
-                  child: PageView(
-                      controller: loginPageController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        Column(
-                          children: [
-                            Container(
-                              child: Form(
-                                key: authController.keyFormLogin,
-                                child: Column(
-                                  children: [
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        "login".tr,
-                                        style: const TextStyle(
-                                            fontSize: 30,
-                                            fontFamily: "kodchasan",
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text("login_text".tr,
-                                          style: const TextStyle(
-                                              fontSize: 12,
-                                              fontFamily: "kodchasan",
-                                              color: Color.fromARGB(
-                                                  255, 121, 121, 121))),
-                                    ),
-                                    const SizedBox(
-                                      height: 20,
-                                    ),
-                                    TextFormField(
-                                      controller: mailController,
-                                      keyboardType: TextInputType.emailAddress,
-                                      validator: (value) => value!.isEmpty
-                                          ? "mailempty".tr
-                                          : EmailValidator.validate(value)
-                                              ? null
-                                              : "wrongemailadress".tr,
-                                      decoration: const InputDecoration(
-                                        fillColor: Colors.red,
-                                        prefixIcon: Icon(Icons.mail),
-                                        hintText: "example@softstarter.dz",
-                                      ),
-                                      onSaved: (value) {
-                                        authController.email = value;
-                                      },
-                                    ),
-                                    Obx(
-                                      () => TextFormField(
-                                        obscureText:
-                                            !authController.showPassword.value,
-                                        validator: (value) => value!.isEmpty
-                                            ? "emptypassword".tr
-                                            : value.length < 6
-                                                ? "shortpassword".tr
-                                                : null,
-                                        decoration: InputDecoration(
-                                          prefixIcon:
-                                              const Icon(Icons.vpn_key_rounded),
-                                          suffixIcon: IconButton(
-                                            onPressed: () {
-                                              authController
-                                                      .showPassword.value =
-                                                  !authController
-                                                      .showPassword.value;
-                                            },
-                                            icon: Icon(authController
-                                                    .showPassword.value
-                                                ? Icons.visibility_off
-                                                : Icons.visibility),
-                                          ),
-                                          hintText: "*********",
-                                        ),
-                                        onSaved: (value) {
-                                          authController.password = value;
-                                        },
-                                      ),
-                                    ),
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(
-                                          vertical: 12),
-                                      child: Align(
-                                        alignment: Alignment.topRight,
-                                        child: InkWell(
-                                          onTap: () {
-                                            Get.to(() => ForgotPasswordPage());
-                                          },
-                                          child: Text(
-                                            "password_forgot".tr,
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 116,
+                        height: 116,
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.radiusLg),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.10),
+                              blurRadius: 26,
+                              offset: const Offset(0, 12),
                             ),
-                            Container(
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 20),
-                              child: MaterialButton(
-                                minWidth: double.infinity,
-                                height: 60,
-                                color: const Color.fromARGB(255, 83, 177, 117),
-                                shape: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                  borderSide: BorderSide.none,
-                                ),
-                                onPressed: () async {
-                                  var sign =
-                                      await authController.SubmitFormLogin();
-                                  CheckLoginSign(sign);
-                                },
-                                child: Text(
-                                  "login".tr,
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ),
-                            Column(
-                              children: [
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    "otherway".tr,
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        fontFamily: "kodchasan",
-                                        color:
-                                            Color.fromARGB(255, 121, 121, 121)),
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 60, vertical: 20),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceAround,
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () async {
-                                          loginPageController.jumpToPage(1);
-                                          Map<String, dynamic> sign =
-                                              await authController
-                                                  .SignInWithGoogle();
-                                          CheckLoginSign(sign);
-                                        },
-                                        child: Image.asset(
-                                          "assets/images/google.png",
-                                          width: 60,
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          loginPageController.jumpToPage(2);
-                                          Map<String, dynamic> sign =
-                                              await authController
-                                                  .SignInWithFacebook();
-                                          CheckLoginSign(sign);
-                                        },
-                                        child: Image.asset(
-                                          "assets/images/facebook.png",
-                                          width: 60,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      vertical: 20, horizontal: 20),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        "not_yet_user".tr,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                      const SizedBox(
-                                        width: 10,
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          Get.to(() => const SignupPage());
-                                        },
-                                        child: Text("signup".tr,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .labelSmall),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            )
                           ],
                         ),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Image.asset("assets/images/google.gif"),
+                        child: Image.asset("assets/images/icon_transp.png"),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    Text("login".tr, style: AppTextStyles.display),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text("login_text".tr, style: AppTextStyles.subtitle),
+                    const SizedBox(height: AppSpacing.xl),
+                    AppCard(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Form(
+                        key: authController.keyFormLogin,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AppTextField(
+                              controller: mailController,
+                              keyboardType: TextInputType.emailAddress,
+                              prefixIcon: Icons.mail_outline_rounded,
+                              hintText: "example@softstarter.dz",
+                              validator: (value) => value!.isEmpty
+                                  ? "mailempty".tr
+                                  : EmailValidator.validate(value)
+                                      ? null
+                                      : "wrongemailadress".tr,
+                              onSaved: (value) {
+                                authController.email = value;
+                              },
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Obx(
+                              () => AppTextField(
+                                obscureText: !authController.showPassword.value,
+                                prefixIcon: Icons.lock_outline_rounded,
+                                hintText: "*********",
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    authController.showPassword.value =
+                                        !authController.showPassword.value;
+                                  },
+                                  icon: Icon(authController.showPassword.value
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined),
+                                ),
+                                validator: (value) => value!.isEmpty
+                                    ? "emptypassword".tr
+                                    : value.length < 6
+                                        ? "shortpassword".tr
+                                        : null,
+                                onSaved: (value) {
+                                  authController.password = value;
+                                },
+                              ),
+                            ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  Get.to(() => ForgotPasswordPage());
+                                },
+                                child: Text("password_forgot".tr),
+                              ),
+                            ),
+                            AppButton(
+                              label: "login".tr,
+                              icon: Icons.login_rounded,
+                              onPressed: () async {
+                                var sign =
+                                    await authController.SubmitFormLogin();
+                                CheckLoginSign(sign);
+                              },
+                            ),
+                          ],
                         ),
-                        Container(
-                          child: Image.asset(
-                            "assets/images/facebook-2.gif",
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    Text("otherway".tr, style: AppTextStyles.caption),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _SocialLoginButton(
+                            asset: "assets/images/google.png",
+                            label: "Google",
+                            onTap: () async {
+                              loginPageController.jumpToPage(1);
+                              Map<String, dynamic> sign =
+                                  await authController.SignInWithGoogle();
+                              CheckLoginSign(sign);
+                            },
                           ),
-                        )
-                      ]),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: _SocialLoginButton(
+                            asset: "assets/images/facebook.png",
+                            label: "Facebook",
+                            onTap: () async {
+                              loginPageController.jumpToPage(2);
+                              Map<String, dynamic> sign =
+                                  await authController.SignInWithFacebook();
+                              CheckLoginSign(sign);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("not_yet_user".tr, style: AppTextStyles.body),
+                        TextButton(
+                          onPressed: () {
+                            Get.to(() => const SignupPage());
+                          },
+                          child: Text("signup".tr),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-
-                // Expanded(
-                //   flex: 3,
-                //   child: ,
-                // ),
-              ],
-            ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: Image.asset("assets/images/google.gif"),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: Image.asset("assets/images/facebook-2.gif"),
+              )
+            ],
           ),
         ));
+  }
+}
+
+class _SocialLoginButton extends StatelessWidget {
+  final String asset;
+  final String label;
+  final VoidCallback onTap;
+
+  const _SocialLoginButton({
+    required this.asset,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(asset, width: 28, height: 28),
+          const SizedBox(width: AppSpacing.sm),
+          Text(label, style: AppTextStyles.body),
+        ],
+      ),
+    );
   }
 }

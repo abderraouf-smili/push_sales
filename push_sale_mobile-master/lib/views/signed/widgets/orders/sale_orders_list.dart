@@ -4,8 +4,14 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/order_controller.dart';
 import 'package:push_sale/api/printer_controller.dart';
+import 'package:push_sale/theme/app_colors.dart';
+import 'package:push_sale/theme/app_spacing.dart';
 import 'package:push_sale/views/signed/widgets/orders/show_order_detail.dart';
 import 'package:push_sale/views/signed/widgets/settings/printer_config.dart';
+import 'package:push_sale/widgets/common/app_empty_state.dart';
+import 'package:push_sale/widgets/common/app_list_tile.dart';
+import 'package:push_sale/widgets/common/app_loading_state.dart';
+import 'package:push_sale/widgets/common/app_status_chip.dart';
 
 class SaleOrderList extends StatelessWidget {
   OrderController orderController = Get.put(OrderController());
@@ -117,35 +123,42 @@ class SaleOrderList extends StatelessWidget {
             )
           ],
         ),
-        body: Container(
-          child: Obx(() => orderController.loadOrdersReady.value
-              ? ListView.builder(
-                  itemCount: orderController.orders.length,
-                  itemBuilder: (context, index) {
-                    var item = orderController.orders[index];
-                    return ListTile(
-                      onTap: () {
-                        Get.to(() => ShowOrderDetail(item));
-                      },
-                      title: Text(item.code),
-                      subtitle: Text(item.client!.name),
-                      trailing: Text(
-                        formatter.format(item.total_amount),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    );
-                  })
-              : const SizedBox(
-                  width: double.infinity,
-                  height: double.infinity,
-                  child: Center(
-                    child: SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: CircularProgressIndicator()),
-                  ),
-                )),
-        ),
+        body: Obx(() => orderController.loadOrdersReady.value
+            ? orderController.orders.isEmpty
+                ? AppEmptyState(
+                    title: "Aucune commande",
+                    message: "Les commandes du jour apparaitront ici.",
+                    icon: Icons.receipt_long_outlined,
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    itemCount: orderController.orders.length,
+                    itemBuilder: (context, index) {
+                      var item = orderController.orders[index];
+                      return AppListTile(
+                        onTap: () {
+                          Get.to(() => ShowOrderDetail(item));
+                        },
+                        icon: Icons.receipt_long_outlined,
+                        color: AppColors.primary,
+                        title: item.code,
+                        subtitle: item.client!.name,
+                        trailing: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              formatter.format(item.total_amount),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            AppStatusChip.fromState(item.state),
+                          ],
+                        ),
+                      );
+                    })
+            : AppLoadingState(message: "loading".tr)),
       ),
     );
   }

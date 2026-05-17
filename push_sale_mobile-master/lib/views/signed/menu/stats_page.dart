@@ -9,6 +9,8 @@ import 'package:push_sale/views/signed/customer/promotion_slide.dart';
 import 'package:push_sale/views/signed/widgets/orders/sale_orders_list.dart';
 import 'package:push_sale/views/signed/widgets/tracking/menu_orders.dart';
 import 'package:push_sale/views/signed/widgets/tracking/orders_status_detail.dart';
+import 'package:push_sale/widgets/common/app_loading_state.dart';
+import 'package:push_sale/widgets/common/app_page_header.dart';
 
 class StatsPage extends StatelessWidget {
   StatController statController = Get.put(StatController());
@@ -50,23 +52,15 @@ class StatsPage extends StatelessWidget {
         ? Column(
             children: [
               //entete DASHBOARD
-              Container(
-                width: double.infinity,
-                color: const Color.fromARGB(255, 107, 166, 255),
-                child: SizedBox(
-                  height: 50,
-                  child: Center(
-                    child: Text(
-                      "dashboard".tr,
-                      style: const TextStyle(fontSize: 18, color: Colors.white),
-                    ),
-                  ),
-                ),
+              AppPageHeader(
+                title: "dashboard".tr,
+                subtitle: "Indicateurs du jour et suivi activite",
+                icon: Icons.dashboard_outlined,
               ),
 
               // Listing of charts
               SizedBox(
-                height: Get.height - 100,
+                height: Get.height - 145,
                 child: CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
@@ -89,13 +83,7 @@ class StatsPage extends StatelessWidget {
               )
             ],
           )
-        : const SizedBox(
-            width: double.infinity,
-            height: double.infinity,
-            child: Center(
-                child: SizedBox(
-                    width: 40, height: 40, child: CircularProgressIndicator())),
-          ));
+        : AppLoadingState(message: "loading".tr));
   }
 
   Widget calenderDashboard(StatController statController) {

@@ -3,11 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/controllers/compte_menu_controller.dart';
 import 'package:push_sale/controllers/permissions_controller.dart';
+import 'package:push_sale/theme/app_colors.dart';
+import 'package:push_sale/theme/app_spacing.dart';
 import 'package:push_sale/views/signed/menu/commercial_menu.dart';
 import 'package:push_sale/views/signed/menu/my_warehouses.dart';
 import 'package:push_sale/views/signed/widgets/account/edit_personal_data.dart';
 import 'package:push_sale/views/signed/widgets/account/message_chat.dart';
 import 'package:push_sale/views/signed/widgets/settings/printer_config.dart';
+import 'package:push_sale/widgets/common/app_card.dart';
+import 'package:push_sale/widgets/common/app_list_tile.dart';
+import 'package:push_sale/widgets/common/app_page_header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:push_sale/const/globals.dart' as global;
 
@@ -122,49 +127,39 @@ class CompteSetting extends StatelessWidget {
         return false;
       },
       child: Column(children: [
-        Container(
-          margin: const EdgeInsets.only(top: 25, left: 20),
-          child: Align(
-            alignment: Alignment.bottomLeft,
-            child: Text(
-              "settings".tr,
-              style: const TextStyle(
-                  color: Color.fromARGB(255, 19, 21, 121),
-                  fontSize: 25,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
+        AppPageHeader(
+          title: "settings".tr,
+          subtitle: "current_version".tr,
+          icon: Icons.manage_accounts_outlined,
         ),
         Obx(
           () => compteController.ready.value
-              ? Container(
+              ? AppCard(
+                  margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       Container(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
                         width: 70,
                         height: 70,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
-                          border: Border.all(width: 1, color: Colors.red),
+                          border: Border.all(width: 1, color: AppColors.line),
                           image: DecorationImage(
                               fit: BoxFit.cover,
                               image: CachedNetworkImageProvider(
                                   compteController.actor!.image)),
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          Get.to(() => EditPerosnalData());
-                        },
-                        child: SizedBox(
-                          width: Get.width / 2,
-                          height: 45,
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            Get.to(() => EditPerosnalData());
+                          },
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Align(
                                 alignment: Alignment.bottomLeft,
@@ -189,7 +184,9 @@ class CompteSetting extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Get.to(() => EditPerosnalData());
+                          },
                           icon: const Icon(Icons.arrow_forward_ios_outlined))
                     ],
                   ),
@@ -242,7 +239,7 @@ class CompteSetting extends StatelessWidget {
                 ),
         ),
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 10),
+          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           height: Get.height - 204,
           child: ListView.builder(
               physics: const BouncingScrollPhysics(),
@@ -255,23 +252,12 @@ class CompteSetting extends StatelessWidget {
                             thickness: 1,
                             endIndent: 50,
                           )
-                        : Container(
-                            child: ListTile(
-                              onTap: menu[index]["onTap"],
-                              leading: Icon(
-                                menu[index]["icon"],
-                                color: menu[index]["color"],
-                                size: 30,
-                              ),
-                              title: Text(
-                                menu[index]["title"],
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Text(menu[index]["subtitle"]),
-                              trailing:
-                                  const Icon(Icons.arrow_forward_ios_outlined),
-                            ),
+                        : AppListTile(
+                            onTap: menu[index]["onTap"],
+                            icon: menu[index]["icon"],
+                            color: menu[index]["color"],
+                            title: menu[index]["title"],
+                            subtitle: menu[index]["subtitle"],
                           )
                     : const SizedBox.shrink();
               }),

@@ -64,7 +64,7 @@ class CompteMenuController extends GetxController {
     var formdata = FormKey.currentState;
     if (formdata!.validate()) {
       formdata.save();
-      String img;
+      String img = "-1";
       if (ImageActor != null && ImageActor!.isNotEmpty) {
         if (ImageActor!.first is Image) {
           // print("No modification on image");

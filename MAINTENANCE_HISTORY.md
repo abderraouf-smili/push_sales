@@ -1,5 +1,51 @@
 # MAINTENANCE_HISTORY
 
+## 2026-05-17 - Modernisation UI/UX mobile et pack de validation
+
+Objectif :
+- Moderniser fortement l'interface mobile sans modifier la logique metier.
+- Ajouter des composants communs, comptes de test et scenarios de validation par role.
+
+Resume technique :
+- Ajout du theme Flutter global dans `lib/theme`.
+- Ajout de composants communs dans `lib/widgets/common`.
+- Modernisation de Login, Signup, HomePage, Clients, Produits, Commandes, menus Compte/Commercial et InternetError.
+- Ajout de confirmations pour creation commande, generation et confirmation de chargement.
+- Reduction des logs API sensibles dans `CallApi`.
+- Ajout de `TestUsersByRoleSeeder` pour dev/test.
+- Ajout de `TEST_ACCOUNTS.md` et `TEST_SCENARIOS.md`.
+
+Commandes executees :
+- `dart format lib\theme lib\widgets\common ...`
+- `flutter clean`
+- `flutter pub get`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug`
+- `flutter devices`
+- `flutter run -d 10.212.134.2:37143 --debug --no-resident`
+- `php -l database\seeders\TestUsersByRoleSeeder.php`
+- `composer install --no-interaction`
+
+Resultats :
+- Deux erreurs Dart existantes ont ete corrigees par initialisation/renommage local sans changement metier.
+- `flutter pub get` : OK.
+- `flutter analyze --no-fatal-infos --no-fatal-warnings` : OK sans erreur bloquante; 856 issues historiques restent a nettoyer progressivement.
+- `flutter build apk --debug` : OK, APK genere dans `push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk`.
+- `flutter devices` : smartphone detecte sur `10.212.134.2:37143`, Windows et Edge detectes.
+- `flutter run -d 10.212.134.2:37143 --debug --no-resident` : OK, application installee/lancee sur SM A165F. Un avertissement de localisation `fr` a ete corrige dans `main.dart`, puis le lancement a ete confirme a nouveau.
+- `php -l` du seeder : OK.
+- `composer install --no-interaction` : bloque par PHP 8.1.32 alors que `composer.lock` demande PHP >= 8.2; commandes Artisan non executees.
+
+Points a surveiller :
+- Tester la navigation par permissions sur les 4 roles.
+- Tester les actions critiques sur vraie base de dev.
+- Tester impression Bluetooth avec imprimante reelle.
+
+Prochaines etapes :
+- Executer le seeder en dev apres `composer install`.
+- Lancer les scenarios manuels.
+- Continuer le nettoyage progressif de `flutter analyze`.
+
 ## 2026-05-17 - Correction compatibilite Flutter 3.38.9
 
 Objectif :

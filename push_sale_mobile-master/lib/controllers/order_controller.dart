@@ -771,18 +771,20 @@ class OrderController extends GetxController
       ),
     );
 
-    Client client = MyOrder != null ? MyOrder.client! : client;
+    Client selectedClient = MyOrder != null ? MyOrder.client! : client!;
 
     textPrint.add(
       LineTextPrinter(
         align: LineTextPrinter.LEFT,
         type: LineTextPrinter.TYPE_TEXT,
         text1: "Client",
-        text2: client.name
+        text2: selectedClient.name
                 .replaceAll("é", "e")
                 .replaceAll("è", "e")
                 .replaceAll("à", "a") +
-            (client.mobile != "" ? " - Tel : ${client.mobile} " : ""),
+            (selectedClient.mobile != ""
+                ? " - Tel : ${selectedClient.mobile} "
+                : ""),
         format: '%-6s %40s %n',
         size: 1,
       ),
@@ -793,12 +795,12 @@ class OrderController extends GetxController
         align: LineTextPrinter.LEFT,
         type: LineTextPrinter.TYPE_TEXT,
         text1: "Adresse",
-        text2: client.address!.city.name
+        text2: selectedClient.address!.city.name
                 .replaceAll("é", "e")
                 .replaceAll("è", "e")
                 .replaceAll("à", "a") +
             "  " +
-            client.address!.wilaya.name
+            selectedClient.address!.wilaya.name
                 .replaceAll("é", "e")
                 .replaceAll("è", "e")
                 .replaceAll("à", "a"),

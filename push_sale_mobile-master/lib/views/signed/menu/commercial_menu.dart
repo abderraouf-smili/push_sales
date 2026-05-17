@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/controllers/permissions_controller.dart';
+import 'package:push_sale/theme/app_spacing.dart';
 import 'package:push_sale/views/signed/widgets/actors/actors_list.dart';
 import 'package:push_sale/views/signed/widgets/coupons/coupons_list.dart';
 import 'package:push_sale/views/signed/widgets/creances/main_creance_page.dart';
 import 'package:push_sale/views/signed/widgets/credit/main_credit_page.dart';
 import 'package:push_sale/views/signed/widgets/pricelist/pricelist_page.dart';
 import 'package:push_sale/views/signed/widgets/promotions/promotions_list.dart';
+import 'package:push_sale/widgets/common/app_list_tile.dart';
+import 'package:push_sale/widgets/common/app_page_header.dart';
 
 class CommercialMenu extends StatelessWidget {
   PermissionsController perm = Get.find();
@@ -84,19 +87,15 @@ class CommercialMenu extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            "commercial".tr,
-            style: const TextStyle(
-                color: Color.fromARGB(255, 19, 21, 121),
-                fontSize: 25,
-                fontWeight: FontWeight.bold),
-          ),
-          centerTitle: true,
-        ),
+        appBar: AppBar(title: Text("commercial".tr)),
         body: Column(children: [
+          AppPageHeader(
+            title: "commercial".tr,
+            subtitle: "commercial.sub".tr,
+            icon: Icons.business_center_outlined,
+          ),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 10),
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             height: Get.height - 204,
             child: ListView.builder(
                 physics: const BouncingScrollPhysics(),
@@ -109,23 +108,12 @@ class CommercialMenu extends StatelessWidget {
                               thickness: 1,
                               endIndent: 50,
                             )
-                          : Container(
-                              child: ListTile(
-                                onTap: menu[index]["onTap"],
-                                leading: Icon(
-                                  menu[index]["icon"],
-                                  color: menu[index]["color"],
-                                  size: 30,
-                                ),
-                                title: Text(
-                                  menu[index]["title"],
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Text(menu[index]["subtitle"]),
-                                trailing: const Icon(
-                                    Icons.arrow_forward_ios_outlined),
-                              ),
+                          : AppListTile(
+                              onTap: menu[index]["onTap"],
+                              icon: menu[index]["icon"],
+                              color: menu[index]["color"],
+                              title: menu[index]["title"],
+                              subtitle: menu[index]["subtitle"],
                             )
                       : const SizedBox.shrink();
                 }),

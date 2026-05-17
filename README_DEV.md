@@ -99,6 +99,60 @@ Lancer sur un appareil detecte :
 flutter run -d <device>
 ```
 
+Device cible possible :
+
+```bash
+flutter run -d 10.212.134.2:45303
+```
+
+Le port ADB wireless peut changer a chaque reconnexion. Le 2026-05-17, le device SM A165F a ete detecte sur :
+
+```bash
+flutter run -d 10.212.134.2:37143
+```
+
+## Comptes de test par role
+
+Un seeder dev/test est disponible :
+
+```bash
+cd push_sale-master
+php artisan db:seed --class=TestUsersByRoleSeeder
+```
+
+Prevoir PHP >= 8.2 pour installer les dependances backend actuelles du `composer.lock`.
+
+Comptes crees :
+
+```text
+admin.test@pushsales.local / Test@123456
+commercial.test@pushsales.local / Test@123456
+livreur.test@pushsales.local / Test@123456
+depot.test@pushsales.local / Test@123456
+```
+
+Ces comptes sont uniquement pour local/dev/test. Voir `TEST_ACCOUNTS.md`.
+
+## Scenarios de validation
+
+Les scenarios manuels par role sont documentes dans :
+
+```text
+TEST_SCENARIOS.md
+```
+
+Ordre recommande :
+
+```text
+1. Admin
+2. Commercial
+3. Livreur
+4. Depot / Distributeur
+5. Offline
+6. Impression Bluetooth
+7. Cartes / localisation
+```
+
 ## Validations utiles
 
 Backend :

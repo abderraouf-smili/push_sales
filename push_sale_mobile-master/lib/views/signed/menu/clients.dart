@@ -5,11 +5,14 @@ import 'package:push_sale/controllers/client_controller.dart';
 import 'package:push_sale/controllers/filter_controller.dart';
 import 'package:push_sale/controllers/permissions_controller.dart';
 import 'package:push_sale/controllers/position_controller.dart';
+import 'package:push_sale/theme/app_colors.dart';
+import 'package:push_sale/theme/app_spacing.dart';
 import 'package:push_sale/views/signed/widgets/clients/dropdown.dart';
 import 'package:push_sale/views/signed/widgets/clients/editclient.dart';
 import 'package:push_sale/views/signed/widgets/clients/listingicon.dart';
 import 'package:push_sale/views/signed/widgets/clients/listinglist.dart';
 import 'package:push_sale/views/signed/widgets/clients/listingmaps.dart';
+import 'package:push_sale/widgets/common/app_page_header.dart';
 import 'dart:math' as math;
 
 class Clients extends StatelessWidget {
@@ -39,9 +42,14 @@ class ListClients extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        AppPageHeader(
+          title: "clients".tr,
+          subtitle: "Recherche rapide, filtres et carte terrain",
+          icon: Icons.groups_outlined,
+        ),
         // Search Bar
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 10),
+          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -63,10 +71,10 @@ class ListClients extends StatelessWidget {
                               left: Radius.circular(30)),
                           borderSide: BorderSide.none),
                       filled: true,
-                      fillColor: const Color.fromARGB(255, 231, 244, 255),
+                      fillColor: AppColors.surface,
                       prefixIcon: const Icon(
                         Icons.search_outlined,
-                        color: Color.fromARGB(255, 135, 201, 255),
+                        color: AppColors.primary,
                       ),
                       suffixIcon: IconButton(
                         onPressed: () {
@@ -82,8 +90,7 @@ class ListClients extends StatelessWidget {
                       ),
                       hintText: "search".tr,
                       hintStyle: const TextStyle(
-                          fontFamily: "alata",
-                          color: Color.fromARGB(255, 135, 201, 255))),
+                          fontFamily: "alata", color: AppColors.muted)),
                   onChanged: (value) {
                     clientController.ready.value = false;
                     clientController.filter = value;
@@ -112,7 +119,7 @@ class ListClients extends StatelessWidget {
                                 filterController.selectedTPV.value > 0
                             ? Icons.filter_alt
                             : Icons.filter_alt_outlined,
-                        color: Colors.blue,
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
@@ -129,10 +136,10 @@ class ListClients extends StatelessWidget {
               Obx(
                 () => AnimatedContainer(
                   decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 231, 244, 255),
+                    color: AppColors.surface,
                     border: Border.all(
                       width: 0.5,
-                      color: const Color.fromARGB(255, 198, 230, 255),
+                      color: AppColors.line,
                     ),
                     borderRadius: const BorderRadius.horizontal(
                         left: Radius.circular(30)),
@@ -174,10 +181,10 @@ class ListClients extends StatelessWidget {
                 () => AnimatedContainer(
                   margin: const EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 231, 244, 255),
+                    color: AppColors.surface,
                     border: Border.all(
                       width: 0.5,
-                      color: const Color.fromARGB(255, 198, 230, 255),
+                      color: AppColors.line,
                     ),
                     borderRadius: const BorderRadius.horizontal(
                         left: Radius.circular(30)),
@@ -224,7 +231,7 @@ class ListClients extends StatelessWidget {
                                         .length
                                         .toString(),
                                     style: const TextStyle(
-                                        color: Colors.blue,
+                                        color: AppColors.primary,
                                         fontFamily: 'alata',
                                         fontSize: 12),
                                   )
@@ -252,16 +259,13 @@ class ListClients extends StatelessWidget {
                                     vertical: 2, horizontal: 1),
                                 decoration: BoxDecoration(
                                   color: clientController.visit_day_only.value
-                                      ? const Color.fromARGB(255, 161, 167, 255)
-                                      : const Color.fromARGB(
-                                          255, 210, 213, 255),
+                                      ? AppColors.primary
+                                      : AppColors.softBlue,
                                   border: Border.all(
                                     width: 1,
                                     color: clientController.visit_day_only.value
-                                        ? const Color.fromARGB(
-                                            255, 139, 131, 252)
-                                        : const Color.fromARGB(
-                                            255, 167, 173, 255),
+                                        ? AppColors.primary
+                                        : AppColors.line,
                                   ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -322,7 +326,7 @@ class ListClients extends StatelessWidget {
                                     },
                                     icon: const Icon(
                                       Icons.change_circle_outlined,
-                                      color: Colors.blue,
+                                      color: AppColors.primary,
                                     ),
                                   ),
                             IconButton(
@@ -334,7 +338,7 @@ class ListClients extends StatelessWidget {
                                 Icons.view_headline_rounded,
                                 color: clientController.page.value == 0
                                     ? const Color.fromARGB(255, 197, 110, 83)
-                                    : Colors.blue,
+                                    : AppColors.primary,
                               ),
                             ),
                             IconButton(
@@ -346,7 +350,7 @@ class ListClients extends StatelessWidget {
                                 Icons.grid_view_rounded,
                                 color: clientController.page.value == 1
                                     ? const Color.fromARGB(255, 197, 110, 83)
-                                    : Colors.blue,
+                                    : AppColors.primary,
                                 size: 23,
                               ),
                             ),
@@ -359,7 +363,7 @@ class ListClients extends StatelessWidget {
                                 Icons.language,
                                 color: clientController.page.value == 2
                                     ? const Color.fromARGB(255, 197, 110, 83)
-                                    : Colors.blue,
+                                    : AppColors.primary,
                               ),
                             ),
                           ],
@@ -376,9 +380,9 @@ class ListClients extends StatelessWidget {
         Stack(
           children: [
             Container(
-              color: const Color.fromARGB(255, 239, 247, 255),
+              color: AppColors.canvas,
               width: double.infinity,
-              height: Get.height - 150,
+              height: Get.height - 215,
               child: Obx(
                 () => PageView(
                   controller: pageController,

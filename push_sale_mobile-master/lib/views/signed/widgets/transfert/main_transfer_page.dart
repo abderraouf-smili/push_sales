@@ -11,6 +11,7 @@ import 'package:push_sale/views/signed/widgets/transfert/orders_page.dart';
 import 'package:push_sale/views/signed/widgets/transfert/show_detail_transfer.dart';
 import 'package:push_sale/views/signed/widgets/transfert/stock_location_page.dart';
 import 'package:push_sale/views/signed/widgets/transfert/tranfer_page.dart';
+import 'package:push_sale/widgets/common/app_confirm_dialog.dart';
 
 class MainTransferPage extends StatelessWidget {
   PurchaseOrderController purchaseController =
@@ -61,6 +62,16 @@ class MainTransferPage extends StatelessWidget {
                           break;
                         case 1:
                           {
+                            final confirmed = await AppConfirmDialog.show(
+                              context: context,
+                              title: "generate.bt".tr,
+                              message:
+                                  "Confirmer la generation du bon de chargement ?",
+                              confirmLabel: "confirm".tr,
+                            );
+                            if (!confirmed) {
+                              break;
+                            }
                             var response =
                                 await purchaseController.generateTransfer();
                             if (response.status == "SUCCESS") {
@@ -181,6 +192,16 @@ class MainTransferPage extends StatelessWidget {
                           }
                         case 4:
                           // confirm transfer
+                          final confirmed = await AppConfirmDialog.show(
+                            context: context,
+                            title: "confirm.bt".tr,
+                            message:
+                                "Confirmer ce chargement et mettre a jour le stock mobile ?",
+                            confirmLabel: "confirm".tr,
+                          );
+                          if (!confirmed) {
+                            break;
+                          }
                           var response = await stockController.confimTransfer();
                           if (response.status == "SUCCESS") {
                             stockController.stock_out.value = false;

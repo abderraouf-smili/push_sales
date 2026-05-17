@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/controllers/authentification_controller.dart';
 import 'package:push_sale/controllers/compte_menu_controller.dart';
+import 'package:push_sale/theme/app_theme.dart';
 import 'package:push_sale/translate/local.dart';
 import 'package:push_sale/views/auth/loginpage.dart';
 import 'package:push_sale/views/auth/passwordforgetpage.dart';
@@ -46,29 +47,10 @@ class PushSaleApp extends StatelessWidget {
   Widget build(BuildContext context) {
     List<String> supportedLocales = ['ar', 'en', 'fr'];
     return GetMaterialApp(
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        // ajoutez vos délégués de localisation ici
-      ],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales:
           supportedLocales.map((locale) => Locale(locale)).toList(),
-
-      // theme: ThemeData(
-      //   primarySwatch: Colors.blue,
-      //   textTheme: TextTheme(
-      //     bodySmall: TextStyle(
-      //       fontFamily: "alata",
-      //       fontSize: 18,
-      //       fontWeight: FontWeight.bold,
-      //     ),
-      //     labelSmall: TextStyle(
-      //         color: Color.fromARGB(255, 83, 177, 117),
-      //         fontWeight: FontWeight.bold,
-      //         fontSize: 14),
-      //   ),
-      // ),
-      // darkTheme: ThemeData.dark(),
+      theme: AppTheme.light(),
       initialRoute: initialPage,
 
       getPages: [

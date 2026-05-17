@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:push_sale/const/globals.dart' as global;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -22,7 +23,9 @@ class CallApi {
       responseType: ResponseType.json,
       contentType: ContentType.json.toString(),
     ));
-    print("=====> Call API : $method $route args($data)");
+    if (kDebugMode) {
+      debugPrint("=====> Call API : $method $route");
+    }
     try {
       await _useSavedToken();
       if (_token != null) {
@@ -35,7 +38,9 @@ class CallApi {
               queryParameters: data, onReceiveProgress: onreceive)
           : await dio.post("/$route",
               data: data, onSendProgress: onsend, onReceiveProgress: onreceive);
-      print("=====> Response API $route ${response.data}");
+      if (kDebugMode) {
+        debugPrint("=====> Response API $route status ${response.statusCode}");
+      }
       if (response.statusCode == 200) {
         ResponseHttpRequest ret = ResponseHttpRequest.fromMap(response.data);
         if (ret.status == "SUCCESS") {
@@ -57,14 +62,18 @@ class CallApi {
       }
     } catch (e) {
       if (e is DioException) {
-        print("=====> Response API $route ERROR :  ${e.message}");
+        if (kDebugMode) {
+          debugPrint("=====> Response API $route ERROR : ${e.message}");
+        }
         return ResponseHttpRequest.fromMap({
           "status": "error",
           "code": "${e.response?.statusCode}",
           "message": e.message
         });
       } else {
-        print("=====> Response API $route ERROR :  $e");
+        if (kDebugMode) {
+          debugPrint("=====> Response API $route ERROR");
+        }
         return ResponseHttpRequest.fromMap(
             {"status": "error", "code": "IE", "message": "$e"});
       }

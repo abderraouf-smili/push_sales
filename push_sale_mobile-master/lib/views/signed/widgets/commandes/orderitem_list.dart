@@ -15,6 +15,7 @@ import 'package:push_sale/controllers/product_controller.dart';
 import 'package:push_sale/models/client.dart';
 import 'package:push_sale/models/line_text_printer.dart';
 import 'package:push_sale/views/signed/widgets/settings/printer_config.dart';
+import 'package:push_sale/widgets/common/app_confirm_dialog.dart';
 import 'package:push_sale/const/globals.dart' as global;
 
 class OrderitemList extends StatelessWidget {
@@ -115,6 +116,16 @@ class OrderitemList extends StatelessWidget {
                       switch (value) {
                         case 0:
                           {
+                            final confirmed = await AppConfirmDialog.show(
+                              context: context,
+                              title: "save".tr,
+                              message:
+                                  "Confirmer la creation de cette commande ?",
+                              confirmLabel: "confirm".tr,
+                            );
+                            if (!confirmed) {
+                              break;
+                            }
                             var response = await orderController.save();
                             if (response.status == "SUCCESS") {
                               // if (true) {
