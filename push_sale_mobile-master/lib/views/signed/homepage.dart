@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:push_sale/controllers/compte_menu_controller.dart';
 import 'package:push_sale/controllers/permissions_controller.dart';
+import 'package:push_sale/services/session_service.dart';
 import 'package:push_sale/theme/app_colors.dart';
+import 'package:push_sale/theme/app_spacing.dart';
+import 'package:push_sale/theme/app_text_styles.dart';
 import 'package:push_sale/views/signed/comptesetting.dart';
 import 'package:push_sale/views/signed/menu/clients.dart';
 import 'package:push_sale/views/signed/menu/favorite.dart';
@@ -13,7 +17,7 @@ import 'package:push_sale/views/signed/widgets/transfert/main_transfer_page.dart
 import 'package:push_sale/widgets/common/app_loading_state.dart';
 
 class HomePage extends StatefulWidget {
-  int index;
+  final int index;
 
   HomePage({super.key, required this.index});
 
@@ -29,6 +33,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     var screen = [];
+    final bool useSideBar = MediaQuery.of(context).size.width >= 720;
 
     if (Get.arguments != null && Get.arguments["client_id"] != "0") {
       _index = 1;
@@ -43,8 +48,20 @@ class _HomePageState extends State<HomePage> {
         },
         child: Scaffold(
           resizeToAvoidBottomInset: false,
+          drawer: !useSideBar
+              ? _PushSalesDrawer(
+                  selectedIndex: _index,
+                  onSelect: (index) {
+                    Navigator.of(context).pop();
+                    setState(() {
+                      _index = index;
+                    });
+                  },
+                  destinations: _drawerItems(),
+                )
+              : null,
           bottomNavigationBar: Obx(
-            () => perm.PermissionLoaded.value
+            () => perm.PermissionLoaded.value && !useSideBar
                 ? NavigationBar(
                     selectedIndex: _index,
                     height: 68,
@@ -100,9 +117,74 @@ class _HomePageState extends State<HomePage> {
                 perm.check(ProductMainPage(), "HomePage.ProductMainPage"),
                 perm.check(CompteSetting(), "HomePage.CompteSetting"),
               ];
-              return AnimatedSwitcher(
+              final Widget currentScreen = AnimatedSwitcher(
                 duration: const Duration(milliseconds: 220),
                 child: screen[_index] as Widget,
+              );
+              if (useSideBar) {
+                return Row(
+                  children: [
+                    NavigationRail(
+                      selectedIndex: _index,
+                      backgroundColor: AppColors.surface,
+                      extended: MediaQuery.of(context).size.width >= 980,
+                      labelType: MediaQuery.of(context).size.width >= 980
+                          ? NavigationRailLabelType.none
+                          : NavigationRailLabelType.all,
+                      onDestinationSelected: (index) {
+                        setState(() {
+                          _index = index;
+                        });
+                      },
+                      destinations: [
+                        NavigationRailDestination(
+                          icon: const Icon(Icons.dashboard_outlined),
+                          selectedIcon: const Icon(Icons.dashboard_rounded),
+                          label: Text("dashboard".tr),
+                        ),
+                        _secondRailDestination(),
+                        _thirdRailDestination(),
+                        NavigationRailDestination(
+                          icon: const Icon(Icons.inventory_2_outlined),
+                          selectedIcon: const Icon(Icons.inventory_2_rounded),
+                          label: Text("products".tr),
+                        ),
+                        NavigationRailDestination(
+                          icon: const Icon(Icons.person_outline_rounded),
+                          selectedIcon: const Icon(Icons.person_rounded),
+                          label: Text("settings".tr),
+                        ),
+                      ],
+                    ),
+                    const VerticalDivider(width: 1),
+                    Expanded(child: currentScreen),
+                  ],
+                );
+              }
+              return Stack(
+                children: [
+                  currentScreen,
+                  PositionedDirectional(
+                    top: 6,
+                    start: 8,
+                    child: Builder(
+                      builder: (context) => SafeArea(
+                        child: Material(
+                          color: AppColors.surface,
+                          elevation: 4,
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.radiusMd),
+                          child: IconButton(
+                            tooltip: "Menu",
+                            onPressed: () => Scaffold.of(context).openDrawer(),
+                            icon: const Icon(Icons.menu_rounded,
+                                color: AppColors.primary),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               );
             } else {
               return AppLoadingState(message: "loading".tr);
@@ -111,6 +193,41 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  List<_DrawerItem> _drawerItems() {
+    return [
+      _DrawerItem(
+        label: "dashboard".tr,
+        icon: Icons.dashboard_rounded,
+      ),
+      _DrawerItem(
+        label: perm.check(null, "HomePage.Clients")
+            ? "clients".tr
+            : perm.check(null, "HomePage.MainTransferPage")
+                ? "transfer".tr
+                : "favorite".tr,
+        icon: perm.check(null, "HomePage.Clients")
+            ? Icons.groups_rounded
+            : perm.check(null, "HomePage.MainTransferPage")
+                ? Icons.local_shipping_rounded
+                : Icons.favorite_rounded,
+      ),
+      _DrawerItem(
+        label: perm.check(null, "HomePage.MainTrackingOrder")
+            ? "tracking".tr
+            : perm.check(null, "HomePage.MainDeliveryPage")
+                ? "delivery".tr
+                : "activity".tr,
+        icon: perm.check(null, "HomePage.MainTrackingOrder")
+            ? Icons.route_rounded
+            : perm.check(null, "HomePage.MainDeliveryPage")
+                ? Icons.delivery_dining_rounded
+                : Icons.access_time_filled_rounded,
+      ),
+      _DrawerItem(label: "products".tr, icon: Icons.inventory_2_rounded),
+      _DrawerItem(label: "settings".tr, icon: Icons.person_rounded),
+    ];
   }
 
   NavigationDestination _secondDestination() {
@@ -154,6 +271,186 @@ class _HomePageState extends State<HomePage> {
       icon: const Icon(Icons.access_time_outlined),
       selectedIcon: const Icon(Icons.access_time_filled_rounded),
       label: "activity".tr,
+    );
+  }
+
+  NavigationRailDestination _secondRailDestination() {
+    if (perm.check(null, "HomePage.Clients")) {
+      return NavigationRailDestination(
+        icon: const Icon(Icons.groups_outlined),
+        selectedIcon: const Icon(Icons.groups_rounded),
+        label: Text("clients".tr),
+      );
+    }
+    if (perm.check(null, "HomePage.MainTransferPage")) {
+      return NavigationRailDestination(
+        icon: const Icon(Icons.local_shipping_outlined),
+        selectedIcon: const Icon(Icons.local_shipping_rounded),
+        label: Text("transfer".tr),
+      );
+    }
+    return NavigationRailDestination(
+      icon: const Icon(Icons.favorite_border_rounded),
+      selectedIcon: const Icon(Icons.favorite_rounded),
+      label: Text("favorite".tr),
+    );
+  }
+
+  NavigationRailDestination _thirdRailDestination() {
+    if (perm.check(null, "HomePage.MainTrackingOrder")) {
+      return NavigationRailDestination(
+        icon: const Icon(Icons.route_outlined),
+        selectedIcon: const Icon(Icons.route_rounded),
+        label: Text("tracking".tr),
+      );
+    }
+    if (perm.check(null, "HomePage.MainDeliveryPage")) {
+      return NavigationRailDestination(
+        icon: const Icon(Icons.delivery_dining_outlined),
+        selectedIcon: const Icon(Icons.delivery_dining_rounded),
+        label: Text("delivery".tr),
+      );
+    }
+    return NavigationRailDestination(
+      icon: const Icon(Icons.access_time_outlined),
+      selectedIcon: const Icon(Icons.access_time_filled_rounded),
+      label: Text("activity".tr),
+    );
+  }
+}
+
+class _DrawerItem {
+  final String label;
+  final IconData icon;
+
+  const _DrawerItem({required this.label, required this.icon});
+}
+
+class _PushSalesDrawer extends StatelessWidget {
+  final int selectedIndex;
+  final ValueChanged<int> onSelect;
+  final List<_DrawerItem> destinations;
+
+  const _PushSalesDrawer({
+    required this.selectedIndex,
+    required this.onSelect,
+    required this.destinations,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final compteController = Get.isRegistered<CompteMenuController>()
+        ? Get.find<CompteMenuController>()
+        : null;
+
+    return Drawer(
+      width: MediaQuery.of(context).size.width * 0.78,
+      backgroundColor: AppColors.primaryDark,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: Colors.white,
+                    backgroundImage: compteController?.actor?.image != null
+                        ? NetworkImage(compteController!.actor!.image)
+                        : null,
+                    child: compteController?.actor?.image == null
+                        ? const Icon(Icons.person_rounded,
+                            color: AppColors.primary)
+                        : null,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          compteController?.actor == null
+                              ? "Push Sales"
+                              : "${compteController!.actor!.firstname} ${compteController.actor!.lastname}",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.title.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          compteController?.actor == null
+                              ? "Mobile"
+                              : compteController!.actor!.mail,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.caption.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: Colors.white24),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                itemCount: destinations.length,
+                itemBuilder: (context, index) {
+                  final item = destinations[index];
+                  final selected = selectedIndex == index;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: ListTile(
+                      selected: selected,
+                      selectedTileColor: Colors.white.withValues(alpha: 0.12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppSpacing.radiusMd),
+                      ),
+                      leading: Icon(
+                        item.icon,
+                        color: selected ? Colors.white : Colors.white70,
+                      ),
+                      title: Text(
+                        item.label,
+                        style: AppTextStyles.body.copyWith(
+                          color: selected ? Colors.white : Colors.white70,
+                          fontWeight:
+                              selected ? FontWeight.w800 : FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () => onSelect(index),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const Divider(color: Colors.white24),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                ),
+                leading: const Icon(Icons.logout_rounded, color: Colors.white),
+                title: Text(
+                  "disconnect".tr,
+                  style: AppTextStyles.body.copyWith(color: Colors.white),
+                ),
+                onTap: SessionService.logout,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

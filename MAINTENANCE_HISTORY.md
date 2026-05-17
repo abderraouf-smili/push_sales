@@ -1,5 +1,58 @@
 # MAINTENANCE_HISTORY
 
+## 2026-05-17 - Navigation drawer, clients et tracking
+
+Objectif :
+- Rendre les pages clients/tracking utilisables et modernes, corriger le depot noir et assurer une deconnexion propre entre roles.
+
+Resume technique :
+- Ajout `SessionService.logout()` pour vider `SharedPreferences`, fermer Firebase Auth et supprimer les controllers GetX avant retour login.
+- HomePage : ajout d'un drawer mobile bleu type sidebar avec navigation par role et bouton logout.
+- Clients : refonte de la page principale avec recherche, filtres, etats loading/error/empty, affichage tous clients par defaut et bouton ajout lisible.
+- Nouveau client : formulaire plus clair, scrollable, cartes visuelles, action GPS explicite, messages si GPS/type PV manquants.
+- Tracking : refonte liste + detail avec KPI, cartes, timeline responsive et correction de navigation vers la bonne page du PageView.
+- Depots : fond clair local et chargement unique pour eviter l'ecran noir/refresh en boucle.
+
+Commandes executees :
+- `dart format ...`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter run -d 10.212.134.2:38587 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- Analyse sans erreur bloquante.
+- APK debug genere.
+- Application reinstallee/lancee sur SM A165F.
+- Warnings stricts restants : historiques, non traites dans ce lot.
+
+## 2026-05-17 - UI depots/reception et liste de prix
+
+Objectif :
+- Corriger les ecrans signales sur smartphone : depots peu lisibles, actions cachees, bon de reception ancien, overflows et liste de prix en chargement infini.
+
+Resume technique :
+- `PricelistPage` converti en `StatefulWidget` pour charger les prix une seule fois apres le premier rendu.
+- `PricelistController` rend le chargement finalisable dans tous les cas et expose un message d'erreur au lieu de laisser le spinner tourner.
+- Modeles `PriceList` et `PriceListItem` durcis contre les valeurs nulles ou types variables du backend.
+- `ShowDetailWarehouse` remplace le dock vertical par une barre d'actions claire et affiche les stocks en cartes.
+- `ProductPurchaseList` remplace les hauteurs fixes par une structure responsive avec recherche, chips de mode et etats vides.
+- `PurchaseItemsList` remplace le menu cache par des actions visibles : ajouter, enregistrer, imprimer, imprimante.
+- Theme sombre legacy neutralise temporairement pour eviter les ecrans noirs tant que tous les vieux widgets ne sont pas theme-aware.
+
+Commandes executees :
+- `dart format ...`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter analyze`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter devices`
+- `flutter run -d 10.212.134.2:38587 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- Analyse Flutter sans erreur bloquante.
+- APK debug genere.
+- Application reinstallee et lancee sur SM A165F.
+- Warnings stricts restants : `flutter analyze` strict retourne 770 issues historiques, principalement style/deprecations/`print`/imports packages non declares; aucune erreur bloquante avec `--no-fatal-infos --no-fatal-warnings`.
+
 ## 2026-05-17 - Correction login comptes de test
 
 Objectif :
@@ -243,3 +296,78 @@ Points restants :
 
 Risque :
 - Moyen pour la partie demo DB, faible pour UI/config Flutter.
+# 2026-05-17 - Correctifs UX visibles et overflow smartphone
+
+Fichiers modifies :
+- `push_sale_mobile-master/lib/views/signed/homepage.dart`
+- `push_sale_mobile-master/lib/views/signed/menu/stats_page.dart`
+- `push_sale_mobile-master/lib/views/signed/menu/favorite.dart`
+- `push_sale_mobile-master/lib/views/signed/menu/cart.dart`
+- `push_sale_mobile-master/lib/views/signed/comptesetting.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/delivery/main_delivery_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/delivery/orders_to_ship.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/delivery/shipping_order_detail.dart`
+- `push_sale-master/app/Http/Controllers/Purchase/PurchaseOrderController.php`
+- Documentation racine.
+
+Commandes executees :
+- `dart format ...`
+- `C:\tools\php83\php.exe -l app\Http\Controllers\Purchase\PurchaseOrderController.php`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter devices`
+- `flutter run -d 10.212.134.2:38587 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- Analyse Flutter non bloquante OK.
+- APK debug genere : `push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk`.
+- `flutter analyze` strict : 791 issues historiques restantes.
+- Device SM A165F detecte et APK lance apres un retry; le premier essai avait echoue sur un verrou Windows temporaire du fichier asset `firebase_api.php`.
+- Syntaxe PHP OK.
+- Overflows corriges sur les ecrans dashboard, parametres et livraison en supprimant les hauteurs fixes principales.
+- Favoris/panier ne sont plus des pages under construction.
+- Theme et notifications disposent d'une action utilisateur visible.
+- Livraison ne casse plus quand la notification post-livraison n'a pas de destinataire associe.
+
+Points restants :
+- Valider visuellement sur scrcpy apres installation de ce nouvel APK.
+- Continuer le nettoyage strict `flutter analyze` par modules.
+- Tester Firebase/FCM avec une cle reelle restreinte.
+
+Risque :
+- Moyen-faible, changements UI/defensifs sans modification de logique metier.
+
+# 2026-05-17 - Modernisation UI lot 2
+
+Fichiers modifies :
+- `push_sale_mobile-master/lib/main.dart`
+- `push_sale_mobile-master/lib/theme/app_theme.dart`
+- `push_sale_mobile-master/lib/controllers/message_chat_controller.dart`
+- `push_sale_mobile-master/lib/views/signed/menu/clients.dart`
+- `push_sale_mobile-master/lib/views/signed/menu/stats_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/account/message_chat.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/products/product_main_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/tracking/main_tracking_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/tracking/orders_to_track.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/transfert/main_transfer_page.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/warehouses/show_my_warehouses.dart`
+- `push_sale_mobile-master/lib/views/signed/widgets/warehouses/show_detail_warehouse.dart`
+
+Commandes executees :
+- `dart format ...`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter devices`
+- `flutter run -d 10.212.134.2:38587 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- Dashboard modernise avec bandeau KPI.
+- Clients/produits/tracking/transfert corriges contre plusieurs overflows de hauteur.
+- Depots modernises, detail depot avec actions flottantes au lieu du menu haut.
+- Chat connecte aux endpoints existants.
+- Theme sombre active via `darkTheme`.
+- APK debug genere et lance sur SM A165F.
+- `flutter analyze` strict : 788 issues historiques restantes.
+
+Risque :
+- Moyen pour les ecrans UI profonds; impact metier nul.

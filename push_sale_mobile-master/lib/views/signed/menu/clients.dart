@@ -5,453 +5,125 @@ import 'package:push_sale/controllers/client_controller.dart';
 import 'package:push_sale/controllers/filter_controller.dart';
 import 'package:push_sale/controllers/permissions_controller.dart';
 import 'package:push_sale/controllers/position_controller.dart';
+import 'package:push_sale/models/client.dart';
 import 'package:push_sale/theme/app_colors.dart';
 import 'package:push_sale/theme/app_spacing.dart';
+import 'package:push_sale/theme/app_text_styles.dart';
 import 'package:push_sale/views/signed/widgets/clients/dropdown.dart';
 import 'package:push_sale/views/signed/widgets/clients/editclient.dart';
 import 'package:push_sale/views/signed/widgets/clients/listingicon.dart';
 import 'package:push_sale/views/signed/widgets/clients/listinglist.dart';
 import 'package:push_sale/views/signed/widgets/clients/listingmaps.dart';
+import 'package:push_sale/widgets/common/app_empty_state.dart';
+import 'package:push_sale/widgets/common/app_error_state.dart';
+import 'package:push_sale/widgets/common/app_loading_state.dart';
 import 'package:push_sale/widgets/common/app_page_header.dart';
-import 'dart:math' as math;
 
 class Clients extends StatelessWidget {
-  String posted_id;
+  final String postedId;
 
-  Clients(this.posted_id, {super.key});
+  const Clients(this.postedId, {super.key});
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      child: ListClients(posted_id),
-    );
+    return ListClients(postedId);
   }
 }
 
 class ListClients extends StatelessWidget {
-  String posted_id;
+  final String postedId;
 
-  ListClients(this.posted_id, {super.key});
+  ListClients(this.postedId, {super.key});
 
-  ClientController clientController = Get.put(ClientController("get"));
-  FilterController filterController = Get.put(FilterController());
-  PositionController posController = Get.put(PositionController());
-  PermissionsController Perm = Get.find();
-  PageController pageController = PageController();
-  TextEditingController searchController = TextEditingController();
+  final ClientController clientController = Get.put(ClientController("get"));
+  final FilterController filterController = Get.put(FilterController());
+  final PositionController posController = Get.put(PositionController());
+  final PermissionsController perm = Get.find();
+  final PageController pageController = PageController();
+  final TextEditingController searchController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        AppPageHeader(
-          title: "clients".tr,
-          subtitle: "Recherche rapide, filtres et carte terrain",
-          icon: Icons.groups_outlined,
-        ),
-        // Search Bar
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // entete search bar
-              SizedBox(
-                height: 40,
-                // margin: const EdgeInsets.only(right: 10),
-                width: Get.width - 60,
-                child: TextFormField(
-                  controller: searchController,
-                  style: const TextStyle(
-                    color: Colors.blue,
-                    fontFamily: 'alata',
-                  ),
-                  decoration: InputDecoration(
-                      contentPadding: EdgeInsets.zero,
-                      border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.horizontal(
-                              left: Radius.circular(30)),
-                          borderSide: BorderSide.none),
-                      filled: true,
-                      fillColor: AppColors.surface,
-                      prefixIcon: const Icon(
-                        Icons.search_outlined,
-                        color: AppColors.primary,
-                      ),
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          clientController.ready.value = false;
-                          clientController.filter = "";
-                          searchController.text = "";
-                          clientController.ready.value = true;
-                        },
-                        icon: const Icon(
-                          Icons.close,
-                          size: 16,
-                        ),
-                      ),
-                      hintText: "search".tr,
-                      hintStyle: const TextStyle(
-                          fontFamily: "alata", color: AppColors.muted)),
-                  onChanged: (value) {
-                    clientController.ready.value = false;
-                    clientController.filter = value;
-                    clientController.ready.value = true;
-                  },
-                ),
-              ),
-
-              SizedBox(
-                width: 40,
-                child: IconButton(
-                  onPressed: () {
-                    filterController.filter_button.value =
-                        !filterController.filter_button.value;
-                  },
-                  icon: Obx(
-                    () => AnimatedContainer(
-                      duration: const Duration(milliseconds: 500),
-                      transform: Matrix4.rotationZ(
-                          !filterController.filter_button.value
-                              ? 0
-                              : math.pi / 2),
-                      transformAlignment: const AlignmentDirectional(0, 0),
-                      child: Icon(
-                        filterController.selectedCity.value > 0 ||
-                                filterController.selectedTPV.value > 0
-                            ? Icons.filter_alt
-                            : Icons.filter_alt_outlined,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            ],
+    return ColoredBox(
+      color: AppColors.canvas,
+      child: Column(
+        children: [
+          AppPageHeader(
+            title: "clients".tr,
+            subtitle: "Recherche rapide, filtres et carte terrain",
+            icon: Icons.groups_outlined,
           ),
-        ),
-        //filter bar + mode view vbar
-        Container(
-          margin: const EdgeInsets.only(bottom: 2),
-          child: Column(
-            children: [
-              Obx(
-                () => AnimatedContainer(
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    border: Border.all(
-                      width: 0.5,
-                      color: AppColors.line,
-                    ),
-                    borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(30)),
-                  ),
-                  margin: const EdgeInsets.symmetric(horizontal: 5),
-                  duration: const Duration(milliseconds: 500),
-                  height: filterController.filter_button.value ? 40 : 0,
-                  width: double.infinity,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      SizedBox(
-                        width: Get.width / 2.25,
-                        child: TypePVSearchDropDown(),
-                      ),
-                      SizedBox(
-                        width: Get.width / 2.5,
-                        child: CitiesSearchDropDown(),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          filterController.selectedCity.value = 0;
-                          filterController.selectedTPV.value = 0;
-                          filterController.searchKeyCity.currentState!.reset();
-                          filterController.searchKeyTPV.currentState!.reset();
-                        },
-                        icon: const Icon(
-                          Icons.close,
-                          color: Color.fromARGB(255, 197, 110, 83),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-              ),
+          _SearchAndFilters(
+            searchController: searchController,
+            clientController: clientController,
+            filterController: filterController,
+            pageController: pageController,
+            countBuilder: () => _filteredClients().length,
+          ),
+          Expanded(
+            child: Obx(
+              () {
+                if (!clientController.ready.value) {
+                  return const AppLoadingState(
+                    message: "Chargement des clients...",
+                  );
+                }
 
-              // view mode bar
-              Obx(
-                () => AnimatedContainer(
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    border: Border.all(
-                      width: 0.5,
-                      color: AppColors.line,
-                    ),
-                    borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(30)),
-                  ),
-                  duration: const Duration(milliseconds: 500),
-                  width: double.infinity,
-                  height: filterController.filter_button.value ? 0 : 40,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                if (clientController.error.value.isNotEmpty) {
+                  return AppErrorState(
+                    title: "Clients indisponibles",
+                    message: clientController.error.value,
+                    onRetry: clientController.getClients,
+                  );
+                }
+
+                final clients = _filteredClients();
+                if (clients.isEmpty && clientController.page.value != 2) {
+                  return ListView(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            // padding: EdgeInsets.only(right: Get.width / 2 - 14),
-                            child: clientController.ready.value
-                                ? Text(
-                                    clientController.clientsList
-                                        .where((element) => element.name
-                                            .contains(clientController.filter))
-                                        .toList()
-                                        .where((element) =>
-                                            filterController.selectedCity.value ==
-                                                0 ||
-                                            element.address!.city.id ==
-                                                filterController
-                                                    .selectedCity.value)
-                                        .toList()
-                                        .where((element) =>
-                                            filterController.selectedTPV.value ==
-                                                0 ||
-                                            element.typepv!.id ==
-                                                filterController
-                                                    .selectedTPV.value)
-                                        .toList()
-                                        .where((element) =>
-                                            element.visitdays != null &&
-                                                element.visitdays!
-                                                    .where((item) =>
-                                                        item.day == "tuesday")
-                                                    .isNotEmpty ||
-                                            !clientController.visit_day_only.value)
-                                        .toList()
-                                        .length
-                                        .toString(),
-                                    style: const TextStyle(
-                                        color: AppColors.primary,
-                                        fontFamily: 'alata',
-                                        fontSize: 12),
-                                  )
-                                : const SizedBox(
-                                    height: 14,
-                                    width: 14,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                          ),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              clientController.visit_day_only.value =
-                                  !clientController.visit_day_only.value;
-                            },
-                            child: SizedBox(
-                              width: Get.width / 5,
-                              height: 40,
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(
-                                    vertical: 2, horizontal: 1),
-                                decoration: BoxDecoration(
-                                  color: clientController.visit_day_only.value
-                                      ? AppColors.primary
-                                      : AppColors.softBlue,
-                                  border: Border.all(
-                                    width: 1,
-                                    color: clientController.visit_day_only.value
-                                        ? AppColors.primary
-                                        : AppColors.line,
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Center(
-                                    child: Text(
-                                  "day.only".tr,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: clientController.visit_day_only.value
-                                        ? Colors.white
-                                        : Colors.grey,
-                                  ),
-                                )),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        width: Get.width / 1.5,
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
+                      AppEmptyState(
+                        icon: Icons.groups_outlined,
+                        title: "Aucun client visible",
+                        message:
+                            "Ajustez la recherche ou affichez tous les jours de visite.",
+                        action: Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: AppSpacing.sm,
                           children: [
-                            !clientController.ready.value ||
-                                    clientController.clientsList
-                                        .where((element) => element.name
-                                            .contains(clientController.filter))
-                                        .toList()
-                                        .where((element) =>
-                                            filterController.selectedCity.value == 0 ||
-                                            element.address!.city.id ==
-                                                filterController
-                                                    .selectedCity.value)
-                                        .toList()
-                                        .where((element) =>
-                                            filterController.selectedTPV.value == 0 ||
-                                            element.typepv!.id ==
-                                                filterController
-                                                    .selectedTPV.value)
-                                        .toList()
-                                        .where((element) =>
-                                            element.visitdays != null &&
-                                                element.visitdays!
-                                                    .where((item) =>
-                                                        item.day ==
-                                                        DateFormat("EEEE").format(DateTime.now()).toLowerCase())
-                                                    .isNotEmpty ||
-                                            !clientController.visit_day_only.value)
-                                        .toList()
-                                        .isNotEmpty
-                                ? const SizedBox.shrink()
-                                : IconButton(
-                                    onPressed: () async {
-                                      clientController.ready.value = false;
-                                      await clientController.getClients();
-                                      clientController.ready.value = true;
-                                    },
-                                    icon: const Icon(
-                                      Icons.change_circle_outlined,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                            IconButton(
+                            OutlinedButton.icon(
                               onPressed: () {
-                                clientController.page.value = 0;
-                                pageController.jumpToPage(0);
+                                clientController.visit_day_only.value = false;
+                                filterController.selectedCity.value = 0;
+                                filterController.selectedTPV.value = 0;
+                                clientController.filter = "";
+                                searchController.clear();
+                                clientController.ready.refresh();
                               },
-                              icon: Icon(
-                                Icons.view_headline_rounded,
-                                color: clientController.page.value == 0
-                                    ? const Color.fromARGB(255, 197, 110, 83)
-                                    : AppColors.primary,
-                              ),
+                              icon: const Icon(Icons.filter_alt_off_rounded),
+                              label: const Text("Afficher tout"),
                             ),
-                            IconButton(
-                              onPressed: () {
-                                clientController.page.value = 1;
-                                pageController.jumpToPage(1);
-                              },
-                              icon: Icon(
-                                Icons.grid_view_rounded,
-                                color: clientController.page.value == 1
-                                    ? const Color.fromARGB(255, 197, 110, 83)
-                                    : AppColors.primary,
-                                size: 23,
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () {
-                                clientController.page.value = 2;
-                                pageController.jumpToPage(2);
-                              },
-                              icon: Icon(
-                                Icons.language,
-                                color: clientController.page.value == 2
-                                    ? const Color.fromARGB(255, 197, 110, 83)
-                                    : AppColors.primary,
-                              ),
+                            FilledButton.icon(
+                              onPressed: clientController.getClients,
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text("Recharger"),
                             ),
                           ],
                         ),
-                      )
+                      ),
                     ],
-                  ),
-                ),
-              )
-            ],
-          ),
-        ),
-        // Content Page
-        Stack(
-          children: [
-            Container(
-              color: AppColors.canvas,
-              width: double.infinity,
-              height: Get.height - 215,
-              child: Obx(
-                () => PageView(
+                  );
+                }
+
+                return PageView(
                   controller: pageController,
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
-                    Container(
-                      color: clientController.ready.value
-                          ? Colors.transparent
-                          : Colors.transparent,
-                      child: ListingList(
-                          clientController.clientsList
-                              .where((element) => element.name
-                                  .contains(clientController.filter))
-                              .toList()
-                              .where((element) =>
-                                  filterController.selectedCity.value == 0 ||
-                                  element.address!.city.id ==
-                                      filterController.selectedCity.value)
-                              .toList()
-                              .where((element) =>
-                                  filterController.selectedTPV.value == 0 ||
-                                  element.typepv!.id ==
-                                      filterController.selectedTPV.value)
-                              .toList()
-                              .where((element) =>
-                                  element.visitdays != null &&
-                                      element.visitdays!
-                                          .where((item) =>
-                                              item.day ==
-                                              DateFormat("EEEE")
-                                                  .format(DateTime.now())
-                                                  .toLowerCase())
-                                          .isNotEmpty ||
-                                  !clientController.visit_day_only.value)
-                              .toList(),
-                          posted_id: posted_id),
-                    ),
-                    Container(
-                      color: clientController.ready.value
-                          ? Colors.transparent
-                          : Colors.transparent,
-                      margin: const EdgeInsets.symmetric(horizontal: 5),
-                      child: ListingIcon(
-                          clientController.clientsList
-                              .where((element) => element.name
-                                  .contains(clientController.filter))
-                              .toList()
-                              .where((element) =>
-                                  filterController.selectedCity.value == 0 ||
-                                  element.address!.city.id ==
-                                      filterController.selectedCity.value)
-                              .toList()
-                              .where((element) =>
-                                  filterController.selectedTPV.value == 0 ||
-                                  element.typepv!.id ==
-                                      filterController.selectedTPV.value)
-                              .toList()
-                              .where((element) =>
-                                  element.visitdays != null &&
-                                      element.visitdays!
-                                          .where((item) =>
-                                              item.day ==
-                                              DateFormat("EEEE")
-                                                  .format(DateTime.now())
-                                                  .toLowerCase())
-                                          .isNotEmpty ||
-                                  !clientController.visit_day_only.value)
-                              .toList(),
-                          posted_id: posted_id),
+                    ListingList(clients, posted_id: postedId),
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                      child: ListingIcon(clients, posted_id: postedId),
                     ),
                     ListingMaps(
                       clientController.clientsList,
@@ -460,36 +132,260 @@ class ListClients extends StatelessWidget {
                       filterCity: filterController.selectedCity.value,
                     ),
                   ],
+                );
+              },
+            ),
+          ),
+          perm.check(
+            Align(
+              alignment: Get.locale!.languageCode == "ar"
+                  ? Alignment.bottomLeft
+                  : Alignment.bottomRight,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                ),
+                child: FloatingActionButton.extended(
+                  heroTag: "add-client",
+                  onPressed: () => Get.to(() => EditClient()),
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text("new.client".tr),
                 ),
               ),
             ),
-            Perm.check(
-                Obx(
-                  () => Positioned(
-                    bottom: 40,
-                    // right: Get.width / 2,
-                    right: Get.locale!.languageCode != "ar"
-                        ? clientController.page.value == 2
-                            ? Get.width / 2 - 28
-                            : 10
-                        : null,
-                    left: Get.locale!.languageCode == "ar"
-                        ? clientController.page.value == 2
-                            ? Get.width / 2 - 28
-                            : 10
-                        : null,
-                    child: FloatingActionButton(
+            "Clients.add",
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Client> _filteredClients() {
+    final nowDay = DateFormat("EEEE").format(DateTime.now()).toLowerCase();
+    final query = clientController.filter.trim().toLowerCase();
+
+    return clientController.clientsList.where((client) {
+      final matchesSearch =
+          query.isEmpty || client.name.toLowerCase().contains(query);
+      final matchesCity = filterController.selectedCity.value == 0 ||
+          client.address?.city.id == filterController.selectedCity.value;
+      final matchesType = filterController.selectedTPV.value == 0 ||
+          client.typepv?.id == filterController.selectedTPV.value;
+      final matchesVisitDay = !clientController.visit_day_only.value ||
+          (client.visitdays != null &&
+              client.visitdays!.any((item) => item.day == nowDay));
+      return matchesSearch && matchesCity && matchesType && matchesVisitDay;
+    }).toList();
+  }
+}
+
+class _SearchAndFilters extends StatelessWidget {
+  final TextEditingController searchController;
+  final ClientController clientController;
+  final FilterController filterController;
+  final PageController pageController;
+  final int Function() countBuilder;
+
+  const _SearchAndFilters({
+    required this.searchController,
+    required this.clientController,
+    required this.filterController,
+    required this.pageController,
+    required this.countBuilder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
+      child: Column(
+        children: [
+          TextFormField(
+            controller: searchController,
+            decoration: InputDecoration(
+              hintText: "search".tr,
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: IconButton(
+                onPressed: () {
+                  clientController.filter = "";
+                  searchController.clear();
+                  clientController.ready.refresh();
+                },
+                icon: const Icon(Icons.close_rounded, size: 18),
+              ),
+            ),
+            onChanged: (value) {
+              clientController.filter = value;
+              clientController.ready.refresh();
+            },
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Obx(
+            () => AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(),
+              secondChild: Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  border: Border.all(color: AppColors.line),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(child: TypePVSearchDropDown()),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: CitiesSearchDropDown()),
+                    IconButton(
                       onPressed: () {
-                        Get.to(() => EditClient());
+                        filterController.selectedCity.value = 0;
+                        filterController.selectedTPV.value = 0;
+                        filterController.searchKeyCity.currentState?.reset();
+                        filterController.searchKeyTPV.currentState?.reset();
                       },
-                      child: const Icon(Icons.add),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+              ),
+              crossFadeState: filterController.filter_button.value
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 180),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Obx(
+                () => Container(
+                  width: 42,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  child: Text(
+                    countBuilder().toString(),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
-                "Clients.add"),
-          ],
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Obx(
+                    () => Row(
+                      children: [
+                        _ClientModeChip(
+                          label: "Jour visite",
+                          icon: Icons.today_rounded,
+                          selected: clientController.visit_day_only.value,
+                          onTap: () {
+                            clientController.visit_day_only.value =
+                                !clientController.visit_day_only.value;
+                          },
+                        ),
+                        _ClientModeChip(
+                          label: "Filtres",
+                          icon: Icons.filter_alt_rounded,
+                          selected: filterController.filter_button.value,
+                          onTap: () {
+                            filterController.filter_button.value =
+                                !filterController.filter_button.value;
+                          },
+                        ),
+                        _ClientModeChip(
+                          label: "Liste",
+                          icon: Icons.view_headline_rounded,
+                          selected: clientController.page.value == 0,
+                          onTap: () {
+                            clientController.page.value = 0;
+                            pageController.jumpToPage(0);
+                          },
+                        ),
+                        _ClientModeChip(
+                          label: "Grille",
+                          icon: Icons.grid_view_rounded,
+                          selected: clientController.page.value == 1,
+                          onTap: () {
+                            clientController.page.value = 1;
+                            pageController.jumpToPage(1);
+                          },
+                        ),
+                        _ClientModeChip(
+                          label: "Carte",
+                          icon: Icons.language_rounded,
+                          selected: clientController.page.value == 2,
+                          onTap: () {
+                            clientController.page.value = 2;
+                            pageController.jumpToPage(2);
+                          },
+                        ),
+                        IconButton(
+                          onPressed: clientController.getClients,
+                          icon: const Icon(Icons.refresh_rounded,
+                              color: AppColors.primary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ClientModeChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ClientModeChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
+      child: ChoiceChip(
+        avatar: Icon(
+          icon,
+          size: 18,
+          color: selected ? AppColors.primary : AppColors.muted,
         ),
-      ],
+        label: Text(label),
+        selected: selected,
+        selectedColor: AppColors.softBlue,
+        labelStyle: AppTextStyles.caption.copyWith(
+          color: selected ? AppColors.primary : AppColors.muted,
+          fontWeight: FontWeight.w700,
+        ),
+        side: BorderSide(color: selected ? AppColors.primary : AppColors.line),
+        onSelected: (_) => onTap(),
+      ),
     );
   }
 }

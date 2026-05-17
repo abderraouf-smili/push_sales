@@ -5,16 +5,18 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/permissions_controller.dart';
 import 'package:push_sale/controllers/stats_controller.dart';
+import 'package:push_sale/theme/app_colors.dart';
 import 'package:push_sale/views/signed/customer/promotion_slide.dart';
 import 'package:push_sale/views/signed/widgets/orders/sale_orders_list.dart';
 import 'package:push_sale/views/signed/widgets/tracking/menu_orders.dart';
 import 'package:push_sale/views/signed/widgets/tracking/orders_status_detail.dart';
 import 'package:push_sale/widgets/common/app_loading_state.dart';
 import 'package:push_sale/widgets/common/app_page_header.dart';
+import 'package:push_sale/widgets/common/app_stat_card.dart';
 
 class StatsPage extends StatelessWidget {
-  StatController statController = Get.put(StatController());
-  PermissionsController perm = Get.find<PermissionsController>();
+  final StatController statController = Get.put(StatController());
+  final PermissionsController perm = Get.find<PermissionsController>();
 
   StatsPage({super.key});
 
@@ -36,7 +38,7 @@ class StatsPage extends StatelessWidget {
 
     List<Widget> Dashboard = [
       calenderDashboard(statController),
-      const Divider(),
+      modernSummaryDashboard(statController),
       perm.check(profitChart(statController, context), "admin"),
       perm.check(
           TournoverDashboard(statController), "StatsPage.TournoverDashboard"),
@@ -58,9 +60,7 @@ class StatsPage extends StatelessWidget {
                 icon: Icons.dashboard_outlined,
               ),
 
-              // Listing of charts
-              SizedBox(
-                height: Get.height - 145,
+              Expanded(
                 child: CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
@@ -86,6 +86,71 @@ class StatsPage extends StatelessWidget {
         : AppLoadingState(message: "loading".tr));
   }
 
+  Widget modernSummaryDashboard(StatController statController) {
+    var formatter = NumberFormat("#,##0.00", "fr_FR");
+    return Obx(() {
+      if (!statController.statsReady.value) {
+        return const SizedBox.shrink();
+      }
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final bool wide = constraints.maxWidth >= 560;
+            final double cardWidth =
+                wide ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                SizedBox(
+                  width: cardWidth,
+                  child: AppStatCard(
+                    label: "Chiffre du jour",
+                    value: formatter.format(statController.stats_day!.total),
+                    icon: Icons.payments_outlined,
+                    color: Colors.green,
+                    onTap: statController.stats_day!.total != 0
+                        ? () => Get.to(() => SaleOrderList())
+                        : null,
+                  ),
+                ),
+                SizedBox(
+                  width: cardWidth,
+                  child: AppStatCard(
+                    label: "Clients visites",
+                    value:
+                        "${statController.stats_day!.visited}/${statController.stats_day!.client_count}",
+                    icon: Icons.groups_2_outlined,
+                    color: Colors.blue,
+                  ),
+                ),
+                SizedBox(
+                  width: cardWidth,
+                  child: AppStatCard(
+                    label: "Panier moyen",
+                    value: formatter.format(statController.stats_day!.average),
+                    icon: Icons.receipt_long_outlined,
+                    color: Colors.orange,
+                  ),
+                ),
+                SizedBox(
+                  width: cardWidth,
+                  child: AppStatCard(
+                    label: "Restants",
+                    value: statController.stats_day!.rest.toString(),
+                    icon: Icons.person_off_outlined,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    });
+  }
+
   Widget calenderDashboard(StatController statController) {
     DateTime? date;
     String? dayName;
@@ -107,44 +172,160 @@ class StatsPage extends StatelessWidget {
       return !statController.statsReady.value
           ? const SizedBox.shrink()
           : Container(
-              padding:
-                  EdgeInsets.symmetric(horizontal: Get.width / 6, vertical: 2),
-              width: Get.width - 20,
-              height: Get.height / 8,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    day!,
-                    style: TextStyle(
-                      fontSize: Get.height / 8 - 20,
-                      fontWeight: FontWeight.bold,
-                      color: const Color.fromARGB(255, 92, 92, 92),
-                    ),
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 14),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF185ADB),
+                    Color(0xFF00A676),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.22),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
                   ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Text(
-                        dayName!,
-                        style: TextStyle(
-                            fontSize: Get.height / 20 - 15,
-                            fontWeight: FontWeight.bold,
-                            color: const Color.fromARGB(255, 92, 92, 92)),
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Center(
+                          child: Text(
+                            day!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
                       ),
-                      Text(
-                        "${month!} ${year!}",
-                        style: TextStyle(
-                            fontSize: Get.height / 25 - 10,
-                            fontWeight: FontWeight.bold,
-                            color: const Color.fromARGB(255, 92, 92, 92)),
-                      )
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "$dayName - $month $year",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "Pilotage terrain en temps reel",
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.82),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      _HeroMetric(
+                        label: "CA",
+                        value: NumberFormat("#,##0.00", "fr_FR")
+                            .format(statController.stats_day!.total),
+                        icon: Icons.payments_outlined,
+                      ),
+                      _HeroMetric(
+                        label: "Clients",
+                        value:
+                            statController.stats_day!.client_count.toString(),
+                        icon: Icons.groups_2_outlined,
+                      ),
+                      _HeroMetric(
+                        label: "Visites",
+                        value: statController.stats_day!.visited.toString(),
+                        icon: Icons.route_outlined,
+                      ),
+                      _HeroMetric(
+                        label: "Restants",
+                        value: statController.stats_day!.rest.toString(),
+                        icon: Icons.warning_amber_rounded,
+                      ),
                     ],
                   ),
                 ],
               ),
             );
     });
+  }
+
+  Widget _HeroMetric({
+    required String label,
+    required String value,
+    required IconData icon,
+  }) {
+    return Container(
+      width: 150,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.78),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget OrdersStatus(StatController statController) {

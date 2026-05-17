@@ -5,8 +5,9 @@ import 'package:push_sale/views/signed/widgets/tracking/orders_to_track.dart';
 import 'package:push_sale/views/signed/widgets/tracking/tracking_detail.dart';
 
 class MainTrackingOrder extends StatelessWidget {
-  PageController pageController = PageController();
-  OrderController orderController = Get.put(OrderController(tag: "tracking"));
+  final PageController pageController = PageController();
+  final OrderController orderController =
+      Get.put(OrderController(tag: "tracking"));
 
   MainTrackingOrder({super.key});
   @override
@@ -20,26 +21,16 @@ class MainTrackingOrder extends StatelessWidget {
         }
         return false;
       },
-      child: SizedBox(
-        width: Get.width,
-        height: Get.height - 80,
-        child: Column(
+      child: SizedBox.expand(
+        child: PageView(
+          physics: const NeverScrollableScrollPhysics(),
+          controller: pageController,
+          onPageChanged: (value) {
+            orderController.page.value = value;
+          },
           children: [
-            SizedBox(
-              width: Get.width,
-              height: Get.height - 80,
-              child: PageView(
-                physics: const NeverScrollableScrollPhysics(),
-                controller: pageController,
-                onPageChanged: (value) {
-                  orderController.page.value = value;
-                },
-                children: [
-                  OrderToTrack(pageController),
-                  TrackingDetail(pageController),
-                ],
-              ),
-            ),
+            OrderToTrack(pageController),
+            TrackingDetail(pageController),
           ],
         ),
       ),

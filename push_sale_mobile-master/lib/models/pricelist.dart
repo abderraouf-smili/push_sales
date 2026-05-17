@@ -26,11 +26,12 @@ class PriceList {
 
   static PriceList fromMap(Map<String, dynamic> value) {
     return PriceList(
-      id: int.parse(value["id"].toString()),
-      name: value["name"],
-      description: value["description"],
-      active: value["active"] == "1",
-      distributor_id: int.parse(value["distributor_id"].toString()),
+      id: int.tryParse(value["id"]?.toString() ?? "0") ?? 0,
+      name: value["name"]?.toString() ?? "",
+      description: value["description"]?.toString() ?? "",
+      active: value["active"] == true || value["active"].toString() == "1",
+      distributor_id:
+          int.tryParse(value["distributor_id"]?.toString() ?? "0") ?? 0,
       start_date: value["start_date"] != null
           ? DateTime.parse(value["start_date"])
           : null,
@@ -39,7 +40,7 @@ class PriceList {
       typePv: value["typepv"] != null
           ? TypePointVente.fromMap(value["typepv"])
           : null,
-      items: PriceListItem.fromListMap(value["items"]),
+      items: PriceListItem.fromListMap((value["items"] as List?) ?? const []),
     );
   }
 }

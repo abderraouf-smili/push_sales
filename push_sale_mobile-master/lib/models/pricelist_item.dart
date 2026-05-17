@@ -17,12 +17,12 @@ class PriceListItem {
 
   static PriceListItem fromMap(Map<String, dynamic> value) {
     return PriceListItem(
-      id: int.parse(value["id"].toString()),
-      pricelist_id: int.parse(value["pricelist_id"].toString()),
+      id: int.tryParse(value["id"]?.toString() ?? "0") ?? 0,
+      pricelist_id: int.tryParse(value["pricelist_id"]?.toString() ?? "0") ?? 0,
       variant:
           value["variant"] != null ? Variant.fromMap(value["variant"]) : null,
-      sku: value["sku"],
-      price: double.parse(value["price"].toString()),
+      sku: value["sku"]?.toString() ?? "",
+      price: double.tryParse(value["price"]?.toString() ?? "0") ?? 0,
     );
   }
 

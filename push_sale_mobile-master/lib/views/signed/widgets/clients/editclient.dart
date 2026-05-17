@@ -9,7 +9,12 @@ import 'package:push_sale/controllers/dropdown_controller.dart';
 import 'package:push_sale/controllers/client_controller.dart';
 import 'package:push_sale/models/client.dart';
 import 'package:push_sale/models/visit_day.dart';
+import 'package:push_sale/theme/app_colors.dart';
+import 'package:push_sale/theme/app_spacing.dart';
+import 'package:push_sale/theme/app_text_styles.dart';
 import 'package:push_sale/views/signed/widgets/clients/dropdown.dart';
+import 'package:push_sale/widgets/common/app_card.dart';
+import 'package:push_sale/widgets/common/app_snackbar.dart';
 import 'package:push_sale/const/globals.dart' as global;
 
 class EditClient extends StatelessWidget {
@@ -52,29 +57,43 @@ class EditClient extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        extendBodyBehindAppBar: true,
+        resizeToAvoidBottomInset: true,
+        backgroundColor: AppColors.canvas,
         appBar: AppBar(
           title: Text(edit ? "editer.client".tr : "new.client".tr),
           centerTitle: true,
-          backgroundColor:
-              edit ? Colors.red.withOpacity(0.7) : Colors.transparent,
-          actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.menu))],
+          backgroundColor: AppColors.canvas,
+          actions: [
+            IconButton(
+              onPressed: () async {
+                final status = await Permission.location.status;
+                if (status.isGranted) {
+                  Position position = await clientController.getLocation();
+                  await clientController.GetAddressFromLatLong(position);
+                } else {
+                  await Geolocator.requestPermission();
+                }
+              },
+              icon: const Icon(Icons.my_location_rounded),
+              tooltip: "GPS",
+            ),
+          ],
         ),
         body: SingleChildScrollView(
-          padding: EdgeInsets.zero,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
           child: Form(
             key: clientController.FormKey,
-            child: Container(
-              padding: const EdgeInsets.only(bottom: 40),
-              color: const Color.fromARGB(255, 244, 249, 255),
-              child: Column(
-                children: [
-                  //Picture
-                  SizedBox(
-                    // color: Colors.orange,
-                    height: Get.height / 2.5,
-                    width: double.infinity,
+            child: Column(
+              children: [
+                AppCard(
+                  padding: EdgeInsets.zero,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                     child: MyImagePicker(
                       preferredCameraDevice: CameraDevice.rear,
                       initialValue: client != null && client!.hasImage
@@ -87,8 +106,8 @@ class EditClient extends StatelessWidget {
                           : null,
                       maxImages: 1,
                       previewMargin: EdgeInsets.zero,
-                      previewWidth: Get.width,
-                      previewHeight: Get.height / 2.5,
+                      previewWidth: double.infinity,
+                      previewHeight: 190,
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                       ),
@@ -103,66 +122,46 @@ class EditClient extends StatelessWidget {
                       },
                     ),
                   ),
+                ),
+                const SizedBox(height: AppSpacing.md),
 
-                  Stack(
+                AppCard(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Stack(
                     children: [
-                      Container(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 10),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            width: 1,
-                            color: const Color.fromARGB(255, 196, 196, 196),
+                      Column(
+                        children: [
+                          // Name
+                          TextFormField(
+                            controller: nameController,
+                            validator: (value) =>
+                                value!.length < 3 ? "errorLastName".tr : null,
+                            onSaved: (newValue) {
+                              clientController.Name = newValue;
+                            },
+                            decoration: InputDecoration(
+                              labelText: "name.client".tr,
+                              prefixIcon:
+                                  const Icon(Icons.store_mall_directory),
+                            ),
                           ),
-                        ),
-                        child: Column(
-                          children: [
-                            // Name
-                            Container(
-                              margin:
-                                  const EdgeInsets.symmetric(horizontal: 20),
-                              child: Container(
-                                child: TextFormField(
-                                  controller: nameController,
-                                  validator: (value) => value!.length < 3
-                                      ? "errorLastName".tr
-                                      : null,
-                                  onSaved: (newValue) {
-                                    clientController.Name = newValue;
-                                  },
-                                  decoration: InputDecoration(
-                                    labelText: "name.client".tr,
-                                    labelStyle: const TextStyle(fontSize: 14),
-                                    border: InputBorder.none,
-                                  ),
-                                ),
-                              ),
+                          const SizedBox(height: AppSpacing.sm),
+                          //phone
+                          TextFormField(
+                            keyboardType: TextInputType.phone,
+                            controller: phoneController,
+                            // validator: (value) => value!.length < 7
+                            //     ? "errorphone".tr
+                            //     : null,
+                            onSaved: (newValue) {
+                              clientController.Mobile = newValue;
+                            },
+                            decoration: InputDecoration(
+                              labelText: "mobile.client".tr,
+                              prefixIcon: const Icon(Icons.phone_rounded),
                             ),
-                            //phone
-                            Container(
-                              margin:
-                                  const EdgeInsets.symmetric(horizontal: 20),
-                              child: Container(
-                                child: TextFormField(
-                                  keyboardType: TextInputType.phone,
-                                  controller: phoneController,
-                                  // validator: (value) => value!.length < 7
-                                  //     ? "errorphone".tr
-                                  //     : null,
-                                  onSaved: (newValue) {
-                                    clientController.Mobile = newValue;
-                                  },
-                                  decoration: InputDecoration(
-                                    labelText: "mobile.client".tr,
-                                    labelStyle: const TextStyle(fontSize: 14),
-                                    border: InputBorder.none,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       //Button GPS
                       Obx(
@@ -176,10 +175,11 @@ class EditClient extends StatelessWidget {
                                     ? 20
                                     : null,
                                 top: 30,
-                                child: Container(
-                                  height: 60,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
+                                child: Material(
+                                  color: AppColors.surface,
+                                  elevation: 3,
+                                  borderRadius: BorderRadius.circular(
+                                      AppSpacing.radiusMd),
                                   child: IconButton(
                                     onPressed: () async {
                                       var status =
@@ -256,173 +256,156 @@ class EditClient extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
 
-                  // Type de client
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        width: 1,
-                        color: const Color.fromARGB(255, 196, 196, 196),
-                      ),
-                    ),
-                    margin: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(flex: 1, child: Text("type_pv".tr)),
-                          Expanded(
-                            flex: 2,
-                            child: SizedBox(
-                                width: Get.width / 1.5,
-                                child: TypePointVenteDropDown(
-                                  select_text: "please select ...".tr,
-                                )),
-                          ),
-                        ],
-                      ),
-                    ),
+                // Type de client
+                const SizedBox(height: AppSpacing.md),
+                AppCard(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs,
                   ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: Text("type_pv".tr, style: AppTextStyles.body),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: SizedBox(
+                            width: Get.width / 1.5,
+                            child: TypePointVenteDropDown(
+                              select_text: "please select ...".tr,
+                            )),
+                      ),
+                    ],
+                  ),
+                ),
 
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  // Address du client
-                  Obx(
-                    () => clientController.GPS_loading.value
-                        ? Container(
-                            //only when GPS_loading
-                            height: 156,
-                            width: 156,
-                            padding: const EdgeInsets.all(60),
-                            child: const CircularProgressIndicator(),
-                          )
-                        : !clientController.GPS_ready.value && !edit
-                            ? const SizedBox(
-                                // only when !edit and !GPS_ready and !GPS_loading
-                                height: 156,
-                              )
-                            : Container(
-                                // GPS_ready or edit
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                        width: 1,
-                                        color: const Color.fromARGB(
-                                            255, 196, 196, 196))),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 30),
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 10),
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 20),
-                                  child: Column(
+                const SizedBox(height: AppSpacing.md),
+                // Address du client
+                Obx(
+                  () => clientController.GPS_loading.value
+                      ? const AppCard(
+                          //only when GPS_loading
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      : !clientController.GPS_ready.value && !edit
+                          ? AppCard(
+                              child: Column(
+                                children: [
+                                  const Icon(Icons.location_off_outlined,
+                                      color: AppColors.warning, size: 36),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Text(
+                                    "Position requise",
+                                    style: AppTextStyles.title
+                                        .copyWith(fontSize: 18),
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  Text(
+                                    "Touchez l'icone GPS pour recuperer la position du client avant l'enregistrement.",
+                                    textAlign: TextAlign.center,
+                                    style: AppTextStyles.subtitle,
+                                  ),
+                                ],
+                              ),
+                            )
+                          : AppCard(
+                              // GPS_ready or edit
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("Adresse", style: AppTextStyles.title),
+                                  const SizedBox(height: AppSpacing.md),
+                                  //Wilaya
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      //Wilaya
-                                      Container(
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text("Wilaya".tr),
-                                            ),
-                                            // Container(width: Get.width / 1.5, child: WilayaDropDown()),
-                                            Expanded(
-                                              flex: 2,
-                                              child: Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 15),
-                                                  child: Text(
-                                                      "${clientController.Wilaya_Text!} - ${clientController.Country_Text!}")),
-                                            )
-                                          ],
-                                        ),
+                                      Expanded(
+                                        child: Text("Wilaya".tr),
                                       ),
-                                      const SizedBox(
-                                        height: 20,
-                                      ),
-
-                                      // City
-                                      Container(
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text("City".tr),
-                                            ),
-                                            // Container(width: Get.width / 1.5, child: WilayaDropDown()),
-                                            Expanded(
-                                              flex: 2,
-                                              child: Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 15),
-                                                  child: Text(clientController
-                                                          .City_Text ??
-                                                      "")),
-                                            )
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(
-                                        height: 20,
-                                      ),
-                                      // Commune
-                                      Container(
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text("address".tr),
-                                            ),
-                                            // Container(width: Get.width / 1.5, child: WilayaDropDown()),
-                                            Expanded(
-                                              flex: 2,
-                                              child: Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 15),
-                                                  child: Text(
-                                                      "${clientController.Commune_Text ?? ""} ${clientController.Street_Text ?? ""}")),
-                                            )
-                                          ],
-                                        ),
-                                      ),
+                                      // Container(width: Get.width / 1.5, child: WilayaDropDown()),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 15),
+                                            child: Text(
+                                                "${clientController.Wilaya_Text!} - ${clientController.Country_Text!}")),
+                                      )
                                     ],
                                   ),
-                                ),
-                              ),
-                  ),
+                                  const SizedBox(
+                                    height: 20,
+                                  ),
 
-                  // jours de visites
-                  Container(
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                            width: 1,
-                            color: const Color.fromARGB(255, 196, 196, 196))),
-                    padding: const EdgeInsets.symmetric(vertical: 30),
-                    margin: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 10),
-                    child: Obx(
-                      () => Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(
-                          global.weekdays.length,
-                          (index) {
-                            var day = global.weekdays[index];
-                            return Column(
-                              mainAxisAlignment:
-                                  clientController.weekday_changed.value >= 0
-                                      ? MainAxisAlignment.center
-                                      : MainAxisAlignment.center,
+                                  // City
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text("City".tr),
+                                      ),
+                                      // Container(width: Get.width / 1.5, child: WilayaDropDown()),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 15),
+                                            child: Text(
+                                                clientController.City_Text ??
+                                                    "")),
+                                      )
+                                    ],
+                                  ),
+                                  const SizedBox(
+                                    height: 20,
+                                  ),
+                                  // Commune
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text("address".tr),
+                                      ),
+                                      // Container(width: Get.width / 1.5, child: WilayaDropDown()),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 15),
+                                            child: Text(
+                                                "${clientController.Commune_Text ?? ""} ${clientController.Street_Text ?? ""}")),
+                                      )
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                ),
+
+                // jours de visites
+                const SizedBox(height: AppSpacing.md),
+                AppCard(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Obx(
+                    () => Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: List.generate(
+                        global.weekdays.length,
+                        (index) {
+                          var day = global.weekdays[index];
+                          return SizedBox(
+                            width: 72,
+                            child: Column(
                               children: [
                                 Text(
                                   day.tr,
@@ -464,23 +447,36 @@ class EditClient extends StatelessWidget {
                                       clientController.weekday_changed.value++;
                                     })
                               ],
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
-                  //Button Save
-                  MaterialButton(
-                    shape: const OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(10)),
-                        borderSide: BorderSide.none),
-                    color: const Color.fromARGB(255, 109, 175, 111),
-                    minWidth: Get.width - 20,
-                    height: 50,
+                ),
+                //Button Save
+                const SizedBox(height: AppSpacing.lg),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton.icon(
                     onPressed: () async {
+                      if (clientController.hasNoGPS.value && !edit) {
+                        AppSnackbar.error(
+                          "Position requise",
+                          "Recuperez la position GPS avant de sauvegarder ce client.",
+                        );
+                        return;
+                      }
                       clientController.TypePVID = dropController.TpvID;
+                      if (clientController.TypePVID == null ||
+                          clientController.TypePVID == 0) {
+                        AppSnackbar.error(
+                          "Type de PV requis",
+                          "Selectionnez le type de point de vente.",
+                        );
+                        return;
+                      }
                       if (edit) {
                         clientController.visit_days = client!.visitdays!;
                       }
@@ -489,9 +485,15 @@ class EditClient extends StatelessWidget {
                         Get.offAllNamed("/HomePage",
                             arguments: {"client_id": rep.data["id"]});
                         // Get.offAll(() => Clients(rep.data["id"]));
+                      } else {
+                        AppSnackbar.error(
+                          "Client non enregistre",
+                          rep.message.toString(),
+                        );
                       }
                     },
-                    child: Obx(() {
+                    icon: const Icon(Icons.save_rounded),
+                    label: Obx(() {
                       switch (clientController.stepSave.value) {
                         case "start":
                           return const CircularProgressIndicator(
@@ -511,30 +513,27 @@ class EditClient extends StatelessWidget {
                         default:
                           return Text(
                             "Save".tr,
-                            style: const TextStyle(
-                                fontSize: 14, color: Colors.white),
                           );
                       }
                     }),
                   ),
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Obx(
-                      () => Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        height: 7,
-                        width: clientController.progressLevel.value == 0
-                            ? 0
-                            : (clientController.progressLevel.value *
-                                        Get.width -
-                                    20) /
-                                clientController.totalLevel,
-                        color: Colors.red,
-                      ),
+                ),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Obx(
+                    () => Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      height: 7,
+                      width: clientController.progressLevel.value == 0
+                          ? 0
+                          : (clientController.progressLevel.value * Get.width -
+                                  20) /
+                              clientController.totalLevel,
+                      color: Colors.red,
                     ),
-                  )
-                ],
-              ),
+                  ),
+                )
+              ],
             ),
           ),
         ),

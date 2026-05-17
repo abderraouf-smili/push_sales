@@ -1,5 +1,52 @@
 # PROJECT_HISTORY
 
+## 2026-05-17 - Clients, tracking, sidebar et deconnexion propre
+
+- Zone modifiee : Flutter HomePage/navigation, clients, nouveau client, tracking, depots, session/logout.
+- Objectif : corriger les retours smartphone : liste clients vide, formulaire nouveau client ancien et peu clair, tracking illisible avec overflow, besoin d'une sidebar mobile, depot noir, deconnexion qui garde des donnees de profil.
+- Resume : ajout d'un drawer lateral mobile avec profil, navigation et logout; centralisation de la deconnexion dans `SessionService` avec clear SharedPreferences, signOut Firebase et reset GetX; page clients modernisee avec recherche, filtres, chips, etats loading/empty/error et affichage tous clients par defaut; formulaire client rendu plus clair avec cartes, GPS explicite et messages d'erreur; tracking remplace par KPI + cartes + timeline responsive; correction du bug `animateToPage(2)` vers une page inexistante; ecran depots enveloppe dans un Scaffold/fond clair et chargement execute une seule fois.
+- Risque : moyen, car navigation/session et plusieurs ecrans visibles sont touches; aucune route API, aucun format JSON et aucun calcul metier n'a ete modifie.
+- Impact logique metier : aucun changement de calcul metier; la creation client garde l'exigence GPS existante mais affiche maintenant un message clair au lieu d'echouer silencieusement.
+- Tests effectues : `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, `flutter run -d 10.212.134.2:38587 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK.
+- Tests a faire : validation manuelle sur scrcpy du drawer, logout/relogin entre roles, ajout client avec permission GPS, liste clients, tracking detail et depot admin.
+- Prochaine etape : continuer la modernisation des sous-ecrans client detail/commande et nettoyer progressivement les warnings historiques.
+
+## 2026-05-17 - Correctif depots, reception et liste de prix
+
+- Zone modifiee : Flutter depots/stock, bon de reception, selection produits reception, liste de prix, theme.
+- Objectif : corriger les retours visuels observes sur scrcpy : ecran depot noir en theme sombre, actions depot peu claires, bon de reception ancien et peu lisible, overflows sur reception, liste de prix qui charge sans fin.
+- Resume : neutralisation temporaire du theme sombre legacy en conservant un rendu clair stable, remplacement des actions depot en petits boutons flottants par une barre d'actions textuelle `Reception / Ajuster / Imprimer / Imprimante`, affichage des articles de depot en cartes avec etat vide, modernisation du bon de reception avec header, total fixe et boutons visibles, modernisation de la recherche produits reception, correction du chargement unique de la liste de prix et parsing defensif des listes/prix.
+- Risque : moyen-faible, car les changements touchent plusieurs ecrans UI mais ne modifient ni routes API, ni formats JSON, ni calculs metier stock/prix/reception.
+- Impact logique metier : aucun changement volontaire; seules des corrections d'etat UI et de robustesse de parsing ont ete ajoutees.
+- Tests effectues : `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter analyze` strict KO sur 770 issues historiques non bloquantes, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, `flutter devices` OK, `flutter run -d 10.212.134.2:38587 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK.
+- Tests a faire : validation manuelle sur scrcpy des chemins admin `Mes depots -> Depot central demo -> Reception -> Bon de reception -> Liste de prix`.
+- Prochaine etape : poursuivre la modernisation profonde de la fiche produit reception et des ecrans prix/acteurs si des captures montrent encore des zones anciennes.
+
+## 2026-05-17 - Correctifs UI visibles, overflows et livraison demo
+
+- Zone modifiee : HomePage Flutter, dashboard, favoris/panier, parametres, livraison mobile, notification livraison Laravel.
+- Objectif : corriger les problemes constates sur smartphone (bandes `BOTTOM OVERFLOWED`, favoris en construction, theme/notifications peu fonctionnels, dashboard peu lisible, erreur livraison `id` null).
+- Resume : remplacement des hauteurs fixes par `Expanded`/scroll flexible sur dashboard, parametres et livraison; ajout d'une navigation laterale responsive sur tablette/grand ecran; remplacement des placeholders favoris/panier par des pages modernes avec empty states et raccourcis; ajout de panneaux Theme et Notifications; ajout de cartes KPI modernes au dashboard.
+- Livraison : l'ecran detail gere maintenant l'absence de commande selectionnee sans crash; cote Laravel, l'envoi de notification apres livraison ignore proprement le cas ou la commande source ou son acteur n'existe pas, au lieu de casser la validation livraison.
+- Risque : moyen-faible, car les changements sont UI/defensifs et ne changent pas les routes API, le JSON, les calculs stock/prix/commande/livraison/paiement.
+- Impact logique metier : aucun changement de logique metier; la notification manquante est sautee uniquement quand le destinataire est absent.
+- Tests effectues : `php -l PurchaseOrderController.php` OK, `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, `flutter devices` OK, `flutter run -d 10.212.134.2:38587 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK apres retry.
+- Warnings restants : `flutter analyze` strict conserve 791 issues historiques deja documentees (style, deprecated, champs non final, prints anciens).
+- Prochaine etape : validation manuelle sur scrcpy des ecrans dashboard, favoris, livraison, parametres/theme/notifications, puis continuer la modernisation module par module.
+
+## 2026-05-17 - Modernisation UI lot 2 dashboard, clients, depots, chat et theme
+
+- Zone modifiee : dashboard Flutter, clients, produits, tracking, transfert, depots, detail depot, chat, theme global.
+- Objectif : repondre aux retours visuels sur scrcpy : UI pas assez moderne, dashboard peu clair, boutons depot en menu haut, chat/theme non fonctionnels, overflows persistants.
+- Resume : ajout d'un hero dashboard moderne avec metriques terrain, correction de la barre clients pour eviter les debordements, suppression de nouvelles hauteurs fixes sur produits/tracking/transfert, modernisation des cartes depot, remplacement du menu haut du detail depot par des boutons flottants avec reception/ajustement/impression/imprimante.
+- Chat : creation d'un controller Flutter connecte aux routes Laravel existantes `getmessage` et `sendmessage`; l'ecran affiche loading, erreur, vide, conversations et reponse rapide.
+- Theme : ajout d'un vrai `darkTheme` dans `GetMaterialApp`; les options Theme clair/sombre/systeme ont maintenant un effet visuel.
+- Risque : moyen, car plusieurs ecrans UI profonds sont touches, mais aucune route API ni logique metier stock/prix/commande/livraison/paiement n'a ete changee.
+- Impact logique metier : aucun changement de calcul metier; uniquement UI, consommation d'endpoints existants et actions defensives.
+- Tests effectues : `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, `flutter devices` OK, `flutter run -d 10.212.134.2:38587 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK.
+- Warnings restants : `flutter analyze` strict conserve 788 issues historiques non bloquantes.
+- Prochaine etape : validation visuelle page par page sur scrcpy et poursuite de la modernisation des sous-ecrans commandes, paiement, promotions et formulaire de reception.
+
 ## 2026-05-17 - Durcissement depots, notifications et warnings ciblés
 
 - Zone modifiee : depots/stock Flutter, commandes/livraison/transfert Flutter, notifications Laravel, documentation.

@@ -12,18 +12,36 @@ import 'package:push_sale/controllers/order_controller.dart';
 import 'package:push_sale/api/printer_controller.dart';
 import 'package:push_sale/models/purchase_orderitem.dart';
 import 'package:push_sale/views/signed/widgets/settings/printer_config.dart';
+import 'package:push_sale/widgets/common/app_empty_state.dart';
 import 'package:push_sale/const/globals.dart' as global;
 
 class ShippingOrderDetail extends StatelessWidget {
-  PageController pageController;
-  OrderController orderController = Get.find();
-  PrinterController printerController = Get.put(PrinterController());
+  final PageController pageController;
+  final OrderController orderController = Get.find();
+  final PrinterController printerController = Get.put(PrinterController());
   ShippingOrderDetail(this.pageController, {super.key});
 
   @override
   Widget build(BuildContext context) {
     var order = orderController.selectedPO;
-    orderController.amount_total.value = order!.total_amount;
+    if (order == null) {
+      return AppEmptyState(
+        icon: Icons.local_shipping_outlined,
+        title: "Commande indisponible",
+        message:
+            "Retournez a la liste des livraisons puis ouvrez de nouveau la commande.",
+        action: ElevatedButton.icon(
+          onPressed: () {
+            pageController.animateToPage(0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.linear);
+          },
+          icon: const Icon(Icons.arrow_back),
+          label: const Text("Retour"),
+        ),
+      );
+    }
+    orderController.amount_total.value = order.total_amount;
     orderController.generateTrackId();
     orderController.generateCashTrackId();
     orderController.encaissement.value = 0.0;
@@ -424,9 +442,7 @@ class ShippingOrderDetail extends StatelessWidget {
           ],
         ),
       ),
-      SizedBox(
-        width: Get.width,
-        height: Get.height - 138.5 - (showDeliveryProof ? 220 : 90),
+      Expanded(
         child: ListView.builder(
           itemCount: order.orderitems.length,
           itemBuilder: (context, index) {

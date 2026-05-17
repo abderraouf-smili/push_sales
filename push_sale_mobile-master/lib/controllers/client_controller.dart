@@ -68,20 +68,29 @@ class ClientController extends GetxController {
   double? Latitude;
   double? Longitude;
 
-  RxBool visit_day_only = true.obs;
+  RxBool visit_day_only = false.obs;
+  RxString error = "".obs;
 
   Future<void> getClients() async {
     ready.value = false;
+    error.value = "";
     clientsList = [];
-    ResponseHttpRequest response = await CallApi.RequestHttp(
-      global.listClient,
-    );
-    if (response.status == "SUCCESS") {
-      for (var element in response.data) {
-        clientsList.add(Client.fromMap(element));
+    try {
+      ResponseHttpRequest response = await CallApi.RequestHttp(
+        global.listClient,
+      );
+      if (response.status == "SUCCESS") {
+        for (var element in response.data) {
+          clientsList.add(Client.fromMap(element));
+        }
+      } else {
+        error.value = response.message.toString();
       }
+    } catch (e) {
+      error.value = e.toString();
+    } finally {
+      ready.value = true;
     }
-    ready.value = true;
   }
 
   Future<void> GetAddressFromLatLong(Position position) async {

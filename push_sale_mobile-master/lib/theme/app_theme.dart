@@ -91,4 +91,10 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData dark() {
+    // The legacy screens still use many fixed light colors. Keep dark mode
+    // visually stable until every screen is theme-aware.
+    return light();
+  }
 }

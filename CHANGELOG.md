@@ -2,6 +2,29 @@
 
 ## 2026-05-17
 
+- Navigation : ajout d'une sidebar/drawer mobile avec navigation par role et deconnexion.
+- Session : logout nettoie maintenant preferences, Firebase Auth et controllers GetX pour eviter le profil precedent.
+- Clients : page principale modernisee, affichage tous clients par defaut, etats vide/erreur/loading et filtres plus lisibles.
+- Nouveau client : formulaire plus clair, scrollable, GPS explicite et messages professionnels en cas de blocage.
+- Tracking : refonte lisible avec KPI, cartes et timeline responsive; correction d'une navigation vers une page inexistante.
+- Depots : fond clair force et chargement unique pour eviter l'ecran noir/refresh repetitif.
+- Depots/reception : actions depot transformees en barre lisible, cartes stock modernisees et etat vide ajoute.
+- Bon de reception : header, total, ajouter/enregistrer/imprimer/imprimante rendus visibles; suppression de hauteurs fixes responsables d'overflows.
+- Liste de prix : correction du chargement infini et parsing plus robuste des donnees backend.
+- Theme : rendu sombre legacy neutralise temporairement pour eviter les ecrans noirs sur les anciens widgets.
+- Validation : APK debug VPN reconstruit et lance sur SM A165F.
+- Modernisation dashboard lot 2 : hero KPI moderne pour le pilotage terrain.
+- Correction overflows supplementaires : clients, produits, tracking, transfert et depots.
+- Depots : cartes modernisees et detail depot avec actions flottantes reception/ajustement/impression/imprimante.
+- Chat : nouvel ecran connecte aux endpoints Laravel `getmessage` et `sendmessage`.
+- Theme : ajout d'un vrai theme sombre via `darkTheme`.
+- Validation device : APK installe et lance sur SM A165F apres build debug VPN.
+- Correction UX visible : suppression des overflows dashboard/parametres/livraison, favoris et panier remplaces par des pages utiles.
+- Ajout d'une navigation laterale responsive sur tablette/grand ecran, en conservant la barre basse sur smartphone.
+- Dashboard enrichi avec cartes KPI modernes pour chiffre du jour, clients visites, panier moyen et restants.
+- Parametres : actions Theme et Notifications ajoutees avec panneaux clairs.
+- Livraison : correction defensive du detail sans commande selectionnee et de la notification Laravel quand la commande source/acteur est absent.
+- Validation : `flutter analyze --no-fatal-infos --no-fatal-warnings` OK et APK debug VPN genere.
 - Durcissement depots/stock : empty state depot, cartes depot plus flexibles, onglets stock responsives.
 - Nettoyage warnings ciblés : variables mortes, imports inutiles, dead code, acces RxList proteges.
 - Notifications backend : retrait d'une ancienne configuration Firebase commentee, validation `FCM_SERVER_KEY`, suppression des logs de token FCM complet.

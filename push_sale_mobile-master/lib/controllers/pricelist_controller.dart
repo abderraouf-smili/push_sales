@@ -1,32 +1,34 @@
 import 'package:get/get.dart';
 import 'package:push_sale/api/call_api.dart';
+import 'package:push_sale/const/globals.dart' as global;
 import 'package:push_sale/models/line_text_printer.dart';
 import 'package:push_sale/models/pricelist.dart';
-import 'package:push_sale/const/globals.dart' as global;
 
 class PricelistController extends GetxController {
-  //
   RxBool loadPricelist = false.obs;
+  RxString error = "".obs;
   List<PriceList> pricelist = [];
   List<LineTextPrinter> textPrint = [];
 
   Future<void> getPricelist() async {
     loadPricelist.value = false;
-    ResponseHttpRequest response =
-        await CallApi.RequestHttp(global.pricelist, data: null);
+    error.value = "";
+    final response = await CallApi.RequestHttp(global.pricelist);
     try {
       if (response.status == "SUCCESS") {
-        pricelist = [];
-        for (var element in response.data) {
-          // print("==>>=>>$element");
-          PriceList price = PriceList.fromMap(element);
-          pricelist.add(price);
-        }
-        loadPricelist.value = true;
+        final rows = (response.data as List?) ?? const [];
+        pricelist = rows
+            .whereType<Map>()
+            .map((element) =>
+                PriceList.fromMap(Map<String, dynamic>.from(element)))
+            .toList();
+      } else {
+        error.value = response.message.toString();
       }
-    } catch (e, stackTrace) {
-      print("❌ ERROR: $e");
-      print("📍 STACKTRACE:\n$stackTrace");
+    } catch (e) {
+      error.value = e.toString();
+    } finally {
+      loadPricelist.value = true;
     }
   }
 

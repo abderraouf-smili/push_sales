@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/controllers/compte_menu_controller.dart';
 import 'package:push_sale/controllers/permissions_controller.dart';
+import 'package:push_sale/services/session_service.dart';
 import 'package:push_sale/theme/app_colors.dart';
 import 'package:push_sale/theme/app_spacing.dart';
+import 'package:push_sale/theme/app_text_styles.dart';
 import 'package:push_sale/views/signed/menu/commercial_menu.dart';
 import 'package:push_sale/views/signed/menu/my_warehouses.dart';
 import 'package:push_sale/views/signed/widgets/account/edit_personal_data.dart';
@@ -13,12 +15,12 @@ import 'package:push_sale/views/signed/widgets/settings/printer_config.dart';
 import 'package:push_sale/widgets/common/app_card.dart';
 import 'package:push_sale/widgets/common/app_list_tile.dart';
 import 'package:push_sale/widgets/common/app_page_header.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:push_sale/const/globals.dart' as global;
 
 class CompteSetting extends StatelessWidget {
-  CompteMenuController compteController = Get.find<CompteMenuController>();
-  PermissionsController perm = Get.find();
+  final CompteMenuController compteController =
+      Get.find<CompteMenuController>();
+  final PermissionsController perm = Get.find();
 
   CompteSetting({super.key});
 
@@ -43,6 +45,9 @@ class CompteSetting extends StatelessWidget {
         "subtitle": "notifications_alert".tr,
         "icon": Icons.notifications,
         "color": Colors.red,
+        "onTap": () {
+          showNotificationsSheet(context);
+        }
       },
       {
         "title": "Messages".tr,
@@ -87,8 +92,7 @@ class CompteSetting extends StatelessWidget {
         "icon": Icons.draw,
         "color": Colors.orange,
         "onTap": () {
-          print("Theme");
-          Get.changeThemeMode(ThemeMode.dark);
+          showThemeSheet(context);
         }
       },
       {
@@ -115,10 +119,7 @@ class CompteSetting extends StatelessWidget {
         "icon": Icons.exit_to_app,
         "color": Colors.black,
         "onTap": () async {
-          // Get.per<PermissionsController>();
-          SharedPreferences Prefs = await SharedPreferences.getInstance();
-          Prefs.clear();
-          Get.offAllNamed("/");
+          await SessionService.logout();
         }
       }
     ];
@@ -126,143 +127,219 @@ class CompteSetting extends StatelessWidget {
       onWillPop: () async {
         return false;
       },
-      child: Column(children: [
-        AppPageHeader(
-          title: "settings".tr,
-          subtitle: "current_version".tr,
-          icon: Icons.manage_accounts_outlined,
-        ),
-        Obx(
-          () => compteController.ready.value
-              ? AppCard(
-                  margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 70,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(width: 1, color: AppColors.line),
-                          image: DecorationImage(
-                              fit: BoxFit.cover,
-                              image: CachedNetworkImageProvider(
-                                  compteController.actor!.image)),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            Get.to(() => EditPerosnalData());
-                          },
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Align(
-                                alignment: Alignment.bottomLeft,
-                                child: Text(
-                                  "${compteController.actor!.firstname} ${compteController.actor!.lastname}",
-                                  style: const TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              const Align(
-                                alignment: Alignment.bottomLeft,
-                                child: Text(
-                                  "Edit personal details",
-                                  style: TextStyle(
-                                      color: Colors.black, fontSize: 12),
-                                ),
-                              ),
-                            ],
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Column(children: [
+          AppPageHeader(
+            title: "settings".tr,
+            subtitle: "current_version".tr,
+            icon: Icons.manage_accounts_outlined,
+          ),
+          Obx(
+            () => compteController.ready.value
+                ? AppCard(
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(width: 1, color: AppColors.line),
+                            image: DecorationImage(
+                                fit: BoxFit.cover,
+                                image: CachedNetworkImageProvider(
+                                    compteController.actor!.image)),
                           ),
                         ),
-                      ),
-                      IconButton(
-                          onPressed: () {
-                            Get.to(() => EditPerosnalData());
-                          },
-                          icon: const Icon(Icons.arrow_forward_ios_outlined))
-                    ],
-                  ),
-                )
-              : Container(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
-                        width: 70,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(width: 1, color: Colors.red),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Get.to(() => EditPerosnalData());
-                        },
-                        child: SizedBox(
-                          width: Get.width / 2,
-                          height: 45,
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Align(
-                                alignment: Alignment.bottomLeft,
-                              ),
-                              Align(
-                                alignment: Alignment.bottomLeft,
-                                child: Text(
-                                  "Edit personal details",
-                                  style: TextStyle(
-                                      color: Colors.black, fontSize: 12),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              Get.to(() => EditPerosnalData());
+                            },
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Align(
+                                  alignment: Alignment.bottomLeft,
+                                  child: Text(
+                                    "${compteController.actor!.firstname} ${compteController.actor!.lastname}",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold),
+                                  ),
                                 ),
-                              ),
-                            ],
+                                const Align(
+                                  alignment: Alignment.bottomLeft,
+                                  child: Text(
+                                    "Edit personal details",
+                                    style: TextStyle(
+                                        color: Colors.black, fontSize: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.arrow_forward_ios_outlined))
-                    ],
+                        IconButton(
+                            onPressed: () {
+                              Get.to(() => EditPerosnalData());
+                            },
+                            icon: const Icon(Icons.arrow_forward_ios_outlined))
+                      ],
+                    ),
+                  )
+                : AppCard(
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(width: 1, color: AppColors.line),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        const Expanded(
+                          child: Text(
+                            "Edit personal details",
+                            style: TextStyle(color: Colors.black, fontSize: 12),
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_outlined)
+                      ],
+                    ),
                   ),
+          ),
+          Expanded(
+            child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xl),
+                physics: const BouncingScrollPhysics(),
+                itemCount: menu.length,
+                itemBuilder: (context, index) {
+                  return menu[index] != null
+                      ? menu[index]["divider"] != null
+                          ? const Divider(
+                              height: 10,
+                              thickness: 1,
+                              endIndent: 50,
+                            )
+                          : AppListTile(
+                              onTap: menu[index]["onTap"],
+                              icon: menu[index]["icon"],
+                              color: menu[index]["color"],
+                              title: menu[index]["title"],
+                              subtitle: menu[index]["subtitle"],
+                            )
+                      : const SizedBox.shrink();
+                }),
+          )
+        ]),
+      ),
+    );
+  }
+
+  void showNotificationsSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Notifications".tr, style: AppTextStyles.title),
+                const SizedBox(height: AppSpacing.sm),
+                const Text(
+                  "Les alertes Push Sales utilisent Firebase cote serveur. Si aucune alerte ne s'affiche, verifier la cle serveur, les permissions Android et la connexion reseau.",
+                  style: AppTextStyles.subtitle,
                 ),
-        ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          height: Get.height - 204,
-          child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              itemCount: menu.length,
-              itemBuilder: (context, index) {
-                return menu[index] != null
-                    ? menu[index]["divider"] != null
-                        ? const Divider(
-                            height: 10,
-                            thickness: 1,
-                            endIndent: 50,
-                          )
-                        : AppListTile(
-                            onTap: menu[index]["onTap"],
-                            icon: menu[index]["icon"],
-                            color: menu[index]["color"],
-                            title: menu[index]["title"],
-                            subtitle: menu[index]["subtitle"],
-                          )
-                    : const SizedBox.shrink();
-              }),
-        )
-      ]),
+                const SizedBox(height: AppSpacing.lg),
+                const AppListTile(
+                  icon: Icons.notifications_active_outlined,
+                  color: AppColors.primary,
+                  title: "Etat",
+                  subtitle: "Notifications applicatives disponibles",
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void showThemeSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text("Theme".tr, style: AppTextStyles.title),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppListTile(
+                  icon: Icons.brightness_auto_outlined,
+                  color: AppColors.primary,
+                  title: "Systeme",
+                  subtitle: "Suivre le theme du telephone",
+                  onTap: () {
+                    Get.changeThemeMode(ThemeMode.system);
+                    Get.back();
+                  },
+                ),
+                AppListTile(
+                  icon: Icons.light_mode_outlined,
+                  color: Colors.orange,
+                  title: "Clair",
+                  subtitle: "Interface lumineuse",
+                  onTap: () {
+                    Get.changeThemeMode(ThemeMode.light);
+                    Get.back();
+                  },
+                ),
+                AppListTile(
+                  icon: Icons.dark_mode_outlined,
+                  color: AppColors.ink,
+                  title: "Sombre",
+                  subtitle: "Interface sombre",
+                  onTap: () {
+                    Get.changeThemeMode(ThemeMode.dark);
+                    Get.back();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

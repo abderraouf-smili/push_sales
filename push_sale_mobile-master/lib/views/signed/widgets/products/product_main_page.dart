@@ -13,7 +13,7 @@ import 'package:push_sale/widgets/common/app_page_header.dart';
 // import 'package:push_sale/views/signed/widgets/products/item_big_icon.dart';
 
 class ProductMainPage extends StatelessWidget {
-  ProductController productController = Get.put(ProductController());
+  final ProductController productController = Get.put(ProductController());
 
   ProductMainPage({super.key});
 
@@ -25,9 +25,9 @@ class ProductMainPage extends StatelessWidget {
       onWillPop: () async {
         return false;
       },
-      child: SizedBox(
-        width: Get.width,
-        height: Get.height - 89,
+      child: SafeArea(
+        top: false,
+        bottom: false,
         child: Column(
           children: [
             AppPageHeader(

@@ -262,16 +262,21 @@ class PurchaseOrderController extends Controller
                     ]);
                     $notif = new NotificationController();
                     $notif_o = Order::where("id", $po->order_id)->first();
-                    // Log::info($notif_o->actor_id);
-                    $notif_u = Actor::where('id',$notif_o->actor_id)->first();
-                    Log::info("Send Notification to Actor: " . $notif_u->firstname . " " . $notif_u->lastname . " - order :" . $po->code);
-                    $params = [
-                        "user_id" => $notif_u->user_id,
-                        "title" => "Order Status - " . $po->code,
-                        "body"  => "The order has been shipped",
-                    ];
-                    // Log::info((object)$params);
-                    $notif->send((object)$params);
+                    $notif_u = $notif_o ? Actor::where('id', $notif_o->actor_id)->first() : null;
+                    if ($notif_u && $notif_u->user_id) {
+                        Log::info("Send Notification to Actor: " . $notif_u->firstname . " " . $notif_u->lastname . " - order :" . $po->code);
+                        $params = [
+                            "user_id" => $notif_u->user_id,
+                            "title" => "Order Status - " . $po->code,
+                            "body"  => "The order has been shipped",
+                        ];
+                        $notif->send((object)$params);
+                    } else {
+                        Log::warning("Delivery notification skipped: missing order actor", [
+                            "purchaseorder_id" => $po->id,
+                            "order_id" => $po->order_id,
+                        ]);
+                    }
 
                 }
 

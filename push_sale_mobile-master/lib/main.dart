@@ -35,7 +35,7 @@ void main() async {
 }
 
 class PushSaleApp extends StatelessWidget {
-  CompteMenuController compteController = Get.put(CompteMenuController());
+  final CompteMenuController compteController = Get.put(CompteMenuController());
   final String initialPage;
 
   PushSaleApp(this.initialPage, {super.key});
@@ -47,6 +47,8 @@ class PushSaleApp extends StatelessWidget {
       supportedLocales:
           supportedLocales.map((locale) => Locale(locale)).toList(),
       theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.system,
       initialRoute: initialPage,
 
       getPages: [

@@ -7,8 +7,8 @@ import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/order_controller.dart';
 
 class OrdersToShip extends StatelessWidget {
-  PageController pageController;
-  OrderController orderController = Get.find();
+  final PageController pageController;
+  final OrderController orderController = Get.find();
   OrdersToShip(this.pageController, {super.key});
   @override
   Widget build(BuildContext context) {
@@ -242,21 +242,15 @@ class OrdersToShip extends StatelessWidget {
           ],
         ),
       ),
-      Obx(
-        () => SizedBox(
-          height: Get.height -
-              143 -
-              40 -
-              (orderController.statusLoadRoute.value != "none" ? 71 : 0),
-          child: TabBarView(
-            physics: const NeverScrollableScrollPhysics(),
-            controller: orderController.tabController,
-            children: [
-              ListPurchaseOrders(pageController),
-              ListPurchaseOrdersOnMap(),
-              ReturnGoods(),
-            ],
-          ),
+      Expanded(
+        child: TabBarView(
+          physics: const NeverScrollableScrollPhysics(),
+          controller: orderController.tabController,
+          children: [
+            ListPurchaseOrders(pageController),
+            ListPurchaseOrdersOnMap(),
+            ReturnGoods(),
+          ],
         ),
       ),
     ]);
@@ -265,119 +259,114 @@ class OrdersToShip extends StatelessWidget {
 
 class ListPurchaseOrders extends StatelessWidget {
   ListPurchaseOrders(this.pageController, {super.key});
-  PageController pageController;
-  OrderController orderController = Get.find();
+  final PageController pageController;
+  final OrderController orderController = Get.find();
   @override
   Widget build(BuildContext context) {
     var formatter = NumberFormat("#,##0.00", "fr_FR");
-    return SizedBox(
-      width: Get.width,
-      height: Get.height - 143 - 81,
-      child: Obx(
-        () => RefreshIndicator(
-          onRefresh: orderController.getPurchaseOrdersToShip,
-          child: ListView.builder(
-            itemCount: orderController.shippingOrders.length *
-                (orderController.loadshippingOrders.value ? 1 : 0),
-            itemBuilder: (context, index) {
-              var item = orderController.shippingOrders[index];
-              return Container(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 2, vertical: 0.5),
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      width: 1,
-                      color: const Color.fromARGB(255, 209, 209, 209),
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: const Color.fromARGB(255, 255, 255, 255)),
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                  onTap: () {
-                    orderController.selectedPO = item;
-                    pageController.animateToPage(1,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.linear);
-                  },
-                  title: Container(child: Text(item.client!.name)),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "${item.client!.address!.city.name} - ${item.client!.address!.wilaya.name}",
-                          ),
-                          item.state == "paid"
-                              ? const Icon(
-                                  Icons.check_box,
-                                  color: Colors.green,
-                                )
-                              : item.state == "shipped"
-                                  ? const Icon(
-                                      Icons.child_friendly_outlined,
-                                      color: Color.fromARGB(255, 239, 133, 253),
-                                    )
-                                  : const SizedBox.shrink()
-                        ],
-                      ),
-                      Container(child: Text(item.code)),
-                    ],
+    return Obx(
+      () => RefreshIndicator(
+        onRefresh: orderController.getPurchaseOrdersToShip,
+        child: ListView.builder(
+          itemCount: orderController.shippingOrders.length *
+              (orderController.loadshippingOrders.value ? 1 : 0),
+          itemBuilder: (context, index) {
+            var item = orderController.shippingOrders[index];
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 0.5),
+              decoration: BoxDecoration(
+                  border: Border.all(
+                    width: 1,
+                    color: const Color.fromARGB(255, 209, 209, 209),
                   ),
-                  leading: Container(
-                    // margin: EdgeInsets.symmetric(horizontal: 5),
-                    width: Get.width / 5,
-                    // height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(5),
-                      image: DecorationImage(
-                        fit: BoxFit.cover,
-                        image: CachedNetworkImageProvider(
-                          item.client!.image,
-                          cacheKey: item.client!.image,
-                        ),
-                      ),
-                    ),
-                  ),
-                  trailing: SizedBox(
-                    width: 90,
-                    height: 45,
-                    child: Column(
+                  borderRadius: BorderRadius.circular(5),
+                  color: const Color.fromARGB(255, 255, 255, 255)),
+              child: ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                onTap: () {
+                  orderController.selectedPO = item;
+                  pageController.animateToPage(1,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.linear);
+                },
+                title: Container(child: Text(item.client!.name)),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(formatter.format(item.total_amount),
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'alata')),
-                        Container(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.category,
-                                size: 16,
+                        Text(
+                          "${item.client!.address!.city.name} - ${item.client!.address!.wilaya.name}",
+                        ),
+                        item.state == "paid"
+                            ? const Icon(
+                                Icons.check_box,
                                 color: Colors.green,
-                              ),
-                              const SizedBox(
-                                width: 5,
-                              ),
-                              Text(
-                                item.orderitems.length.toString(),
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        )
+                              )
+                            : item.state == "shipped"
+                                ? const Icon(
+                                    Icons.child_friendly_outlined,
+                                    color: Color.fromARGB(255, 239, 133, 253),
+                                  )
+                                : const SizedBox.shrink()
                       ],
+                    ),
+                    Container(child: Text(item.code)),
+                  ],
+                ),
+                leading: Container(
+                  // margin: EdgeInsets.symmetric(horizontal: 5),
+                  width: Get.width / 5,
+                  // height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                    image: DecorationImage(
+                      fit: BoxFit.cover,
+                      image: CachedNetworkImageProvider(
+                        item.client!.image,
+                        cacheKey: item.client!.image,
+                      ),
                     ),
                   ),
                 ),
-              );
-            },
-          ),
+                trailing: SizedBox(
+                  width: 90,
+                  height: 45,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(formatter.format(item.total_amount),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'alata')),
+                      Container(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.category,
+                              size: 16,
+                              color: Colors.green,
+                            ),
+                            const SizedBox(
+                              width: 5,
+                            ),
+                            Text(
+                              item.orderitems.length.toString(),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -385,7 +374,7 @@ class ListPurchaseOrders extends StatelessWidget {
 }
 
 class ListPurchaseOrdersOnMap extends StatelessWidget {
-  OrderController orderController = Get.find();
+  final OrderController orderController = Get.find();
 
   ListPurchaseOrdersOnMap({super.key});
   @override
@@ -434,44 +423,40 @@ class ListPurchaseOrdersOnMap extends StatelessWidget {
 
 class ReturnGoods extends StatelessWidget {
   ReturnGoods({super.key});
-  OrderController orderController = Get.find();
+  final OrderController orderController = Get.find();
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: Get.width,
-      height: Get.height - 143 - 81,
-      child: ListView.builder(
-          itemCount: orderController.restant.length,
-          itemBuilder: (context, index) {
-            var item = orderController.restant[index];
-            return ListTile(
-              title: Text(item.product_name),
-              leading: CachedNetworkImage(
-                cacheManager: CacheManager(
-                  Config(
-                    item.image,
-                    stalePeriod: const Duration(days: 7),
-                  ),
+    return ListView.builder(
+        itemCount: orderController.restant.length,
+        itemBuilder: (context, index) {
+          var item = orderController.restant[index];
+          return ListTile(
+            title: Text(item.product_name),
+            leading: CachedNetworkImage(
+              cacheManager: CacheManager(
+                Config(
+                  item.image,
+                  stalePeriod: const Duration(days: 7),
                 ),
-                imageUrl: item.image,
-                placeholder: (context, url) => const SizedBox(
-                    width: 30, height: 30, child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) => const Icon(Icons.error),
               ),
-              subtitle: Text("${item.variant_name_1} ${item.variant_name_2!}"),
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(item.restant ~/ item.package != 0
-                      ? "${(item.restant ~/ item.package).toStringAsFixed(0)} Cart"
-                      : ""),
-                  Text(item.restant % item.package != 0
-                      ? "${(item.restant % item.package).toStringAsFixed(0)} Pcs"
-                      : ""),
-                ],
-              ),
-            );
-          }),
-    );
+              imageUrl: item.image,
+              placeholder: (context, url) => const SizedBox(
+                  width: 30, height: 30, child: CircularProgressIndicator()),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
+            ),
+            subtitle: Text("${item.variant_name_1} ${item.variant_name_2!}"),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(item.restant ~/ item.package != 0
+                    ? "${(item.restant ~/ item.package).toStringAsFixed(0)} Cart"
+                    : ""),
+                Text(item.restant % item.package != 0
+                    ? "${(item.restant % item.package).toStringAsFixed(0)} Pcs"
+                    : ""),
+              ],
+            ),
+          );
+        });
   }
 }

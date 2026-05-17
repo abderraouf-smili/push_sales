@@ -233,13 +233,26 @@ flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=h
 Derniere validation du 2026-05-17 :
 
 ```text
-flutter clean : OK
-flutter pub get : OK
+php -l PurchaseOrderController.php : OK
 flutter analyze --no-fatal-infos --no-fatal-warnings : OK
-flutter analyze strict : 802 issues historiques restantes
-flutter build apk --debug : OK
-flutter run -d 10.212.134.2:38587 --debug --no-resident : OK
+flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000 : OK
+flutter devices : OK, SM A165F detecte
+flutter run -d 10.212.134.2:38587 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000 : OK apres retry
+APK debug : push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk
+flutter analyze strict : 791 issues historiques restantes
 ```
+
+Correctifs UX recents :
+
+- dashboard modernise avec bandeau KPI terrain;
+- depots modernises, detail depot avec actions flottantes;
+- chat connecte aux routes API existantes `getmessage` / `sendmessage`;
+- theme sombre actif via `darkTheme`;
+- dashboard, parametres et livraison passent sur layouts flexibles pour eviter les erreurs `BOTTOM OVERFLOWED`;
+- favoris/panier affichent des pages utiles au lieu de l'image `under construction`;
+- theme et notifications ont des actions visibles dans Parametres;
+- navigation laterale activee automatiquement sur tablette/grand ecran;
+- validation livraison protegee si la notification associee n'a pas de destinataire.
 
 ## Securite
 

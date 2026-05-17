@@ -3,158 +3,228 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/warehouse_controller.dart';
 import 'package:push_sale/models/warehouse.dart';
+import 'package:push_sale/theme/app_colors.dart';
+import 'package:push_sale/theme/app_spacing.dart';
+import 'package:push_sale/theme/app_text_styles.dart';
 import 'package:push_sale/const/globals.dart' as global;
+import 'package:push_sale/widgets/common/app_card.dart';
 import 'package:push_sale/widgets/common/app_empty_state.dart';
+import 'package:push_sale/widgets/common/app_loading_state.dart';
+import 'package:push_sale/widgets/common/app_page_header.dart';
 
-class ShowMyWarehouses extends StatelessWidget {
-  ShowMyWarehouses(this.pageController, {super.key});
-  final WarehouseController warehouseController = Get.find();
+class ShowMyWarehouses extends StatefulWidget {
+  const ShowMyWarehouses(this.pageController, {super.key});
   final PageController pageController;
 
   @override
+  State<ShowMyWarehouses> createState() => _ShowMyWarehousesState();
+}
+
+class _ShowMyWarehousesState extends State<ShowMyWarehouses> {
+  final WarehouseController warehouseController = Get.find();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      warehouseController.getWarehouses();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    warehouseController.getWarehouses();
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("mywarehouses".tr),
-        centerTitle: true,
-      ),
-      body: Obx(() {
-        if (!warehouseController.ready.value) {
-          return const Center(
-            child: SizedBox(
-              width: 60,
-              height: 60,
-              child: CircularProgressIndicator(),
+    return ColoredBox(
+      color: AppColors.canvas,
+      child: _buildContent(context),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    return Obx(() {
+      if (!warehouseController.ready.value) {
+        return const AppLoadingState();
+      }
+
+      if (warehouseController.warehouses.isEmpty) {
+        return Column(
+          children: [
+            AppPageHeader(
+              title: "mywarehouses".tr,
+              subtitle: "Stock, alertes et reception",
+              icon: Icons.warehouse_outlined,
             ),
-          );
-        }
+            AppEmptyState(
+              icon: Icons.warehouse_outlined,
+              title: "mywarehouses".tr,
+              message: "Aucun depot de test disponible.",
+            ),
+          ],
+        );
+      }
 
-        if (warehouseController.warehouses.isEmpty) {
-          return AppEmptyState(
-            icon: Icons.warehouse_outlined,
-            title: "mywarehouses".tr,
-            message: "Aucun depot de test disponible.",
-          );
-        }
-
-        return ListView.builder(
-            physics: const BouncingScrollPhysics(),
-            itemCount: warehouseController.warehouses.length,
-            itemBuilder: (context, index) {
-              var item = warehouseController.warehouses[index];
-              return GestureDetector(
+      return CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: AppPageHeader(
+              title: "mywarehouses".tr,
+              subtitle: "Stock, alertes et reception",
+              icon: Icons.warehouse_outlined,
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xl),
+            sliver: SliverList.builder(
+              itemCount: warehouseController.warehouses.length,
+              itemBuilder: (context, index) {
+                var item = warehouseController.warehouses[index];
+                return WarehouseLine(
+                  item,
                   onTap: () {
                     warehouseController.warehouse = item;
-                    pageController.jumpToPage(1);
+                    widget.pageController.jumpToPage(1);
                   },
-                  child: WarehouseLine(item));
-            });
-      }),
-    );
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    });
   }
 }
 
 class WarehouseLine extends StatelessWidget {
   final Warehouse warehouse;
-  const WarehouseLine(this.warehouse, {super.key});
+  final VoidCallback onTap;
+  const WarehouseLine(this.warehouse, {super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     var formatter = NumberFormat("#,##0.00", "fr_FR");
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 3),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      width: double.infinity,
-      decoration: BoxDecoration(
-          border: Border.all(
-            width: 0.5,
-            color: const Color.fromARGB(255, 150, 208, 255),
-          ),
-          color: const Color.fromARGB(255, 245, 250, 255)),
+    final alertCount = warehouse.items
+        .where((element) =>
+            element.quantity / element.package <= global.alertQuantity)
+        .length;
+
+    return AppCard(
+      onTap: onTap,
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                warehouse.address.city.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 18, fontFamily: 'alata'),
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: AppColors.softBlue,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                ),
+                child: const Icon(Icons.store_mall_directory_outlined,
+                    color: AppColors.primary),
               ),
-              Text(warehouse.address.wilaya.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 18, fontFamily: 'alata')),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      warehouse.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.title.copyWith(fontSize: 18),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      "${warehouse.address.city.name} - ${warehouse.address.wilaya.name}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.subtitle,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
             ],
           ),
+          const SizedBox(height: AppSpacing.lg),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                warehouse.name,
-                style:
-                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              Expanded(
+                child: _WarehouseMetric(
+                  icon: Icons.inventory_2_outlined,
+                  label: "Articles",
+                  value: "${warehouse.items.length}",
+                  color: AppColors.primary,
+                ),
               ),
-              Text(
-                formatter.format(warehouse.total),
-                style: const TextStyle(fontSize: 18, fontFamily: 'alata'),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: _WarehouseMetric(
+                  icon: Icons.payments_outlined,
+                  label: "Valeur",
+                  value: formatter.format(warehouse.total),
+                  color: AppColors.secondary,
+                ),
               ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.category,
-                    color: Colors.blue,
+              if (alertCount > 0) ...[
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _WarehouseMetric(
+                    icon: Icons.notification_important_outlined,
+                    label: "Alertes",
+                    value: "$alertCount",
+                    color: AppColors.danger,
                   ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  Text(
-                    "${warehouse.items.length}",
-                    style: const TextStyle(
-                        fontFamily: 'alata', fontSize: 22, color: Colors.blue),
-                  ),
-                ],
-              ),
-              warehouse.items
-                      .where((element) =>
-                          element.quantity / element.package <=
-                          global.alertQuantity)
-                      .isNotEmpty
-                  ? Row(
-                      children: [
-                        const Icon(
-                          Icons.notification_important_rounded,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(
-                          width: 10,
-                        ),
-                        Text(
-                          warehouse.items
-                              .where((element) =>
-                                  (element.quantity / element.package) <=
-                                  global.alertQuantity)
-                              .length
-                              .toString(),
-                          style: const TextStyle(
-                              fontFamily: 'alata',
-                              fontSize: 22,
-                              color: Colors.red),
-                        ),
-                      ],
-                    )
-                  : const SizedBox.shrink(),
+                ),
+              ],
             ],
           )
+        ],
+      ),
+    );
+  }
+}
+
+class _WarehouseMetric extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _WarehouseMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(height: AppSpacing.xs),
+          Text(value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.title.copyWith(fontSize: 15)),
+          Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.caption),
         ],
       ),
     );
