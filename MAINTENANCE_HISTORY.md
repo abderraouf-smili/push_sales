@@ -1,5 +1,125 @@
 # MAINTENANCE_HISTORY
 
+## 2026-05-18 - SuperAdmin smartphone UX fixes
+
+Objectif :
+- Finaliser l'ergonomie SuperAdmin en mode reel sur petit smartphone : actions visibles, formulaires sans saisie manuelle d'ID, details lisibles, relation acteur/distributeur et messages premium.
+
+Resume technique :
+- `WorkspacePage` utilise maintenant `PopScope` pour fermer le clavier Android avant de quitter l'ecran.
+- Ajout d'actions rapides SuperAdmin en haut de page et masquage de la barre d'actions basse pour eviter les boutons loin en bas.
+- Recherche/filtres SuperAdmin compactes pour Distributeurs, Acteurs et Produits.
+- Les cartes acteur/distributeur/produit ouvrent directement les details modernes.
+- Formulaire acteur : dropdown workspace, dropdown distributeur, distributeur obligatoire sauf `superadmin`, email verifie par defaut, mot de passe temporaire copiable.
+- Formulaire produit : dropdown categorie, creation rapide categorie, dropdown distributeur avec option Global, creation/modification variants.
+- Details distributeur/acteur/produit : suppression des donnees JSON brutes, tabs scrollables et informations metier.
+- Profil SuperAdmin : bottom sheets utiles pour Firebase, Google Maps, Bluetooth printer et Google/Facebook Login.
+- Backend : filtrage acteurs distributeur corrige, `email_verified_at` garanti pour les acteurs crees/reset par SuperAdmin, payloads produits enrichis avec categorie/distributeur.
+
+Commandes executees :
+- `php artisan route:list --path=api/superadmin`
+- `php artisan migrate --force`
+- Tests HTTP login SuperAdmin, dashboard, creation distributeur, creation acteur lie distributeur, login acteur cree, detail distributeur acteurs, creation categorie, creation produit, creation variant, audit logs.
+- `dart format`
+- `dart analyze lib/views/signed/workspace/workspace_page.dart`
+- `flutter clean`
+- `flutter pub get`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.1:40459`
+
+Resultats :
+- Routes SuperAdmin OK.
+- Migration non destructive OK, rien a migrer.
+- APIs SuperAdmin CRUD/categorie/variant/audit OK.
+- Acteur cree par SuperAdmin : `email_verified_at` OK et login Laravel OK.
+- Acteur lie au distributeur cree : visible via `/api/superadmin/distributors/{id}/actors`.
+- Analyse Flutter no-fatal OK; warnings historiques stricts toujours presents.
+- APK genere : `push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk`.
+- Test smartphone bloque : ADB refuse `10.212.134.1:40459` avec erreur `10061`, aucun device liste.
+
+Points restants :
+- Validation visuelle smartphone a refaire apres reconnexion ADB wireless.
+- Nettoyage progressif des warnings stricts Flutter historiques hors workspace SuperAdmin.
+
+## 2026-05-18 - Bascule workspace en mode reel
+
+Objectif :
+- Remplacer le comportement workspace demo dans les environnements de test reel et production par des appels API reels ou des erreurs explicites.
+
+Resume technique :
+- Ajout des environnements Flutter `demo` et `real`.
+- Ajout des flags `AppConfig.isDemoMode` et `AppConfig.isRealDataMode`.
+- Blocage de `CallApi.RequestHttp('workspace/mvp')` en `vpn`, `real` et `production` avec `DEMO_ACTION_NOT_ALLOWED_IN_REAL_ENV`.
+- Renommage Flutter de `WorkspaceMvpPage` vers `WorkspacePage`.
+- HomePage utilise maintenant `WorkspacePage` et la route `/api/workspace/real` hors `APP_ENV=demo`.
+- Ajout de la route Laravel `/api/workspace/real`.
+- Retrait des libelles visibles `donnees demo`, `action demo`, `panier demo` dans le flux reel.
+
+Commandes executees :
+- `C:\tools\php83\php.exe artisan migrate --force`
+- `C:\tools\php83\php.exe artisan route:list --path=api`
+- Tests HTTP login/workspace/API reels pour SuperAdmin, Commercial, Depot, Livreur et Point de Vente.
+- `dart format`
+- `flutter clean`
+- `flutter pub get`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- Migrations non destructives OK, rien a migrer.
+- APIs SuperAdmin reelles OK.
+- Endpoints reels par role OK : `clients`, `products`, `currentorders`, `warehouses`, `topackorders`, `toshiporders`, `currentstock`.
+- Point de Vente lit le catalogue et ses commandes via `workspace/real`.
+- APK debug genere avec succes.
+
+Points restants :
+- Brancher une vraie API de validation panier Point de Vente; le bouton est bloque proprement en mode reel au lieu de simuler.
+- Nettoyer progressivement les 758 issues Flutter historiques no-fatal.
+
+## 2026-05-18 - Finalisation SuperAdmin CRUD et audit logs
+
+Objectif :
+- Rendre le workspace SuperAdmin exploitable avec dashboard global, gestion distributeurs, gestion acteurs, gestion produits et audit des actions sensibles.
+
+Resume technique :
+- Ajout de `SuperAdminController` avec garde workspace `superadmin`.
+- Ajout de routes `/api/superadmin/dashboard`, `/api/superadmin/distributors`, `/api/superadmin/actors`, `/api/superadmin/products`, `/api/superadmin/audit-logs` et endpoints enfants.
+- Ajout migration non destructive sur `distributor`, `actor` et `product` pour champs de gestion manquants.
+- Mise a jour des modeles `Distributor`, `Actor` et `Product`.
+- Mise a jour `WorkspaceMvpController` pour ne renvoyer les KPIs SuperAdmin que sur `dashboard`.
+- Mise a jour `WorkspaceMvpPage` avec formulaires, filtres, recherche, details et confirmations SuperAdmin.
+
+Commandes executees :
+- `C:\tools\php83\php.exe artisan migrate --force`
+- `C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder --force`
+- `C:\tools\php83\php.exe artisan db:seed --class=DemoDataSeeder --force`
+- `C:\tools\php83\php.exe artisan route:list --path=api/superadmin`
+- Tests HTTP login SuperAdmin, permissions/workspace, dashboard, CRUD distributeur, CRUD acteur, CRUD produit, audit logs.
+- `dart format lib\views\signed\workspace\workspace_mvp_page.dart`
+- `flutter clean`
+- `flutter pub get`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter analyze`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- Routes SuperAdmin OK.
+- Migrations et seeders OK.
+- Login SuperAdmin et permissions/workspace OK.
+- CRUD distributeur/acteur/produit OK avec ecriture audit.
+- Audit logs consultables OK.
+- Analyse Flutter no-fatal OK.
+- Analyse Flutter stricte conserve 758 issues historiques non bloquantes.
+- APK debug genere : `push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk`.
+
+Risque :
+- Moyen-faible. Les operations SuperAdmin sont nouvelles mais protegees par le workspace SuperAdmin; aucune route metier existante n'a ete supprimee.
+
+Points restants :
+- Nettoyer les warnings Flutter stricts historiques.
+- Ajouter une UI dediee plus avancee pour creation directe de variants depuis la fiche produit.
+
 ## 2026-05-18 - Socle B2B workspaces, seeders et contrat permissions
 
 Objectif :

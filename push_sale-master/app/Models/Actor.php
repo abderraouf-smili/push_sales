@@ -26,7 +26,8 @@ class Actor extends Model
         "phone",
         "image",
         "distributor_id",
-        "address_id"
+        "address_id",
+        "is_active"
     ];
 
     protected $hidden = ["user_id", "address_id", "profile_id", "created_at", "updated_at"];

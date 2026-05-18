@@ -122,8 +122,13 @@ class WorkspaceMvpController extends Controller
             'routes' => 'Clients a livrer et ordre recommande',
             'stock_mobile' => 'Produits dans le camion groupes par produit, etat ou client',
             'catalog', 'products' => 'Catalogue, variants, prix et disponibilite',
+            'distributors' => 'Gestion des distributeurs de la plateforme',
+            'actors' => 'Gestion des utilisateurs, roles et workspaces',
+            'profile', 'settings' => $workspace === WorkspaceResolver::SUPERADMIN
+                ? 'Parametres application, securite et services externes'
+                : 'Compte, preferences et securite',
             'clients' => 'Liste claire avec visites, commandes et acces carte',
-            default => 'Donnees demo/API disponibles pour valider le workflow',
+            default => 'Donnees reelles de la base pour valider le workflow',
         };
     }
 
@@ -143,6 +148,10 @@ class WorkspaceMvpController extends Controller
 
     private function stats(string $workspace, Actor $actor, string $section): array
     {
+        if ($workspace === WorkspaceResolver::SUPERADMIN && $section !== 'dashboard') {
+            return [];
+        }
+
         $warehouseIds = $this->warehouseIds($workspace, $actor);
         $purchaseBase = $this->purchaseOrdersQuery($workspace, $actor);
 
@@ -164,7 +173,7 @@ class WorkspaceMvpController extends Controller
             WorkspaceResolver::SUPERADMIN => [
                 $this->stat('Distributeurs', (string) $this->distributorsQuery($workspace, $actor)->count(), 'actifs', 'blue', 'business'),
                 $this->stat('Acteurs', (string) $this->actorsQuery($workspace, $actor)->count(), 'comptes lies', 'purple', 'users'),
-                $this->stat('Commandes', $ordersCount, 'global demo', 'orange', 'orders'),
+                $this->stat('Commandes', $ordersCount, 'global', 'orange', 'orders'),
                 $this->stat('Stock total', $stockUnits, 'unites suivies', 'green', 'inventory'),
             ],
             WorkspaceResolver::LIVREUR => [
@@ -223,7 +232,7 @@ class WorkspaceMvpController extends Controller
                 ['title' => 'Livraisons liees au stock', 'items' => $this->purchaseOrderItems($workspace, $actor, ['new', 'taken', 'in_way', 'shipped'])],
             ],
             'products', 'catalog' => [
-                ['title' => 'Produits disponibles', 'items' => $this->productItems()],
+                ['title' => 'Produits disponibles', 'items' => $this->productItems($workspace)],
             ],
             'clients' => [
                 ['title' => 'Clients affectes', 'items' => $this->clientItems($workspace, $actor)],
@@ -243,13 +252,17 @@ class WorkspaceMvpController extends Controller
                 ['title' => 'Solde et transactions', 'items' => $this->transactionItems($workspace, $actor)],
             ],
             'support' => [
-                ['title' => 'Support demo', 'items' => $this->supportItems()],
+                ['title' => 'Support', 'items' => $this->supportItems()],
             ],
             'audit_logs' => [
                 ['title' => 'Journal activite', 'items' => $this->auditItems($workspace, $actor)],
             ],
             'profile', 'settings' => [
                 ['title' => 'Compte connecte', 'items' => [$this->profileItem($actor)]],
+                ...($workspace === WorkspaceResolver::SUPERADMIN ? [
+                    ['title' => 'Parametres application', 'items' => $this->superAdminSettingsItems()],
+                    ['title' => 'Securite et services externes', 'items' => $this->superAdminSecurityItems()],
+                ] : []),
             ],
             default => $this->dashboardLists($workspace, $actor),
         };
@@ -259,9 +272,8 @@ class WorkspaceMvpController extends Controller
     {
         return match ($workspace) {
             WorkspaceResolver::SUPERADMIN => [
-                ['title' => 'Distributeurs a superviser', 'items' => $this->distributorItems($workspace, $actor)],
-                ['title' => 'Acteurs recents', 'items' => array_slice($this->actorItems($workspace, $actor), 0, 5)],
-                ['title' => 'Journal activite', 'items' => $this->auditItems($workspace, $actor)],
+                ['title' => 'Activite recente', 'items' => $this->auditItems($workspace, $actor)],
+                ['title' => 'Transactions et alertes', 'items' => $this->superAdminTransactionAlertItems($actor)],
             ],
             WorkspaceResolver::DISTRIBUTEUR => [
                 ['title' => 'Commandes recentes', 'items' => $this->orderItems($workspace, $actor)],
@@ -281,7 +293,7 @@ class WorkspaceMvpController extends Controller
             ],
             WorkspaceResolver::POINT_VENTE => [
                 ['title' => 'Mes commandes recentes', 'items' => $this->orderItems($workspace, $actor)],
-                ['title' => 'Catalogue recommande', 'items' => $this->productItems()],
+                ['title' => 'Catalogue recommande', 'items' => $this->productItems($workspace)],
             ],
             default => [
                 ['title' => 'Priorites', 'items' => $this->priorityItems($workspace, $actor)],
@@ -296,12 +308,12 @@ class WorkspaceMvpController extends Controller
             ['label' => 'Actualiser', 'kind' => 'refresh', 'enabled' => true],
         ];
 
-        if (in_array($section, ['products', 'catalog'], true)) {
+        if (in_array($section, ['products', 'catalog'], true) && $workspace !== WorkspaceResolver::SUPERADMIN) {
             $actions[] = ['label' => 'Ajouter au panier', 'kind' => 'cart', 'enabled' => true];
         }
 
         if ($section === 'cart') {
-            $actions[] = ['label' => 'Valider la commande demo', 'kind' => 'submit_order', 'enabled' => true];
+            $actions[] = ['label' => 'Valider la commande', 'kind' => 'submit_order', 'enabled' => true];
         }
 
         if (in_array($section, ['delivery', 'prepare_orders', 'loadings'], true)) {
@@ -321,7 +333,23 @@ class WorkspaceMvpController extends Controller
         }
 
         if (in_array($section, ['distributors', 'actors', 'warehouses', 'clients'], true)) {
-            $actions[] = ['label' => 'Creer en mode demo', 'kind' => 'create_demo', 'enabled' => true];
+            if ($workspace === WorkspaceResolver::SUPERADMIN && $section === 'distributors') {
+                $actions[] = ['label' => 'Ajouter distributeur', 'kind' => 'create_distributor', 'enabled' => true];
+            } elseif ($workspace === WorkspaceResolver::SUPERADMIN && $section === 'actors') {
+                $actions[] = ['label' => 'Ajouter acteur', 'kind' => 'create_actor', 'enabled' => true];
+            } else {
+                $actions[] = ['label' => 'Creer', 'kind' => 'missing_real_api', 'enabled' => true];
+            }
+        }
+
+        if ($workspace === WorkspaceResolver::SUPERADMIN && $section === 'products') {
+            $actions[] = ['label' => 'Ajouter produit', 'kind' => 'create_product', 'enabled' => true];
+        }
+
+        if ($workspace === WorkspaceResolver::SUPERADMIN && $section === 'dashboard') {
+            $actions[] = ['label' => 'Ajouter distributeur', 'kind' => 'create_distributor', 'enabled' => true];
+            $actions[] = ['label' => 'Ajouter manager', 'kind' => 'create_actor', 'enabled' => true];
+            $actions[] = ['label' => 'Voir audit logs', 'kind' => 'view_audit_logs', 'enabled' => true];
         }
 
         return $actions;
@@ -330,24 +358,40 @@ class WorkspaceMvpController extends Controller
     private function distributorItems(string $workspace, Actor $actor): array
     {
         return $this->distributorsQuery($workspace, $actor)->limit(20)->get()->map(fn ($item) => [
+            'id' => $item->id,
             'title' => $item->name,
             'subtitle' => 'Code ' . ($item->code ?? $item->id),
-            'status' => $item->private ? 'Actif' : 'Public',
+            'status' => Schema::hasColumn('distributor', 'is_active')
+                ? ($item->is_active ? 'Actif' : 'Inactif')
+                : ($item->private ? 'Actif' : 'Public'),
             'amount' => '',
+            'meta' => trim(($item->contact_name ?? '') . ' ' . ($item->phone ?? '')),
             'action' => 'Ouvrir',
             'kind' => 'distributor',
+            'is_active' => Schema::hasColumn('distributor', 'is_active') ? (bool) $item->is_active : (bool) $item->private,
+            'code' => $item->code,
+            'phone' => $item->phone ?? '',
+            'email' => $item->email ?? '',
+            'contact_name' => $item->contact_name ?? '',
         ])->values()->all();
     }
 
     private function actorItems(string $workspace, Actor $actor): array
     {
         return $this->actorsQuery($workspace, $actor)->limit(30)->get()->map(fn ($item) => [
+            'id' => $item->id,
             'title' => trim(($item->firstname ?? '') . ' ' . ($item->lastname ?? '')) ?: $item->mail,
-            'subtitle' => optional($item->Profile)->name . ' - ' . ($item->phone ?? 'telephone demo'),
-            'status' => WorkspaceResolver::type($item),
+            'subtitle' => optional($item->Profile)->name . ' - ' . ($item->phone ?? 'telephone non renseigne'),
+            'status' => (Schema::hasColumn('actor', 'is_active') && !$item->is_active) ? 'Inactif' : WorkspaceResolver::type($item),
             'amount' => '',
-            'action' => 'Profil',
+            'meta' => optional($item->Distributor)->name ?: $item->mail,
+            'action' => 'Ouvrir',
             'kind' => 'actor',
+            'workspace_type' => WorkspaceResolver::type($item),
+            'is_active' => Schema::hasColumn('actor', 'is_active') ? (bool) $item->is_active : true,
+            'email' => $item->mail,
+            'phone' => $item->phone ?? '',
+            'distributor_id' => $item->distributor_id,
         ])->values()->all();
     }
 
@@ -358,7 +402,7 @@ class WorkspaceMvpController extends Controller
 
             return [
                 'title' => $warehouse->name,
-                'subtitle' => trim(optional($warehouse->address)->commune . ' - ' . optional(optional($warehouse->address)->City)->name, ' -') ?: 'Adresse demo',
+                'subtitle' => trim(optional($warehouse->address)->commune . ' - ' . optional(optional($warehouse->address)->City)->name, ' -') ?: 'Adresse non renseignee',
                 'status' => (clone $stock)->where('quantity', '<=', 10)->exists() ? 'Attention' : 'En bonne sante',
                 'amount' => $this->money((float) (clone $stock)->sum('stock_price')),
                 'meta' => (string) (clone $stock)->count() . ' articles',
@@ -384,7 +428,7 @@ class WorkspaceMvpController extends Controller
         return $query->get()->map(function ($stock) {
             $variant = $stock->variant;
             $product = optional($variant)->product;
-            $name = optional($product)->short_description_fr ?: optional($variant)->variant1_fr ?: 'Produit demo';
+            $name = optional($product)->short_description_fr ?: optional($variant)->variant1_fr ?: 'Produit sans nom';
             $status = $stock->quantity <= 0 ? 'Rupture' : ($stock->quantity <= 10 ? 'Stock faible' : 'En stock');
 
             return [
@@ -399,21 +443,71 @@ class WorkspaceMvpController extends Controller
         })->values()->all();
     }
 
-    private function productItems(): array
+    private function productItems(?string $workspace = null): array
     {
         return Product::with(['category', 'allVariants.pricing'])->limit(30)->get()->map(function ($product) {
             $variant = $product->allVariants->first();
             $price = optional(optional($variant)->pricing->first())->price;
             return [
-                'title' => $product->short_description_fr ?: 'Produit demo',
+                'id' => $product->id,
+                'title' => $product->short_description_fr ?: 'Produit sans nom',
                 'subtitle' => optional($variant)->variant1_fr ?: optional($product->category)->short_description_fr ?: 'Catalogue',
-                'status' => $price ? 'En stock' : 'Prix a verifier',
+                'status' => Schema::hasColumn('product', 'is_active') && !$product->is_active
+                    ? 'Inactif'
+                    : ($price ? 'En stock' : 'Prix a verifier'),
                 'amount' => $price ? $this->money((float) $price) : '',
                 'meta' => 'Ref. ' . ($product->ssin ?? $product->id),
-                'action' => 'Ajouter',
+                'action' => $workspace === WorkspaceResolver::SUPERADMIN ? 'Ouvrir' : 'Ajouter',
                 'kind' => 'product',
+                'ssin' => $product->ssin,
+                'category_id' => $product->category_id,
+                'distributor_id' => $product->distributor_id ?? null,
+                'is_active' => Schema::hasColumn('product', 'is_active') ? (bool) $product->is_active : true,
+                'variant_count' => $product->allVariants->count(),
             ];
         })->values()->all();
+    }
+
+    private function superAdminTransactionAlertItems(Actor $actor): array
+    {
+        $items = [];
+
+        foreach ($this->orderItems(WorkspaceResolver::SUPERADMIN, $actor) as $order) {
+            $items[] = [
+                ...$order,
+                'title' => $order['title'],
+                'subtitle' => 'Commande globale - ' . ($order['subtitle'] ?? ''),
+                'status' => $order['status'] ?? 'Commande',
+                'action' => 'Details',
+            ];
+            if (count($items) >= 3) {
+                break;
+            }
+        }
+
+        $lowStockCount = Schema::hasTable('stock_quantity')
+            ? StockQuantity::where('quantity', '<=', 10)->count()
+            : 0;
+        $items[] = [
+            'title' => 'Stock critique',
+            'subtitle' => $lowStockCount . ' produits a reapprovisionner',
+            'status' => $lowStockCount > 0 ? 'Attention' : 'OK',
+            'amount' => '',
+            'meta' => '',
+            'action' => 'Details',
+            'kind' => 'info',
+        ];
+        $items[] = [
+            'title' => 'Firebase / Maps',
+            'subtitle' => 'Configuration reelle a verifier avant production',
+            'status' => 'A configurer',
+            'amount' => '',
+            'meta' => '',
+            'action' => 'Details',
+            'kind' => 'setting',
+        ];
+
+        return $items;
     }
 
     private function clientItems(string $workspace, Actor $actor): array
@@ -581,14 +675,14 @@ class WorkspaceMvpController extends Controller
         }
 
         return [
-            ['title' => 'Aucune urgence', 'subtitle' => 'Les donnees demo sont pretes', 'status' => 'OK', 'kind' => 'info', 'action' => 'Actualiser'],
+            ['title' => 'Aucune urgence', 'subtitle' => 'Les donnees de la base sont disponibles', 'status' => 'OK', 'kind' => 'info', 'action' => 'Actualiser'],
         ];
     }
 
     private function supportItems(): array
     {
         return [
-            ['title' => 'Chat support', 'subtitle' => 'Envoyer un message au distributeur', 'status' => 'Demo', 'kind' => 'support', 'action' => 'Envoyer'],
+            ['title' => 'Chat support', 'subtitle' => 'Envoyer un message au distributeur', 'status' => 'Disponible', 'kind' => 'support', 'action' => 'Envoyer'],
             ['title' => 'Reclamation livraison', 'subtitle' => 'Signaler une anomalie de livraison', 'status' => 'Disponible', 'kind' => 'support', 'action' => 'Creer'],
         ];
     }
@@ -629,6 +723,25 @@ class WorkspaceMvpController extends Controller
             'meta' => $actor->phone ?? '',
             'action' => 'Deconnexion disponible',
             'kind' => 'profile',
+        ];
+    }
+
+    private function superAdminSettingsItems(): array
+    {
+        return [
+            ['title' => 'Environnement API', 'subtitle' => app()->environment(), 'status' => config('app.debug') ? 'Debug' : 'Production', 'kind' => 'setting', 'action' => 'Details'],
+            ['title' => 'Version API', 'subtitle' => 'Laravel ' . app()->version(), 'status' => 'OK', 'kind' => 'setting', 'action' => 'Details'],
+            ['title' => 'Mode maintenance', 'subtitle' => app()->isDownForMaintenance() ? 'Application en maintenance' : 'Application disponible', 'status' => app()->isDownForMaintenance() ? 'Attention' : 'Actif', 'kind' => 'setting', 'action' => 'Details'],
+        ];
+    }
+
+    private function superAdminSecurityItems(): array
+    {
+        return [
+            ['title' => 'Audit logs', 'subtitle' => Schema::hasTable('audit_logs') ? 'Journalisation active' : 'Migration requise', 'status' => Schema::hasTable('audit_logs') ? 'Actif' : 'A faire', 'kind' => 'audit', 'action' => 'Voir'],
+            ['title' => 'Firebase', 'subtitle' => 'Configuration par projet reel requise', 'status' => 'A configurer', 'kind' => 'setting', 'action' => 'Details'],
+            ['title' => 'Google Maps', 'subtitle' => 'Cle restreinte package + SHA requise', 'status' => 'A configurer', 'kind' => 'setting', 'action' => 'Details'],
+            ['title' => 'Bluetooth printer', 'subtitle' => 'Tester avec imprimante terrain', 'status' => 'Materiel requis', 'kind' => 'setting', 'action' => 'Details'],
         ];
     }
 

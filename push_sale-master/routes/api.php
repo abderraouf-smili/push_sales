@@ -21,6 +21,7 @@ use App\Http\Controllers\Order\OrderController;
 
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\PermissionsController;
+use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\WorkspaceMvpController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\NotificationController;
@@ -149,6 +150,56 @@ Route::middleware('auth:api')->group(function () {
     Route::post("permissions",  [PermissionsController::class, "index"]);
     Route::post("permissions/workspace",  [PermissionsController::class, "index"]);
     Route::post("workspace/mvp", [WorkspaceMvpController::class, "index"]);
+    Route::post("workspace/real", [WorkspaceMvpController::class, "index"]);
+
+    // SuperAdmin workspace operations
+    Route::prefix("superadmin")->group(function () {
+        Route::match(["get", "post"], "dashboard", [SuperAdminController::class, "dashboard"]);
+
+        Route::get("distributors", [SuperAdminController::class, "distributors"]);
+        Route::post("distributors/query", [SuperAdminController::class, "distributors"]);
+        Route::post("distributors", [SuperAdminController::class, "createDistributor"]);
+        Route::get("distributors/{id}", [SuperAdminController::class, "distributorDetail"]);
+        Route::match(["put", "patch"], "distributors/{id}", [SuperAdminController::class, "updateDistributor"]);
+        Route::post("distributors/{id}/update", [SuperAdminController::class, "updateDistributor"]);
+        Route::post("distributors/{id}/activate", [SuperAdminController::class, "activateDistributor"]);
+        Route::post("distributors/{id}/deactivate", [SuperAdminController::class, "deactivateDistributor"]);
+        Route::match(["get", "post"], "distributors/{id}/actors", [SuperAdminController::class, "distributorActors"]);
+        Route::match(["get", "post"], "distributors/{id}/warehouses", [SuperAdminController::class, "distributorWarehouses"]);
+        Route::match(["get", "post"], "distributors/{id}/products", [SuperAdminController::class, "distributorProducts"]);
+        Route::match(["get", "post"], "distributors/{id}/orders", [SuperAdminController::class, "distributorOrders"]);
+        Route::match(["get", "post"], "distributors/{id}/stats", [SuperAdminController::class, "distributorStatsEndpoint"]);
+
+        Route::get("actors", [SuperAdminController::class, "actors"]);
+        Route::post("actors/query", [SuperAdminController::class, "actors"]);
+        Route::post("actors", [SuperAdminController::class, "createActor"]);
+        Route::get("actors/{id}", [SuperAdminController::class, "actorDetail"]);
+        Route::match(["put", "patch"], "actors/{id}", [SuperAdminController::class, "updateActor"]);
+        Route::post("actors/{id}/update", [SuperAdminController::class, "updateActor"]);
+        Route::post("actors/{id}/activate", [SuperAdminController::class, "activateActor"]);
+        Route::post("actors/{id}/deactivate", [SuperAdminController::class, "deactivateActor"]);
+        Route::post("actors/{id}/reset-password", [SuperAdminController::class, "resetActorPassword"]);
+        Route::match(["get", "post"], "workspaces", [SuperAdminController::class, "workspaces"]);
+        Route::match(["get", "post"], "actor-profiles", [SuperAdminController::class, "actorProfiles"]);
+
+        Route::get("products", [SuperAdminController::class, "products"]);
+        Route::post("products/query", [SuperAdminController::class, "products"]);
+        Route::post("products", [SuperAdminController::class, "createProduct"]);
+        Route::get("products/{id}", [SuperAdminController::class, "productDetail"]);
+        Route::match(["put", "patch"], "products/{id}", [SuperAdminController::class, "updateProduct"]);
+        Route::post("products/{id}/update", [SuperAdminController::class, "updateProduct"]);
+        Route::get("products/{id}/variants", [SuperAdminController::class, "productVariants"]);
+        Route::post("products/{id}/variants/query", [SuperAdminController::class, "productVariants"]);
+        Route::post("products/{id}/variants", [SuperAdminController::class, "createVariant"]);
+        Route::post("variants/{id}/update", [SuperAdminController::class, "updateVariant"]);
+        Route::match(["put", "patch"], "variants/{id}", [SuperAdminController::class, "updateVariant"]);
+        Route::get("categories", [SuperAdminController::class, "categories"]);
+        Route::post("categories/query", [SuperAdminController::class, "categories"]);
+        Route::post("categories", [SuperAdminController::class, "createCategory"]);
+
+        Route::get("audit-logs", [SuperAdminController::class, "auditLogs"]);
+        Route::post("audit-logs/query", [SuperAdminController::class, "auditLogs"]);
+    });
 
     //Send Push Notification
     Route::post("sendnotification", [NotificationController::class, "send"]);

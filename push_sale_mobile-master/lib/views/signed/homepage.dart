@@ -16,7 +16,7 @@ import 'package:push_sale/views/signed/widgets/delivery/main_delivery_page.dart'
 import 'package:push_sale/views/signed/widgets/products/product_main_page.dart';
 import 'package:push_sale/views/signed/widgets/tracking/main_tracking_page.dart';
 import 'package:push_sale/views/signed/widgets/transfert/main_transfer_page.dart';
-import 'package:push_sale/views/signed/workspace/workspace_mvp_page.dart';
+import 'package:push_sale/views/signed/workspace/workspace_page.dart';
 import 'package:push_sale/widgets/common/app_loading_state.dart';
 
 class HomePage extends StatefulWidget {
@@ -99,11 +99,11 @@ class _HomePageState extends State<HomePage> {
           ),
           body: Obx(() {
             if (perm.PermissionLoaded.value) {
-              final bool workspaceMvp = _usesWorkspaceMvp();
+              final bool workspaceMode = _usesWorkspaceMode();
               final bool deliveryWorkspace = _isDeliveryWorkspace();
-              screen = workspaceMvp
+              screen = workspaceMode
                   ? _workspaceTabs()
-                      .map((tab) => WorkspaceMvpPage(section: tab.section))
+                      .map((tab) => WorkspacePage(section: tab.section))
                       .toList()
                   : deliveryWorkspace
                       ? [
@@ -197,7 +197,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<_DrawerItem> _drawerItems() {
-    if (_usesWorkspaceMvp()) {
+    if (_usesWorkspaceMode()) {
       return _workspaceTabs()
           .map((tab) => _DrawerItem(label: tab.label, icon: tab.selectedIcon))
           .toList();
@@ -247,7 +247,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   bool _isDeliveryWorkspace() {
-    if (_usesWorkspaceMvp()) {
+    if (_usesWorkspaceMode()) {
       return false;
     }
 
@@ -257,7 +257,7 @@ class _HomePageState extends State<HomePage> {
         !perm.check(null, "HomePage.MainTransferPage");
   }
 
-  bool _usesWorkspaceMvp() {
+  bool _usesWorkspaceMode() {
     return const {
       "superadmin",
       "distributeur",
@@ -440,7 +440,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<NavigationDestination> _bottomDestinations() {
-    if (_usesWorkspaceMvp()) {
+    if (_usesWorkspaceMode()) {
       return _workspaceTabs()
           .map(
             (tab) => NavigationDestination(
@@ -470,7 +470,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<NavigationRailDestination> _railDestinations() {
-    if (_usesWorkspaceMvp()) {
+    if (_usesWorkspaceMode()) {
       return _workspaceTabs()
           .map(
             (tab) => NavigationRailDestination(

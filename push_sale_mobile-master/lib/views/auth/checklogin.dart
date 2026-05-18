@@ -128,9 +128,10 @@ CheckLoginSign(Map<String, dynamic> result) {
               AwesomeDialog(
                       btnOkOnPress: () {},
                       context: Get.context!,
-                      dialogType: DialogType.error,
-                      title: "error".tr,
-                      desc: "mail.not.verified".tr)
+                      dialogType: DialogType.warning,
+                      title: "Connexion impossible",
+                      desc: result["message"]?.toString() ??
+                          "Courriel non verifie. Contactez votre administrateur.")
                   .show();
             }
             break;

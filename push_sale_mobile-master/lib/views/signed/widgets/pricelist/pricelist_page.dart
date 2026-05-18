@@ -59,7 +59,7 @@ class _PricelistPageState extends State<PricelistPage> {
                   icon: Icons.price_change_outlined,
                   title: "Aucune liste de prix",
                   message:
-                      "Les tarifs de demonstration apparaitront ici lorsque le backend les fournit.",
+                      "Les tarifs apparaitront ici lorsque le backend les fournit.",
                 ),
               ],
             );

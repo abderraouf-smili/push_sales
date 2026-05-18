@@ -15,7 +15,17 @@ class Distributor extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ["id", "code", "private", "name", "address_id"];
+    protected $fillable = [
+        "id",
+        "code",
+        "private",
+        "is_active",
+        "name",
+        "phone",
+        "email",
+        "contact_name",
+        "address_id",
+    ];
 
     protected $hidden = ["address_id", "created_at", "updated_at"];
 

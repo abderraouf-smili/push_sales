@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## 2026-05-18 - SuperAdmin smartphone UX fixes
+
+- Flutter : SuperAdmin gagne une ergonomie compacte pour smartphone avec recherche/filtres reduits, actions rapides visibles et fermeture du clavier Android avant sortie.
+- Flutter : details distributeur, acteur et produit modernises; suppression des champs bruts/JSON et ajout de tabs scrollables.
+- Flutter : creation acteur avec dropdown distributeur, email verifie par defaut et mot de passe temporaire copiable.
+- Flutter : creation produit avec dropdown categorie/distributeur, creation rapide categorie, detail produit `Infos / Variants` et ajout/modification variants.
+- Flutter : suppression des actions panier dans le workspace SuperAdmin; les cartes ouvrent directement les details.
+- Flutter : ajout de toasts premium et bottom sheets utiles pour Firebase, Maps, Bluetooth printer et Google/Facebook Login.
+- Backend : correction relation acteurs par distributeur et garantie de connexion directe pour les acteurs crees par SuperAdmin.
+- Backend : payloads produits enrichis avec categorie/distributeur lisibles et variants relies.
+- Validation : APIs SuperAdmin testees, login acteur cree OK, relation distributeur-acteur OK, APK debug VPN genere.
+
+## 2026-05-18 - Mode reel workspace et suppression des actions demo
+
+- Flutter : ajout de `APP_ENV=demo` et `APP_ENV=real`; `vpn`, `real` et `production` utilisent les APIs reelles.
+- Flutter : `WorkspaceMvpPage` devient `WorkspacePage` et charge `/api/workspace/real` hors environnement demo.
+- Flutter : garde-fou `DEMO_ACTION_NOT_ALLOWED_IN_REAL_ENV` si une ancienne route `/workspace/mvp` est appelee en environnement reel.
+- Flutter : retrait des messages visibles `donnees demo`, `action demo`, `panier demo` et remplacement par vraies actions API ou message `API reelle requise`.
+- Backend : ajout de l'alias `/api/workspace/real` pour les workspaces connectes aux donnees existantes.
+- QA : ajout de `REAL_MODE_AUDIT.md` et `TEST_REAL_RESULTS.md`.
+- Validation : APIs reelles testees par role, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN genere.
+
+## 2026-05-18 - SuperAdmin CRUD, audit et gestion plateforme
+
+- Backend : ajout des routes `/api/superadmin/*` pour dashboard, distributeurs, acteurs, produits, categories, variants et audit logs.
+- Backend : ajout du controller `SuperAdminController` avec garde SuperAdmin, payloads compatibles `SUCCESS/FAIL`, validations et journalisation `audit_logs`.
+- Base de donnees : migration non destructive pour completer `distributor`, `actor` et `product` avec les champs de gestion SuperAdmin (`is_active`, contacts, liaison distributeur produit).
+- Flutter : finalisation du workspace SuperAdmin avec KPIs uniquement sur Dashboard, headers simples sur Distributeurs/Acteurs/Produits/Profil, recherche, filtres, formulaires et confirmations.
+- SuperAdmin : CRUD distributeur teste avec creation, modification, activation/desactivation, detail et sections acteurs/depots/produits/commandes/stats.
+- SuperAdmin : CRUD acteur teste avec creation, modification, activation/desactivation et reset password confirme.
+- SuperAdmin : CRUD produit teste avec creation, modification, detail et consultation variants.
+- Audit : consultation des logs et ecriture des actions sensibles SuperAdmin validees.
+- Validation : migrations/seeders/routes/API CRUD OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN genere avec succes.
+
 ## 2026-05-18
 
 - Backend : ajout de `/api/workspace/mvp`, endpoint MVP de lecture pour alimenter les pages par workspace avec donnees existantes.

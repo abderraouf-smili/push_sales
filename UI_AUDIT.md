@@ -58,3 +58,68 @@ Objectif : inventaire des ecrans Flutter principaux, etat UX, risques connus et 
 3. Moderniser promotions, coupons, creances et acteurs.
 4. Nettoyer les warnings stricts historiques par module.
 5. Tester FCM et impression Bluetooth avec materiel/configuration reels.
+
+## Addendum SuperAdmin 2026-05-18
+
+Objectif : corriger le workspace SuperAdmin pour qu'il ne soit plus une page de visualisation, mais un espace d'administration exploitable.
+
+### Corrections UI
+
+- Les KPIs globaux SuperAdmin sont affiches uniquement dans `dashboard`.
+- Les sections `distributors`, `actors`, `products` et `profile` utilisent des headers simples et adaptes a la page.
+- Ajout recherche et filtres statut sur les listes SuperAdmin.
+- Ajout formulaires bottom sheet pour creation/modification distributeur, acteur et produit.
+- Ajout confirmations pour actions sensibles : desactivation distributeur, activation distributeur, desactivation acteur, activation acteur, reset password.
+- Ajout consultation audit logs depuis le dashboard/action.
+- Profil SuperAdmin enrichi avec sections compte, application, securite et services externes.
+
+### Validation UI
+
+| Page | Attendu | Resultat |
+| --- | --- | --- |
+| Dashboard | KPIs + supervision + raccourcis | OK |
+| Distributeurs | Header simple + liste + recherche + filtres + ajouter | OK |
+| Detail distributeur | Infos + acteurs + depots + produits + commandes + stats | OK |
+| Acteurs | Header simple + liste + filtres + ajouter | OK |
+| Detail acteur | Modifier, reset password, activer/desactiver | OK |
+| Produits | Header simple + liste + ajouter + detail/variants | OK |
+| Audit logs | Liste consultable en bottom sheet | OK |
+| Profil | Parametres sans KPIs globaux | OK |
+
+### Dette restante
+
+- L'analyse stricte Flutter garde des warnings historiques non bloquants; la passe SuperAdmin compile et passe l'analyse no-fatal.
+
+## SuperAdmin smartphone UX fixes 2026-05-18
+
+Objectif : rapprocher le workspace SuperAdmin des maquettes fournies tout en gardant les vraies APIs Laravel.
+
+### Corrections appliquees
+
+- Search et filtres rendus plus compacts sur Distributeurs, Acteurs et Produits.
+- Actions principales accessibles en haut via raccourcis/FAB; plus besoin de descendre en bas pour ajouter.
+- Pull-to-refresh conserve sur les listes workspace.
+- Gestion retour Android : si le clavier est ouvert, retour ferme le clavier au lieu de quitter l'application.
+- Cartes acteurs : suppression du bouton `Profil`, ouverture du detail au clic sur la carte.
+- Detail acteur : affichage metier moderne, sans JSON brut ni champs techniques.
+- Creation acteur : workspace en dropdown, distributeur en dropdown nom/code/ID, email verifie par defaut.
+- Detail distributeur : tabs scrollables, adresse formatee, onglet Acteurs alimente par relation API corrigee.
+- Produits SuperAdmin : suppression des actions panier, creation via categorie/distributeur dropdowns, categorie rapide, detail `Infos / Variants`.
+- Profil : bottom sheets Firebase, Google Maps, Bluetooth printer et Google/Facebook Login.
+- Messages : snackbars remplaces par toasts premium pour les actions SuperAdmin.
+
+### Validation
+
+| Point | Resultat |
+| --- | --- |
+| API relation distributeur-acteur | OK |
+| Login acteur cree par SuperAdmin | OK |
+| Creation categorie/produit/variant | OK |
+| `workspace_page.dart` analyse ciblee | OK |
+| APK debug VPN | OK |
+| Test scrcpy | KO environnement, ADB refuse `10.212.134.1:40459` |
+
+### Dette restante
+
+- Validation visuelle smartphone a refaire apres reconnexion ADB.
+- Warnings Flutter stricts historiques hors workspace SuperAdmin a nettoyer par module.

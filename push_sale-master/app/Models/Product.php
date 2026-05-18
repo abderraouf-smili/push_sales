@@ -12,7 +12,18 @@ class Product extends Model
 
     protected $table = "product";
 
-    protected $fillable = ["ssin", "rate", "short_description_ar", "long_description_ar", "short_description_fr", "long_description_fr", "image", "category_id"];
+    protected $fillable = [
+        "ssin",
+        "rate",
+        "short_description_ar",
+        "long_description_ar",
+        "short_description_fr",
+        "long_description_fr",
+        "image",
+        "category_id",
+        "distributor_id",
+        "is_active",
+    ];
 
 
 
@@ -36,6 +47,11 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function Distributor()
+    {
+        return $this->belongsTo(Distributor::class);
     }
 
     public function promotion()

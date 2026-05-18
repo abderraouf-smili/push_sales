@@ -190,10 +190,15 @@ class AuthentificationController extends GetxController {
       );
       User firebaseUser = userCredential!.user!;
       if (!firebaseUser.emailVerified) {
+        final laravelLogin = await _signinWithLaravelAccount();
+        if (laravelLogin["response"] == "logged") {
+          return laravelLogin;
+        }
         return {
           "response": "error",
           "code": "mail-not-verified",
-          "Message": "Mail is not yet verified",
+          "message":
+              "Courriel non verifie dans Firebase. Le compte Laravel n a pas pu prendre le relais. Contactez un administrateur.",
         };
       } else {
         // all ok for authentification go to Route Home in this section
@@ -252,10 +257,12 @@ class AuthentificationController extends GetxController {
         }
       }
     } on FirebaseAuthException catch (e) {
-      if (_isLocalTestAccount() &&
-          ['user-not-found', 'invalid-credential', 'wrong-password']
-              .contains(e.code)) {
-        return await _signinWithLaravelTestAccount();
+      if (['user-not-found', 'invalid-credential', 'wrong-password']
+          .contains(e.code)) {
+        final laravelLogin = await _signinWithLaravelAccount();
+        if (laravelLogin["response"] == "logged") {
+          return laravelLogin;
+        }
       }
       if (e.code == 'user-not-found') {
         return {
@@ -284,13 +291,7 @@ class AuthentificationController extends GetxController {
     };
   }
 
-  bool _isLocalTestAccount() {
-    return kDebugMode &&
-        email != null &&
-        email!.trim().toLowerCase().endsWith('@pushsales.local');
-  }
-
-  Future<Map<String, dynamic>> _signinWithLaravelTestAccount() async {
+  Future<Map<String, dynamic>> _signinWithLaravelAccount() async {
     final ResponseHttpRequest responseToken = await CallApi.RequestHttp(
       global.login,
       data: {

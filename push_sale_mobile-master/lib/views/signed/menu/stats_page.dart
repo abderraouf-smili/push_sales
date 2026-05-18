@@ -1587,7 +1587,7 @@ class CommercialDashboard extends StatelessWidget {
                 icon: Icons.groups_outlined,
                 title: "Aucun client affecte",
                 message:
-                    "Executez les seeders demo ou verifiez les affectations du commercial.",
+                    "Verifiez les donnees disponibles ou les affectations du commercial.",
               )
             else
               ..._todayClients(clients).take(4).map(

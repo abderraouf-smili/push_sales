@@ -399,3 +399,53 @@ Resultat attendu :
 - Les actions destructives non finalisees restent en mode demo clair.
 
 Statut API/Build 2026-05-18 : OK.
+
+## Scenario SuperAdmin CRUD et audit 2026-05-18
+
+Role : SuperAdmin
+
+Compte :
+- `superadmin@pushsales.local`
+
+Preconditions :
+- `php artisan migrate --force`
+- `php artisan db:seed --class=TestUsersByRoleSeeder --force`
+- `php artisan db:seed --class=DemoDataSeeder --force`
+- Backend disponible depuis Flutter.
+
+Etapes :
+1. Se connecter avec le compte SuperAdmin.
+2. Ouvrir Accueil.
+3. Verifier que les KPIs globaux sont visibles uniquement sur Accueil.
+4. Ouvrir Distributeurs.
+5. Verifier que le header est simple et que les KPIs globaux ne sont pas repetes.
+6. Rechercher un distributeur et tester le filtre actif/inactif.
+7. Creer un distributeur de test.
+8. Ouvrir le distributeur cree.
+9. Modifier ses informations.
+10. Desactiver puis reactiver le distributeur avec confirmation.
+11. Verifier les sections detail : Infos, Acteurs, Depots, Produits, Commandes, Statistiques.
+12. Ouvrir Acteurs.
+13. Rechercher/filtrer par workspace et statut.
+14. Creer un acteur rattache a un distributeur.
+15. Modifier l'acteur.
+16. Reinitialiser le mot de passe avec confirmation.
+17. Desactiver puis reactiver l'acteur avec confirmation.
+18. Ouvrir Produits.
+19. Rechercher un produit.
+20. Creer un produit de test.
+21. Modifier le produit.
+22. Ouvrir le detail produit et verifier les variants.
+23. Depuis Accueil, ouvrir Audit logs.
+24. Verifier que les actions de creation/modification/desactivation/reset sont visibles dans les logs.
+25. Ouvrir Profil et verifier les sections compte, application, securite et services externes.
+
+Resultat attendu :
+- Toutes les pages SuperAdmin s'ouvrent sans page blanche.
+- Aucun bouton visible ne reste mort.
+- Les actions sensibles demandent confirmation.
+- Les creations/modifications retournent un message succes ou erreur clair.
+- Les audit logs contiennent les actions sensibles.
+- Les autres workspaces ne sont pas modifies par ces tests.
+
+Statut API/Build 2026-05-18 : OK.

@@ -16,6 +16,20 @@ class CallApi {
     ProgressCallback? onsend,
     ProgressCallback? onreceive,
   }) async {
+    if (route == 'workspace/mvp' && AppConfig.isRealDataMode) {
+      if (kDebugMode) {
+        debugPrint(
+          'DEMO_ACTION_NOT_ALLOWED_IN_REAL_ENV: blocked $route in ${AppConfig.environment.name}',
+        );
+      }
+      return ResponseHttpRequest(
+        code: 'DEMO_ACTION_NOT_ALLOWED_IN_REAL_ENV',
+        status: 'error',
+        message:
+            'Le mode demo est desactive dans cet environnement. Cette page doit utiliser les APIs reelles.',
+      );
+    }
+
     final dio = Dio(BaseOptions(
       connectTimeout: global.timeOut,
       sendTimeout: global.timeOut,

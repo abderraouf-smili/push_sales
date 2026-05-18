@@ -2,40 +2,41 @@
 
 Date : 2026-05-18
 
-Objectif : verifier que les boutons visibles des workspaces MVP ont une action claire et ne restent pas morts.
+Objectif : verifier que les boutons visibles des workspaces ont une action claire et ne restent pas morts.
 
 ## Resultat
 
 | Page | Bouton | Action | Statut |
 | --- | --- | --- | --- |
-| Tous workspaces MVP | Menu haut | Ouvre le drawer ou la navigation laterale | OK |
-| Tous workspaces MVP | Notification | Affiche un message snack "Notifications demo chargees..." | OK |
-| Tous workspaces MVP | Chat/support | Affiche un message snack ou ouvre la section support selon workspace | OK |
-| Tous workspaces MVP | Actualiser | Recharge `/api/workspace/mvp` pour la section courante | OK |
-| Tous workspaces MVP | Voir details | Affiche les details de la carte en bottom sheet | OK |
-| Tous workspaces MVP | Ouvrir | Affiche les details de l'element en bottom sheet | OK |
-| SuperAdmin | Distributeurs | Charge section `distributors` via API MVP | OK |
-| SuperAdmin | Acteurs | Charge section `actors` via API MVP | OK |
-| SuperAdmin | Produits | Charge section `products` via API MVP | OK |
-| Distributeur | Acteurs | Charge section `actors` via API MVP | OK |
-| Distributeur | Depots | Charge section `warehouses` via API MVP | OK |
-| Distributeur | Produits | Charge section `products` via API MVP | OK |
-| Depot | Preparations | Charge section `prepare_orders` via API MVP | OK |
-| Depot | Chargements | Charge section `loadings` via API MVP | OK |
-| Depot | Stock | Charge section `warehouse_stock` via API MVP | OK |
-| Livreur | Stock | Charge section `stock_mobile` via API MVP | OK |
+| Tous workspaces | Menu haut | Ouvre le drawer ou la navigation laterale | OK |
+| Tous workspaces | Notification | Affiche un message lie aux notifications du workspace | OK |
+| Tous workspaces | Chat/support | Affiche un message snack ou ouvre la section support selon workspace | OK |
+| Tous workspaces | Actualiser | Recharge `/api/workspace/real` pour la section courante en mode `vpn/real/production` | OK |
+| Tous workspaces | Voir details | Affiche les details de la carte en bottom sheet | OK |
+| Tous workspaces | Ouvrir | Affiche les details de l'element en bottom sheet | OK |
+| SuperAdmin | Distributeurs | Charge section `distributors` via API reelle | OK |
+| SuperAdmin | Acteurs | Charge section `actors` via API reelle | OK |
+| SuperAdmin | Produits | Charge section `products` via API reelle | OK |
+| Distributeur | Acteurs | Charge section `actors` via API reelle | OK |
+| Distributeur | Depots | Charge section `warehouses` via API reelle | OK |
+| Distributeur | Produits | Charge section `products` via API reelle | OK |
+| Depot | Preparations | Charge section `prepare_orders` via API reelle | OK |
+| Depot | Chargements | Charge section `loadings` via API reelle | OK |
+| Depot | Stock | Charge section `warehouse_stock` via API reelle | OK |
+| Livreur | Stock | Charge section `stock_mobile` via API reelle | OK |
 | Livreur | Delivery | Charge section `delivery`, filtres Preparées/A livrer/En cours/Livrees | OK |
-| Livreur | Trajets | Charge section `routes`, liste clients et action Maps demo | OK |
+| Livreur | Trajets | Charge section `routes`, liste clients et action Maps externe | OK |
 | Livreur | Generer bon reception | Disponible uniquement sur elements prepares; sinon message clair | OK |
-| Point de Vente | Catalogue | Charge section `catalog` via API MVP | OK |
-| Point de Vente | Ajouter | Ajoute le produit au panier local demo et affiche feedback | OK |
+| Point de Vente | Catalogue | Charge section `catalog` via API reelle | OK |
+| Point de Vente | Ajouter | Ajoute le produit au panier local avant validation API | OK |
 | Point de Vente | Panier | Affiche panier local et donnees API | OK |
-| Point de Vente | Valider commande demo | Affiche confirmation demo sans appel destructif | OK |
+| Point de Vente | Valider commande | Bloque proprement en mode reel si l'API commande point de vente manque | OK |
 | Point de Vente | Support | Charge section `support` et affiche actions claires | OK |
 
 ## Notes
 
-- Les workspaces MVP utilisent `WorkspaceMvpPage`; les actions non encore branchees sur une route CRUD destructive affichent un feedback explicite au lieu de ne rien faire.
+- Les workspaces utilisent `WorkspacePage`; `APP_ENV=vpn|real|production` charge `/api/workspace/real`.
+- Les actions non encore branchees sur une route CRUD reelle affichent un feedback explicite au lieu de ne rien faire.
 - Les anciennes pages commerciales restent accessibles pour conserver les workflows existants.
 - Les anciens ecrans profonds gardent une dette de style Flutter documentee dans `TEST_RESULTS.md`.
 
@@ -43,11 +44,58 @@ Objectif : verifier que les boutons visibles des workspaces MVP ont une action c
 
 | Page | Bouton | Action | Statut |
 | --- | --- | --- | --- |
-| Workspace MVP | Carte liste | Ouvre une fiche detail en bottom sheet moderne | OK |
-| Workspace MVP routes/clients | Maps | Ouvre Google Maps externe avec la cible disponible | OK |
+| Workspace | Carte liste | Ouvre une fiche detail en bottom sheet moderne | OK |
+| Workspace routes/clients | Maps | Ouvre Google Maps externe avec la cible disponible | OK |
 | Livreur Delivery | Generer bon reception | Autorise uniquement les elements prepares; sinon message clair | OK |
 | Auth | Google | Timeout + message clair si config Firebase/Google manquante | OK |
 | Auth | Facebook | Timeout + message clair si config Facebook manquante | OK |
 | Auth | Retour apres erreur sociale | Revient au formulaire email/password | OK |
-| Point de Vente | Ajouter produit | Feedback local, panier demo lisible | OK |
-| Promotions/Coupons | Consultation demo | Donnees seedees et endpoints verifies | OK |
+| Point de Vente | Ajouter produit | Feedback local, panier lisible | OK |
+| Promotions/Coupons | Consultation | Endpoints verifies selon donnees disponibles | OK |
+
+## Addendum SuperAdmin CRUD 2026-05-18
+
+| Page | Bouton | Action | Statut |
+| --- | --- | --- | --- |
+| Dashboard SuperAdmin | Ajouter distributeur | Ouvre le formulaire de creation distributeur | OK |
+| Dashboard SuperAdmin | Ajouter manager/acteur | Ouvre le formulaire de creation acteur | OK |
+| Dashboard SuperAdmin | Voir audit logs | Charge `/api/superadmin/audit-logs` et affiche la liste | OK |
+| Dashboard SuperAdmin | Parametres application | Ouvre la section profil/parametres | OK |
+| Distributeurs | Rechercher | Filtre la liste locale chargee par API | OK |
+| Distributeurs | Actifs/Inactifs | Filtre par `is_active` | OK |
+| Distributeurs | Ajouter | `POST /api/superadmin/distributors` | OK |
+| Distributeurs | Ouvrir/detail | Charge detail + acteurs + depots + produits + commandes + stats | OK |
+| Detail distributeur | Modifier | `PATCH /api/superadmin/distributors/{id}` | OK |
+| Detail distributeur | Desactiver | Confirmation puis `POST /deactivate` | OK |
+| Detail distributeur | Activer | Confirmation puis `POST /activate` | OK |
+| Acteurs | Rechercher | Filtre nom/email/workspace/distributeur | OK |
+| Acteurs | Workspace/statut | Filtre la liste acteurs | OK |
+| Acteurs | Ajouter | `POST /api/superadmin/actors` | OK |
+| Detail acteur | Modifier | `PATCH /api/superadmin/actors/{id}` | OK |
+| Detail acteur | Reset password | Confirmation puis `POST /reset-password` | OK |
+| Detail acteur | Desactiver/Activer | Confirmation puis `POST /deactivate|activate` | OK |
+| Produits | Rechercher | Filtre nom/categorie/distributeur | OK |
+| Produits | Ajouter | `POST /api/superadmin/products` | OK |
+| Detail produit | Modifier | `PATCH /api/superadmin/products/{id}` | OK |
+| Detail produit | Variants | Charge `/api/superadmin/products/{id}/variants` | OK |
+
+## Addendum SuperAdmin smartphone UX fixes 2026-05-18
+
+| Page | Bouton | Action | Statut |
+| --- | --- | --- | --- |
+| Top bar SuperAdmin | N / Notifications | Ouvre un toast premium ou sheet info notifications workspace | OK |
+| Top bar SuperAdmin | M / Messages | Ouvre un toast premium ou sheet info messagerie workspace | OK |
+| Toutes listes SuperAdmin | Pull-to-refresh | Recharge la section reelle courante | OK |
+| Toutes listes SuperAdmin | Carte acteur/distributeur/produit | Ouvre le detail moderne | OK |
+| Acteurs | Ajouter acteur | Formulaire avec workspace dropdown, distributeur dropdown, email verifie | OK |
+| Acteurs | Copier mot de passe temporaire | Copie dans le presse-papiers | OK |
+| Detail acteur | Reset acces | Confirmation puis `/reset-password`, email verifie si necessaire | OK |
+| Detail distributeur | + Acteur | Ouvre creation acteur avec distributeur preselectionne | OK |
+| Produits | Ajouter categorie | `POST /api/superadmin/categories` puis selection automatique | OK |
+| Produits | Ajouter produit | `POST /api/superadmin/products` avec categorie/distributeur selectionnes | OK |
+| Detail produit | + Variant | `POST /api/superadmin/products/{id}/variants` | OK |
+| Detail produit | Modifier variant | `POST /api/superadmin/variants/{id}/update` | OK |
+| Profil | Firebase | Bottom sheet statut/configuration, pas de loading infini | OK |
+| Profil | Google Maps | Bottom sheet + ouverture Maps externe de test | OK |
+| Profil | Bluetooth printer | Bottom sheet permissions/materiel requis/test | OK |
+| Profil | Google/Facebook Login | Bottom sheet configuration requise | OK |

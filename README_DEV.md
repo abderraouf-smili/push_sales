@@ -77,6 +77,8 @@ L'application accepte les options suivantes :
 ```bash
 flutter run --dart-define=APP_ENV=vpn
 flutter run --dart-define=APP_ENV=emulator
+flutter run --dart-define=APP_ENV=real
+flutter run --dart-define=APP_ENV=demo
 flutter run --dart-define=API_BASE_URL=http://192.168.1.20:8000
 ```
 
@@ -85,10 +87,19 @@ Valeurs par defaut :
 ```text
 vpn       -> http://192.168.1.20:8000
 emulator  -> http://10.0.2.2:8000
+real      -> http://192.168.1.20:8000
+demo      -> http://192.168.1.20:8000
 production-> https://example.com
 ```
 
 `CallApi` ajoute `/api` une seule fois. Ne pas mettre `/api` en double dans `API_BASE_URL`.
+
+Mode reel :
+
+- `APP_ENV=vpn`, `APP_ENV=real` et `APP_ENV=production` utilisent les APIs reelles, notamment `/api/workspace/real`.
+- `APP_ENV=demo` est le seul mode autorise a utiliser `/api/workspace/mvp`.
+- Si une ancienne action Flutter tente d'appeler `/api/workspace/mvp` en mode reel, l'appel est bloque avec `DEMO_ACTION_NOT_ALLOWED_IN_REAL_ENV`.
+- Ne jamais lancer `DemoDataSeeder`, `migrate:fresh` ou `db:wipe` sur une base contenant des donnees reelles.
 
 Exemple smartphone VPN :
 

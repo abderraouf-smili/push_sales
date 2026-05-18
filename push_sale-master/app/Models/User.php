@@ -23,6 +23,7 @@ class User extends Authenticatable
         'name',
         'device_id',
         'email',
+        'email_verified_at',
         'fcmtoken',
         'provider',
         'password',

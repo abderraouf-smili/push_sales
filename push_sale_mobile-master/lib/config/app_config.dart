@@ -43,14 +43,25 @@ class AppConfig {
 
   static AppEnvironment get environment => AppEnvironment.fromName(_envName);
 
+  static bool get isDemoMode => environment == AppEnvironment.demo;
+
+  static bool get isRealDataMode =>
+      environment == AppEnvironment.vpn ||
+      environment == AppEnvironment.real ||
+      environment == AppEnvironment.production;
+
   static String get apiBaseUrl {
     if (_apiBaseUrlOverride.trim().isNotEmpty) {
       return _normalizeBaseUrl(_apiBaseUrlOverride);
     }
 
     switch (environment) {
+      case AppEnvironment.demo:
+        return 'http://192.168.1.20:8000';
       case AppEnvironment.emulator:
         return 'http://10.0.2.2:8000';
+      case AppEnvironment.real:
+        return 'http://192.168.1.20:8000';
       case AppEnvironment.production:
         return 'https://example.com';
       case AppEnvironment.vpn:

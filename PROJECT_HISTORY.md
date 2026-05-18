@@ -1,5 +1,42 @@
 # PROJECT_HISTORY
 
+## 2026-05-18 - SuperAdmin smartphone UX fixes
+
+- Zone modifiee : workspace Flutter SuperAdmin, APIs Laravel SuperAdmin, relation produit/distributeur, authentification comptes crees par SuperAdmin, documentation QA.
+- Objectif : rapprocher le workspace SuperAdmin des maquettes fournies sur petit smartphone, supprimer les details bruts, rendre les formulaires intelligents et verifier les actions reelles hors mode demo.
+- Resume : ajout d'une barre d'actions rapide SuperAdmin, recherche/filtres compacts, pull-to-refresh conserve, cartes cliquables, details distributeur/acteur/produit modernises, toasts premium, bottom sheets services externes, dropdown distributeur/categorie, creation categorie, creation/modification variant, et gestion du retour Android pour fermer le clavier avant de quitter l'ecran.
+- Backend : correction du filtrage acteurs par distributeur via `distributor_id` et fallback `id_distributor`, ajout de l'email verifie par defaut/reset pour les acteurs SuperAdmin, enrichissement des payloads produits avec categorie/distributeur lisibles, et relation `Product::Distributor`.
+- UI : les boutons principaux sont accessibles en haut/FAB; le bouton panier est retire du workspace SuperAdmin; les donnees techniques `id/meta/kind` et JSON bruts sont masquees au profit d'informations metier lisibles.
+- Risque : moyen-faible, car les modifications restent ciblees SuperAdmin et les anciens workspaces/API metier ne sont pas supprimes.
+- Impact logique metier : logique existante conservee; les operations SuperAdmin utilisent les vraies APIs et ecrivent l'audit sans simulation demo.
+- Tests effectues : `route:list --path=api/superadmin` OK, `migrate --force` OK, login SuperAdmin OK, dashboard OK, creation distributeur OK, creation acteur lie distributeur OK, `email_verified_at` OK, login acteur cree OK, detail distributeur acteurs OK, creation categorie OK, creation produit OK, creation variant OK, audit logs OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN OK.
+- Test smartphone : ADB `10.212.134.1:40459` refuse la connexion (`10061`), donc installation/scrcpy non executes dans cette passe.
+- Prochaine etape : reconnecter ADB wireless et valider visuellement les sheets SuperAdmin sur SM A165F; continuer le nettoyage des warnings Flutter stricts historiques.
+
+## 2026-05-18 - Mode reel workspace et garde-fou anti-demo
+
+- Zone modifiee : configuration Flutter, API client Flutter, navigation workspace Flutter, route Laravel workspace, documentation mode reel.
+- Objectif : empecher les actions/pages demo en `APP_ENV=vpn|real|production` et utiliser les donnees reelles de la base pour les tests terrain.
+- Resume : ajout de `APP_ENV=demo/real`, bascule automatique vers `/api/workspace/real` hors demo, blocage Flutter de `/api/workspace/mvp` avec `DEMO_ACTION_NOT_ALLOWED_IN_REAL_ENV`, retrait des messages visibles `donnees demo/action demo/panier demo`, renommage de `WorkspaceMvpPage` en `WorkspacePage`.
+- Backend : ajout de l'alias `/api/workspace/real` compatible avec les donnees existantes; les APIs SuperAdmin et legacy metier restent les sources reelles.
+- Risque : moyen-faible, car le changement force le mode reel sans supprimer `/workspace/mvp` pour l'environnement `APP_ENV=demo`.
+- Impact logique metier : logique existante conservee; les actions non encore reliees a une API reelle sont bloquees proprement au lieu de simuler.
+- Tests effectues : `migrate --force` OK sans changement, `route:list --path=api` OK, tests HTTP SuperAdmin/commercial/depot/livreur/point_vente OK, `flutter clean`, `flutter pub get`, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN OK.
+- Tests a faire : test manuel smartphone des boutons workspace en mode `APP_ENV=vpn`, puis implementation de l'API reelle de commande Point de Vente.
+- Prochaine etape : brancher la validation panier Point de Vente sur une API metier reelle `order_source=point_vente`.
+
+## 2026-05-18 - Workspace SuperAdmin exploitable CRUD et audit
+
+- Zone modifiee : backend Laravel SuperAdmin, routes API, migration non destructive, workspace Flutter SuperAdmin, documentation de validation.
+- Objectif : passer le profil SuperAdmin d'une visualisation MVP a une vraie gestion plateforme avec operations, confirmations, audit logs et tests.
+- Resume : ajout de `SuperAdminController`, routes `/api/superadmin/*`, CRUD distributeurs/acteurs/produits, detail distributeur avec acteurs/depots/produits/commandes/stats, audit logs consultables, et formulaires Flutter pour creation/modification/actions sensibles.
+- UI : les KPIs globaux SuperAdmin sont maintenant limites au Dashboard; les pages Distributeurs, Acteurs, Produits et Profil affichent des headers simples avec recherche/filtres/actions adaptees.
+- Risque : moyen, car la passe ajoute des operations d'administration; le guard SuperAdmin et les validations limitent l'exposition, et les anciens endpoints/workspaces restent compatibles.
+- Impact logique metier : logique existante conservee; ajout d'operations de supervision et de gestion non destructives avec audit.
+- Tests effectues : `migrate --force` OK, seeders test/demo OK, route:list SuperAdmin OK, login SuperAdmin OK, permissions/workspace OK, dashboard OK, CRUD distributeur/acteur/produit OK, audit logs OK, analyse Flutter no-fatal OK, APK debug VPN OK.
+- Tests a faire : validation manuelle longue sur smartphone des formulaires SuperAdmin et nettoyage progressif des warnings Flutter stricts historiques.
+- Prochaine etape : brancher une UX plus riche de creation/modification variants et poursuivre la meme profondeur CRUD sur le workspace Distributeur.
+
 ## 2026-05-18 - Socle B2B workspaces, permissions et donnees demo etendues
 
 - Zone modifiee : backend Laravel permissions/workspaces, seeders demo, controller Flutter permissions, documentation projet.
