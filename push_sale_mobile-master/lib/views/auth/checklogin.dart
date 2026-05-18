@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 CheckLoginSign(Map<String, dynamic> result) {
-  switch (result["response"]) {
+  final response = result["response"] ?? "error";
+  switch (response) {
     //{response: create, provider: email, hasactor: false, fullname: Smail Meziane, email: shini20fr@gmail.com}
     //{response: create, provider: gmail, hasactor: false, fullname: Smail Meziane, email: shini20fr@gmail.com}
     case "create":
@@ -97,13 +98,16 @@ CheckLoginSign(Map<String, dynamic> result) {
             break;
 
           case "unknown-error":
+          case "timeout":
+          case "google-config-missing":
+          case "facebook-config-missing":
             {
               AwesomeDialog(
                       btnOkOnPress: () {},
                       context: Get.context!,
                       dialogType: DialogType.error,
                       title: "error".tr,
-                      desc: "unknown.error".tr)
+                      desc: result["message"]?.toString() ?? "unknown.error".tr)
                   .show();
             }
             break;
@@ -121,7 +125,6 @@ CheckLoginSign(Map<String, dynamic> result) {
             break;
           case "mail-not-verified":
             {
-              print("${result["code"]}");
               AwesomeDialog(
                       btnOkOnPress: () {},
                       context: Get.context!,

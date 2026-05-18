@@ -34,8 +34,10 @@ class DemoDataSeeder extends Seeder
             $category = $this->seedCategory();
             $variants = $this->seedProductsAndVariants($category->id, $now);
             $this->seedWarehousesAndStock($variants, $now);
+            $this->seedPromotionsAndCoupons($category->id, $variants, $now);
             $clients = $this->seedClients($now);
             $this->seedOrdersAndTransactions($clients, $variants, $now);
+            $this->seedProductionValidationData($clients, $now);
         });
     }
 
@@ -465,6 +467,75 @@ class DemoDataSeeder extends Seeder
         return $payload;
     }
 
+    private function seedPromotionsAndCoupons(int $categoryId, array $variants, $now): void
+    {
+        if (Schema::hasTable('promotion_type')) {
+            DB::table('promotion_type')->updateOrInsert(
+                ['id' => 1],
+                [
+                    'description' => 'Remise demo',
+                    'type' => 'discount',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
+
+        if (Schema::hasTable('promotion')) {
+            DB::table('promotion')->updateOrInsert(
+                ['id' => 'PROMO-DEMO-BOISSONS'],
+                [
+                    'description' => 'Promotion demo boissons -10%',
+                    'start_date' => $now->copy()->subDays(3)->format('Y-m-d'),
+                    'end_date' => $now->copy()->addDays(30)->format('Y-m-d'),
+                    'distributor_id' => self::DISTRIBUTOR_ID,
+                    'typepv_id' => 1,
+                    'type_promotion_id' => 1,
+                    'image' => '/storage/demo/promo-boissons.png',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
+
+        if (Schema::hasTable('promotion_item') && !empty($variants)) {
+            $variant = $variants[0]['model'];
+            DB::table('promotion_item')->updateOrInsert(
+                ['id' => 'PROMOITEM-DEMO-001'],
+                [
+                    'promotion_id' => 'PROMO-DEMO-BOISSONS',
+                    'category_id' => $categoryId,
+                    'product_id' => $variant->product_id,
+                    'variant_id' => $variant->id,
+                    'discount' => 10,
+                    'minimum' => 1,
+                    'unite' => 'U',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
+
+        if (Schema::hasTable('coupon')) {
+            DB::table('coupon')->updateOrInsert(
+                ['id' => 'COUPON-DEMO-10'],
+                [
+                    'description' => 'Coupon demo validation commande',
+                    'code' => 'DEMO10',
+                    'is_pourcentage' => true,
+                    'discount' => 10,
+                    'count' => 100,
+                    'start_date' => $now->copy()->subDays(3)->format('Y-m-d'),
+                    'end_date' => $now->copy()->addDays(30)->format('Y-m-d'),
+                    'min_amount' => 500,
+                    'distributor_id' => self::DISTRIBUTOR_ID,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
+    }
+
     private function seedClients($now): array
     {
         $clients = [
@@ -510,7 +581,9 @@ class DemoDataSeeder extends Seeder
                     'actor_id' => $client['actor'],
                     'typepv_id' => $client['typepv'],
                     'address_id' => $addressId,
-                ]
+                ] + (Schema::hasColumn('client', 'credit_limit')
+                    ? ['credit_limit' => $client['typepv'] === 2 ? 25000 : 12000]
+                    : [])
             );
 
             foreach ($client['days'] as $day) {
@@ -547,7 +620,10 @@ class DemoDataSeeder extends Seeder
                 'state' => 'new',
                 'created_at' => $now,
                 'updated_at' => $now,
-            ]
+            ] + $this->tablePayload('order', [
+                'order_source' => 'commercial',
+                'payment_due_date' => $now->copy()->addDays(15)->format('Y-m-d'),
+            ])
         );
 
         DB::table('orderitem')->updateOrInsert(
@@ -744,6 +820,103 @@ class DemoDataSeeder extends Seeder
                 'updated_at' => $now,
             ])
         );
+    }
+
+    private function seedProductionValidationData(array $clients, $now): void
+    {
+        if (Schema::hasTable('client_user_access') && !empty($clients)) {
+            $pointVenteUserId = DB::table('users')
+                ->where('email', 'pointvente.test@pushsales.local')
+                ->value('id');
+
+            if ($pointVenteUserId) {
+                DB::table('client_user_access')->updateOrInsert(
+                    ['user_id' => $pointVenteUserId, 'client_id' => $clients[0]],
+                    [
+                        'distributor_id' => self::DISTRIBUTOR_ID,
+                        'access_type' => 'owner',
+                        'is_primary' => true,
+                        'is_active' => true,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]
+                );
+            }
+        }
+
+        if (Schema::hasTable('delivery_trips') && !empty($clients)) {
+            $tripId = DB::table('delivery_trips')->updateOrInsert(
+                [
+                    'actor_id' => 'ACT-TEST-LIVREUR',
+                    'trip_date' => $now->format('Y-m-d'),
+                ],
+                [
+                    'distributor_id' => self::DISTRIBUTOR_ID,
+                    'status' => 'planned',
+                    'route_summary' => json_encode([
+                        'mode' => 'demo',
+                        'summary' => 'Route demo Alger Centre',
+                    ]),
+                    'total_distance' => 24.50,
+                    'estimated_duration' => 95,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+
+            $tripId = DB::table('delivery_trips')
+                ->where('actor_id', 'ACT-TEST-LIVREUR')
+                ->where('trip_date', $now->format('Y-m-d'))
+                ->value('id');
+
+            if ($tripId && Schema::hasTable('delivery_trip_stops')) {
+                foreach (array_slice($clients, 0, 4) as $index => $clientId) {
+                    $address = DB::table('client')
+                        ->join('address', 'address.id', '=', 'client.address_id')
+                        ->where('client.id', $clientId)
+                        ->select('address.latitude', 'address.longitude')
+                        ->first();
+
+                    DB::table('delivery_trip_stops')->updateOrInsert(
+                        ['delivery_trip_id' => $tripId, 'client_id' => $clientId],
+                        [
+                            'purchase_order_id' => $index === 0 ? 'PO-DEMO-SHIP' : null,
+                            'order_id' => 'ORD-DEMO-001',
+                            'sequence' => $index + 1,
+                            'status' => $index === 0 ? 'in_route' : 'planned',
+                            'latitude' => $address->latitude ?? null,
+                            'longitude' => $address->longitude ?? null,
+                            'estimated_arrival' => $now->copy()->addMinutes(30 * ($index + 1)),
+                            'actual_arrival' => null,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]
+                    );
+                }
+            }
+        }
+
+        if (Schema::hasTable('audit_logs')) {
+            DB::table('audit_logs')->updateOrInsert(
+                [
+                    'workspace_type' => 'superadmin',
+                    'action' => 'demo_seeded',
+                    'entity_type' => 'demo_data',
+                    'entity_id' => 'push-sales-demo',
+                ],
+                [
+                    'user_id' => DB::table('users')->where('email', 'superadmin@pushsales.local')->value('id'),
+                    'actor_id' => 'ACT-TEST-SUPERADMIN',
+                    'distributor_id' => self::DISTRIBUTOR_ID,
+                    'old_values' => null,
+                    'new_values' => json_encode(['demo' => true, 'version' => 'production-validation']),
+                    'ip_address' => '127.0.0.1',
+                    'user_agent' => 'DemoDataSeeder',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
     }
 
     private function tablePayload(string $table, array $payload): array

@@ -28,4 +28,14 @@ class Transactions extends Model
         "updated_at",
         "created_at"
     ];
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class, 'client_id', 'id');
+    }
+
+    public function actor()
+    {
+        return $this->belongsTo(Actor::class, 'actor_id', 'id');
+    }
 }

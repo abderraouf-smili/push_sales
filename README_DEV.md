@@ -254,6 +254,36 @@ Build APK avec configuration VPN :
 flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000
 ```
 
+Validation MVP B2B du 2026-05-18 :
+
+```text
+composer install : OK sous PHP 8.3.31
+php artisan migrate --force : OK
+php artisan db:seed --class=TestUsersByRoleSeeder --force : OK
+php artisan db:seed --class=DemoDataSeeder --force : OK
+php artisan route:list --path=api : OK
+/api/login + /api/permissions/workspace : OK pour les 6 comptes B2B
+/api/workspace/mvp : OK pour SuperAdmin, Distributeur, Commercial, Depot, Livreur, Point de Vente
+flutter clean : OK
+flutter pub get : OK
+flutter analyze --no-fatal-infos --no-fatal-warnings : OK
+flutter analyze strict : 762 issues historiques restantes
+flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000 : OK
+flutter devices : OK, SM A165F detecte sur 10.212.134.2:35599
+flutter run -d 10.212.134.2:35599 --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000 : OK
+APK debug : push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk
+```
+
+Pages MVP alimentees par `/api/workspace/mvp` :
+
+```text
+SuperAdmin   : Accueil, Distributeurs, Acteurs, Produits, Profil
+Distributeur : Accueil, Acteurs, Depots, Produits, Profil
+Depot        : Accueil, Preparations, Chargements, Stock, Profil
+Livreur      : Accueil, Stock, Delivery, Trajets, Profil
+Point vente  : Accueil, Catalogue, Panier, Commandes, Profil
+```
+
 Derniere validation du 2026-05-17 :
 
 ```text
@@ -310,3 +340,32 @@ Correctifs UX recents :
 - Ne pas versionner `.env`, cles privees, tokens, dumps SQL ou fichiers de credentials.
 - Ne pas logger les tokens, passwords ou headers `Authorization`.
 - Les cles Google/API presentes dans le code mobile doivent etre restreintes, rotatees si exposees, puis externalisees progressivement.
+
+## Validation production locale
+
+Commandes backend :
+
+```bash
+cd push_sale-master
+composer install
+php artisan migrate --force
+php artisan db:seed --class=TestUsersByRoleSeeder --force
+php artisan db:seed --class=DemoDataSeeder --force
+php artisan route:list --path=api --compact
+```
+
+Commandes Flutter :
+
+```bash
+cd push_sale_mobile-master
+flutter pub get
+flutter analyze --no-fatal-infos --no-fatal-warnings
+flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000
+```
+
+Documents utiles :
+
+- `REAL_DATA_TESTING.md` : procedure donnees reelles sans ecraser la base.
+- `PRODUCTION_CHECKLIST.md` : checklist avant release.
+- `TEST_RESULTS.md` : resultats commandes/API/device.
+- `BUTTONS_AUDIT.md` : audit des boutons visibles.

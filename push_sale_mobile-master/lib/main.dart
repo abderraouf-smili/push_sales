@@ -1,4 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:push_sale/config/app_config.dart';
@@ -19,19 +21,36 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 void main() async {
   // testDomainAccess();
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: AppConfig.firebaseApiKey,
-      appId: AppConfig.firebaseAppId,
-      messagingSenderId: AppConfig.firebaseMessagingSenderId,
-      projectId: AppConfig.firebaseProjectId,
-      storageBucket: AppConfig.firebaseStorageBucket,
-    ),
-  );
+  try {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: AppConfig.firebaseApiKey,
+        appId: AppConfig.firebaseAppId,
+        messagingSenderId: AppConfig.firebaseMessagingSenderId,
+        projectId: AppConfig.firebaseProjectId,
+        storageBucket: AppConfig.firebaseStorageBucket,
+      ),
+    );
+    await _configureFirebaseMessaging();
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('Firebase non configure: $e');
+    }
+  }
   String initialPage = await AuthentificationController.checkInternet();
   // SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
   //     overlays: [SystemUiOverlay.top]);
   runApp(PushSaleApp(initialPage));
+}
+
+Future<void> _configureFirebaseMessaging() async {
+  final messaging = FirebaseMessaging.instance;
+  await messaging.requestPermission(alert: true, badge: true, sound: true);
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
 }
 
 class PushSaleApp extends StatelessWidget {

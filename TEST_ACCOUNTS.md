@@ -19,6 +19,17 @@ C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder : OK
 /api/isprofiled : hasactor=1 verifie au minimum sur admin
 ```
 
+Validation locale du 2026-05-18 :
+
+```text
+composer install : OK sous PHP 8.3.31 apres mise a jour ciblee de lcobucci/clock 3.5.0
+php artisan db:seed --class=TestUsersByRoleSeeder --force : OK
+php artisan db:seed --class=DemoDataSeeder --force : OK
+/api/login : SUCCESS pour les 6 comptes B2B, tokens non affiches
+/api/permissions/workspace : workspace attendu pour les 6 comptes
+/api/workspace/mvp : donnees retournees pour dashboards et pages MVP
+```
+
 Mot de passe temporaire dev/test pour tous les comptes crees par le seeder :
 
 ```text

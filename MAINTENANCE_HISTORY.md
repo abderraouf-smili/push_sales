@@ -620,6 +620,55 @@ Resultats :
 Risque :
 - Faible; correctifs UI defensifs sans changement de logique metier.
 
+# 2026-05-18 - MVP B2B fonctionnel et test device
+
+Fichiers modifies :
+- `push_sale-master/app/Http/Controllers/WorkspaceMvpController.php`
+- `push_sale-master/app/Models/Transactions.php`
+- `push_sale-master/app/Support/WorkspaceResolver.php`
+- `push_sale-master/routes/api.php`
+- `push_sale-master/composer.lock`
+- `push_sale_mobile-master/lib/views/signed/homepage.dart`
+- `push_sale_mobile-master/lib/views/signed/workspace/workspace_mvp_page.dart`
+- `BUTTONS_AUDIT.md`
+- `TEST_RESULTS.md`
+- `TEST_ACCOUNTS.md`
+- `TEST_SCENARIOS.md`
+- `PROJECT_HISTORY.md`
+- `MAINTENANCE_HISTORY.md`
+
+Commandes executees :
+- `composer update lcobucci/clock --with-all-dependencies`
+- `composer install`
+- `php artisan migrate --force`
+- `php artisan db:seed --class=TestUsersByRoleSeeder --force`
+- `php artisan db:seed --class=DemoDataSeeder --force`
+- `php artisan config:clear`
+- `php artisan cache:clear`
+- `php artisan route:list --path=api`
+- `composer audit --no-interaction`
+- Tests API login/workspace sur 6 comptes
+- Tests API `clients`, `products`, `currentorders`, `warehouses`, `topackorders`, `toshiporders`, `currentstock`
+- `flutter clean`
+- `flutter pub get`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter analyze`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter devices`
+- `flutter run -d 10.212.134.2:35599 --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- `composer install` fonctionne maintenant avec PHP 8.3.31 grace a `lcobucci/clock` 3.5.0.
+- Les 6 comptes B2B retournent le workspace attendu.
+- Les pages MVP ne restent pas vides : SuperAdmin, Distributeur, Depot, Livreur et Point de Vente sont alimentes par `/api/workspace/mvp`.
+- Le role livreur n'utilise plus l'ancien delivery blanc pour les onglets principaux; il passe par `WorkspaceMvpPage`.
+- APK debug genere et app lancee sur SM A165F.
+- `flutter analyze` strict reste en echec sur 762 issues historiques non bloquantes.
+- `composer audit` signale 2 advisories dependances et 2 packages abandonnes a traiter dans une montee Laravel/dependances separee.
+
+Risque :
+- Moyen-faible; endpoint d'agregation et UI de navigation sans changement des anciens endpoints ni calculs metier.
+
 # 2026-05-17 - GUI style maquettes et protections runtime
 
 Fichiers modifies :
@@ -679,3 +728,49 @@ Resultats :
 
 Risque :
 - Moyen-faible; correction UI, robustesse de chargement et donnees demo sans changement de routes API ni logique metier.
+
+# 2026-05-18 - Durcissement production validation
+
+Fichiers modifies/ajoutes :
+- `push_sale-master/database/migrations/2026_05_18_120000_add_production_validation_tables.php`
+- `push_sale-master/app/Models/AuditLog.php`
+- `push_sale-master/app/Models/ClientUserAccess.php`
+- `push_sale-master/app/Models/DeliveryTrip.php`
+- `push_sale-master/app/Models/DeliveryTripStop.php`
+- `push_sale-master/app/Http/Controllers/WorkspaceMvpController.php`
+- `push_sale-master/app/Http/Controllers/Order/OrderController.php`
+- `push_sale-master/database/seeders/DemoDataSeeder.php`
+- `push_sale_mobile-master/lib/views/signed/workspace/workspace_mvp_page.dart`
+- `push_sale_mobile-master/lib/controllers/authentification_controller.dart`
+- `push_sale_mobile-master/lib/views/auth/loginpage.dart`
+- `push_sale_mobile-master/lib/views/auth/checklogin.dart`
+- `push_sale_mobile-master/lib/main.dart`
+- `push_sale_mobile-master/android/app/src/main/AndroidManifest.xml`
+- `REAL_DATA_TESTING.md`
+- `PRODUCTION_CHECKLIST.md`
+
+Commandes executees :
+- `composer install`
+- `php artisan migrate --force`
+- `php artisan db:seed --class=TestUsersByRoleSeeder --force`
+- `php artisan db:seed --class=DemoDataSeeder --force`
+- Tests API login/workspace 6 comptes
+- Tests API `clients`, `products`, `currentorders`, `warehouses`, `topackorders`, `toshiporders`, `currentstock`, `listpromotions`, `listcoupons`
+- `flutter pub get`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter devices`
+- `flutter run -d 10.212.134.2:35599 --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- Migrations non destructives OK.
+- Seeders OK et donnees demo plus coherentes pour point de vente, promotions, coupons, audit et trajets.
+- Workspaces MVP alimentes et plus compacts sur petit smartphone.
+- Auth Gmail/Facebook protegee contre loading infini.
+- Firebase Messaging non bloquant et permission demandee.
+- Maps externe disponible en fallback.
+- APK debug genere et app lancee sur SM A165F.
+- Passe finale apres `flutter clean` : APK debug regenere OK; le smartphone n'etait plus visible dans `flutter devices` et `adb connect 10.212.134.2:35599` a echoue car le port ADB wireless avait expire/change.
+
+Risque :
+- Moyen-faible; les changements ajoutent une couche de fiabilite et d'audit sans supprimer de donnees ni remplacer les anciens endpoints.

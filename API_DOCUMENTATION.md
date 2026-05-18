@@ -13,6 +13,7 @@ Backend dev : `http://192.168.1.20:8000/api`
 | POST | `/actorinfo` | Retourne l'acteur connecte |
 | POST | `/permissions` | Permissions legacy + workspace B2B |
 | POST | `/permissions/workspace` | Alias de `/permissions` |
+| POST | `/workspace/mvp` | Donnees agregees pour dashboards/pages MVP par workspace |
 
 ## Contrat permissions
 
@@ -53,6 +54,58 @@ Le contrat B2B ajoute :
 | Livraison | `toshiporders`, `shiporder`, `cashorder`, `sendcashforall`, `purchaseorderslist` |
 | Statistiques | `stats_month`, `deliverystats`, `profitstats` |
 | Communication | `sendnotification`, `sendmessage`, `getmessage` |
+
+## Endpoint MVP workspace
+
+`POST /api/workspace/mvp`
+
+Body :
+
+```json
+{
+  "section": "dashboard"
+}
+```
+
+Sections disponibles : `dashboard`, `distributors`, `actors`, `warehouses`, `warehouse_stock`, `stock`, `stock_mobile`, `prepare_orders`, `loadings`, `delivery`, `routes`, `products`, `catalog`, `cart`, `clients`, `orders`, `my_orders`, `deliveries`, `payments`, `credit`, `support`, `profile`, `settings`, `reports`, `audit_logs`.
+
+Reponse :
+
+```json
+{
+  "status": "SUCCESS",
+  "data": {
+    "workspace_type": "livreur",
+    "section": "delivery",
+    "title": "Delivery",
+    "stats": [],
+    "lists": [],
+    "actions": []
+  }
+}
+```
+
+Cet endpoint est une couche de lecture/agregation pour rendre les workspaces testables. Il ne remplace pas les anciens endpoints metier.
+
+## Addendum production validation 2026-05-18
+
+- Le workspace point de vente filtre les donnees via `client_user_access` quand une liaison active existe.
+- `orders` expose progressivement `order_source` et `payment_due_date` quand les colonnes sont presentes.
+- Les clients peuvent porter `credit_limit` pour les vues credit/creances.
+- `routes` peut lire `delivery_trips` et `delivery_trip_stops`; sinon fallback vers les bons de livraison existants.
+- `dashboard` et les sections MVP renvoient des actions non destructives et des flags UI comme `can_receive`.
+- `currentorders` retourne maintenant des commandes recentes si aucun `client_id`/`date` n'est fourni, afin d'eviter une page vide dans le workspace commercial.
+
+Endpoints valides apres seed demo :
+
+| Endpoint | Attendu |
+| --- | --- |
+| `/api/listpromotions` | Promotions demo |
+| `/api/listcoupons` | Coupons demo |
+| `/api/currentstock` | Stock mobile livreur |
+| `/api/toshiporders` | Livraisons livreur |
+| `/api/topackorders` | Preparations depot |
+| `/api/workspace/mvp` section `audit_logs` | Journal demo |
 
 ## Compatibilite
 

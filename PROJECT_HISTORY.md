@@ -158,6 +158,34 @@
 - Tests effectues : `php -l NotificationController.php` OK, `composer install` PHP 8.3 OK, `route:list` OK, `config:clear` OK, `cache:clear` OK, seeders OK, `flutter clean`, `flutter pub get`, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter analyze` strict 802 issues, `flutter build apk --debug` OK, `flutter run` sur SM A165F OK.
 - Prochaine etape : nettoyer progressivement les `must_be_immutable` historiques, remplacer `WillPopScope` par `PopScope` par module, tester FCM avec une vraie cle restreinte.
 
+## 2026-05-18 - MVP B2B testable par workspace
+
+- Zone modifiee : backend Laravel workspace, routes API, seeders/verifications, HomePage Flutter, page MVP Flutter, documentation de tests.
+- Objectif : rendre les comptes SuperAdmin, Distributeur, Depot, Livreur et Point de Vente navigables avec des pages non vides et alimentees par API.
+- Resume : ajout de `/api/workspace/mvp`, enrichissement du contrat `WorkspaceResolver`, ajout d'une page Flutter generique responsive `WorkspaceMvpPage`, branchement HomePage sur les workspaces MVP, bascule du role livreur vers les pages MVP `stock_mobile/delivery/routes` pour eviter l'ancien ecran blanc.
+- Backend : `WorkspaceMvpController` agrege les donnees existantes (acteurs, distributeurs, clients, produits, depots, stock, commandes, purchase orders, transactions) sans modifier les anciens endpoints.
+- Compatibilite : `/api/permissions` et `/api/permissions/workspace` conservent le format legacy et ajoutent `workspace_type`, `menus`, `actions`, `profile`, `actor`, `user`.
+- Securite : aucun token documente; tests login realises sans afficher les tokens; aucune suppression destructive.
+- Risque : moyen-faible, car ajout d'un endpoint de lecture/agrégation et branchement UI pour workspaces manquants; logique metier existante conservee.
+- Impact logique metier : aucun calcul de prix/stock/commande modifie; les actions non finalisees dans les pages MVP donnent un feedback demo au lieu d'executer une action destructive.
+- Tests effectues : `composer install` OK, `migrate` OK, seeders OK, login 6 comptes OK, permissions/workspace 6 comptes OK, endpoints `clients/products/currentorders/warehouses/topackorders/toshiporders/currentstock` OK, `flutter clean/pub get/analyze --no-fatal.../build apk` OK, `flutter run --no-resident` sur SM A165F OK.
+- Tests a faire : validation manuelle longue des anciens ecrans commerciaux profonds, impression Bluetooth, notifications Firebase et cartes avec cles restreintes.
+- Prochaine etape : reduire progressivement les 762 issues `flutter analyze` strict par module historique.
+
+## 2026-05-18 - Durcissement production validation
+
+- Zone modifiee : migrations Laravel, workspace MVP, seeders demo, auth sociale Flutter, Firebase Messaging, Maps fallback, documentation production.
+- Objectif : rendre le MVP B2B plus fiable pour tests reels sans loading infini, pages blanches ou donnees vides.
+- Resume : ajout des tables `audit_logs`, `client_user_access`, `delivery_trips`, `delivery_trip_stops`; ajout de `order_source`, `payment_due_date` et `client.credit_limit`; seed demo enrichi avec promotions, coupon, audit, liaison point de vente et tournee; dashboard/listes MVP densifies pour petit smartphone.
+- Auth : Google/Facebook ont maintenant timeouts et messages clairs si les vraies cles Firebase/Facebook ne sont pas configurees.
+- Notifications : permission Firebase Messaging demandee et configuration non bloquante si Firebase est absent.
+- Maps : bouton externe Google Maps ajoute comme fallback.
+- Risque : moyen-faible, migrations progressives et UI defensive; aucune suppression de donnees ni changement de calcul metier.
+- Impact logique metier : intention existante conservee; ajout de champs/supports pour audit, credit, point de vente et trajets.
+- Tests effectues : migrations OK, seeders OK, login/workspace 6 comptes OK, endpoints metier/promotions/coupons OK, analyse no-fatal OK, APK debug OK. Un lancement SM A165F avait ete valide avant clean; sur la passe finale le port ADB wireless n'etait plus joignable.
+- Tests a faire : validation Gmail/Facebook avec vraies cles, push Firebase reel, impression Bluetooth avec materiel physique, build release signe, relance device quand le nouveau port ADB wireless est disponible.
+
+
 ## 2026-05-17 - Finalisation API config, seeders demo et verification device
 
 - Zone modifiee : configuration Flutter, Android manifest, responsive commun, seeder Laravel demo, documentation.

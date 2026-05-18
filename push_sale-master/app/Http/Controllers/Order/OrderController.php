@@ -51,7 +51,16 @@ class OrderController extends Controller
                     ->orderBy("code")
                     ->get();
             } else {
-                return response()->json(["status" => "SUCCESS", "data" => null]);
+                $actor = Actor::where("user_id", $user->id)->first();
+                $order = Order::where("actor_id", $actor->id)
+                    ->with(["orderitem", "client.Address.City", "client.Address.State", "client.Address.Country", "tracking.actor", "tracking" => function ($query) {
+                        $query->orderBy('created_at', 'asc');
+                    }])
+                    ->withSum("PurchaseOrders", "total_amount", "residual")
+                    ->withSum("PurchaseOrders", "residual")
+                    ->orderByDesc("order_date")
+                    ->limit(50)
+                    ->get();
             }
             return response()->json(["status" => "SUCCESS", "data" => $order]);
         } else {

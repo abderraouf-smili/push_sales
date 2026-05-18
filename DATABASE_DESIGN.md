@@ -52,3 +52,26 @@ La migration est progressive et non destructive. Le code continue a deduire le w
 3. Ajouter `order_source` (`commercial`, `point_vente`) sur les commandes.
 4. Ajouter `payment_due_date` et `credit_limit` si la logique credit devient contractuelle.
 5. Ajouter une table `delivery_trips` si l'optimisation de route devient persistante.
+
+## Addendum production validation 2026-05-18
+
+Migration ajoutee :
+
+`2026_05_18_120000_add_production_validation_tables.php`
+
+Ajouts non destructifs :
+
+- `audit_logs` : journal d'actions pour SuperAdmin/distributeur.
+- `client_user_access` : liaison user point de vente vers client/distributeur autorise.
+- `order.order_source` : source `commercial` ou `point_vente`.
+- `order.payment_due_date` : echeance paiement commande.
+- `client.credit_limit` : limite credit contractuelle.
+- `delivery_trips` : tournee livreur.
+- `delivery_trip_stops` : arrets clients d'une tournee.
+
+Utilisation actuelle :
+
+- `WorkspaceMvpController` lit `audit_logs` pour la section audit.
+- Le workspace point de vente filtre ses clients, commandes, bons et transactions via `client_user_access` quand la liaison existe.
+- `DemoDataSeeder` cree une liaison point de vente, une tournee demo et des arrets pour tester Trajets.
+- Les anciennes tables et routes restent compatibles.

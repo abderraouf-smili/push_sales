@@ -65,3 +65,17 @@ Chaque page principale doit avoir :
 3. Detail avec onglets ou sections.
 4. Action critique avec confirmation.
 5. Feedback succes/echec.
+
+## Densite mobile ajustee 2026-05-18
+
+Pour Samsung A16 / petits smartphones :
+
+- boutons communs reduits a une hauteur compacte ;
+- grille KPI en 2 colonnes des 360 px quand possible ;
+- cartes MVP moins hautes et padding vertical reduit ;
+- actions secondaires de fiche liste en bottom sheet ;
+- bottom navigation conservee avec padding bas ;
+- detail liste affiche en bottom sheet au lieu d'ecran vide ;
+- timeouts auth/API pour eviter loading infini.
+
+Les actions Maps ouvrent Google Maps externe si la carte interne n'est pas configuree.

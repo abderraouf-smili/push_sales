@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -346,37 +347,58 @@ class AuthentificationController extends GetxController {
 
   Future<Map<String, dynamic>> SignInWithGoogle() async {
     try {
-      print("=====> entring login");
+      if (kDebugMode) {
+        debugPrint("=====> entering Google login");
+      }
       GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ["email", "profile"],
       );
-      // Trigger the authentication flow
-      print("=====> Sign");
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      // Obtain the auth details from the request
-      print("=====> Auth");
+      final GoogleSignInAccount? googleUser =
+          await googleSignIn.signIn().timeout(const Duration(seconds: 30));
+      if (googleUser == null) {
+        return {
+          "response": "error",
+          "code": "selection-account-error",
+          "message": "Connexion Google annulee.",
+        };
+      }
       final GoogleSignInAuthentication? googleAuth =
-          await googleUser?.authentication;
-      // Create a new credential
+          await googleUser.authentication.timeout(const Duration(seconds: 20));
+      if (googleAuth?.accessToken == null && googleAuth?.idToken == null) {
+        return {
+          "response": "error",
+          "code": "google-config-missing",
+          "message":
+              "Configuration Google/Firebase incomplete. Verifiez SHA-1/SHA-256 et google-services.json.",
+        };
+      }
       final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth!.accessToken,
-        idToken: googleAuth.idToken,
+        accessToken: googleAuth?.accessToken,
+        idToken: googleAuth?.idToken,
       );
 
       // 5. Se connecter à Firebase avec la crédential
-      final UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithCredential(credential)
+          .timeout(const Duration(seconds: 30));
 
       final User? user = userCredential.user;
-      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (user == null || user.email == null) {
+        return {
+          "response": "error",
+          "code": "google-user-empty",
+          "message": "Google n a pas retourne un compte utilisable.",
+        };
+      }
+      final fcmToken = await _safeFcmToken();
       PushSaleUser user0 = PushSaleUser(
-        id: user!.uid,
+        id: user.uid,
         mail: user.email!,
-        name: user.displayName!,
+        name: user.displayName ?? user.email!,
         phone: '-',
         device_id: "",
         password: md5.convert(utf8.encode(user.uid)).toString(),
-        fcmtoken: fcmToken ?? "",
+        fcmtoken: fcmToken,
         provider: "gmail",
       );
 
@@ -388,7 +410,9 @@ class AuthentificationController extends GetxController {
         data: {"fbuid": user.uid},
       );
       if (response.status == "SUCCESS") {
-        print(response.data);
+        if (kDebugMode) {
+          debugPrint("=====> Google user checked");
+        }
         // positive response internet is OK
         if (response.data != null) {
           // user exists, check if the same provider
@@ -505,13 +529,20 @@ class AuthentificationController extends GetxController {
         }
       }
       return {
-        "reponse": "error",
+        "response": "error",
         "code": "unknown-error",
         "message": "Internet error"
       };
+    } on TimeoutException {
+      return {
+        "response": "error",
+        "code": "timeout",
+        "message":
+            "Connexion Google trop longue. Verifiez Internet ou la configuration Firebase.",
+      };
     } catch (e) {
       return {
-        "reponse": "error",
+        "response": "error",
         "code": "internal-error",
         "message": e,
       };
@@ -520,8 +551,19 @@ class AuthentificationController extends GetxController {
 
   Future<Map<String, dynamic>> SignInWithFacebook() async {
     try {
-      await FacebookAuth.i.login();
-      final LoginResult loginResult = await FacebookAuth.instance.login();
+      final LoginResult loginResult = await FacebookAuth.instance
+          .login()
+          .timeout(const Duration(seconds: 30));
+
+      if (loginResult.status != LoginStatus.success ||
+          loginResult.accessToken == null) {
+        return {
+          "response": "error",
+          "code": "facebook-config-missing",
+          "message":
+              "Connexion Facebook impossible ou annulee. Verifiez la configuration Facebook/Firebase.",
+        };
+      }
 
       // Create a credential from the access token
       final OAuthCredential facebookAuthCredential =
@@ -529,21 +571,29 @@ class AuthentificationController extends GetxController {
 
       // Once signed in, return the UserCredential
       userCredential = await FirebaseAuth.instance
-          .signInWithCredential(facebookAuthCredential);
+          .signInWithCredential(facebookAuthCredential)
+          .timeout(const Duration(seconds: 30));
 
       FirebaseAuth auth = FirebaseAuth.instance;
-      User user = auth.currentUser!;
+      User? user = auth.currentUser;
+      if (user == null || user.email == null) {
+        return {
+          "response": "error",
+          "code": "facebook-user-empty",
+          "message": "Facebook n a pas retourne un compte utilisable.",
+        };
+      }
       String? deviceId = ""; // await PlatformDeviceId.getDeviceId;
-      final fcmToken = await FirebaseMessaging.instance.getToken();
+      final fcmToken = await _safeFcmToken();
 
       PushSaleUser user0 = PushSaleUser(
         id: user.uid,
-        mail: userCredential!.user!.email!,
-        name: userCredential!.user!.displayName!,
+        mail: user.email!,
+        name: user.displayName ?? user.email!,
         phone: '-',
         device_id: deviceId,
         password: md5.convert(utf8.encode(user.uid)).toString(),
-        fcmtoken: fcmToken!,
+        fcmtoken: fcmToken,
         provider: "facebook",
       );
 
@@ -658,15 +708,33 @@ class AuthentificationController extends GetxController {
         }
       }
       return {
-        "reponse": "error",
+        "response": "error",
         "message": "Internet error",
+      };
+    } on TimeoutException {
+      return {
+        "response": "error",
+        "code": "timeout",
+        "message":
+            "Connexion Facebook trop longue. Verifiez Internet ou la configuration Firebase/Facebook.",
       };
     } catch (e) {
       return {
-        "reponse": "error",
+        "response": "error",
         "code": "internal-error",
         "message": e,
       };
+    }
+  }
+
+  Future<String> _safeFcmToken() async {
+    try {
+      return await FirebaseMessaging.instance
+              .getToken()
+              .timeout(const Duration(seconds: 8)) ??
+          "";
+    } catch (_) {
+      return "";
     }
   }
 }

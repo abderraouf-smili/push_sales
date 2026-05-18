@@ -2,6 +2,12 @@
 
 ## 2026-05-18
 
+- Backend : ajout de `/api/workspace/mvp`, endpoint MVP de lecture pour alimenter les pages par workspace avec donnees existantes.
+- Flutter : branchement de HomePage sur les workspaces MVP SuperAdmin, Distributeur, Depot, Livreur et Point de Vente.
+- Livreur : remplacement des onglets principaux anciens par pages MVP fonctionnelles `Stock`, `Delivery`, `Trajets`, `Profil`.
+- QA : ajout de `BUTTONS_AUDIT.md` et `TEST_RESULTS.md`.
+- Composer : correction compatibilite PHP 8.3 via mise a jour ciblee `lcobucci/clock` 3.5.0.
+- Validation : login/workspace OK pour les 6 comptes B2B, endpoints metier principaux OK, APK debug genere, lancement device SM A165F OK.
 - Backend : ajout du contrat B2B progressif `workspace_type`, `menus`, `actions`, `permissions` sur `/api/permissions`, avec compatibilite legacy `permission/type_actor`.
 - Backend : ajout de l'alias `/api/permissions/workspace`.
 - Base de donnees : migration non destructive `actor_profile.workspace_type`.
@@ -81,3 +87,14 @@
 - Produits : catalogue modernise avec recherche, categories, compteur et cartes produit visuelles.
 - Credits : page encaissements modernisee avec KPI, fond clair et navigation par periodes.
 - Stabilite : protections `PageController.hasClients` ajoutees sur tracking, livraison et detail depot.
+
+## 2026-05-18 - Production validation hardening
+
+- Ajout migrations non destructives : `audit_logs`, `client_user_access`, `delivery_trips`, `delivery_trip_stops`, `order_source`, `payment_due_date`, `credit_limit`.
+- Enrichissement demo : promotions, coupon, audit log, liaison point de vente, tournee livreur.
+- Point de vente : filtrage backend via `client_user_access` quand disponible.
+- Workspace MVP : cartes plus compactes, bottom sheet detail, actions Maps, bons reception proteges.
+- Auth sociale : Google/Facebook avec timeouts et erreurs lisibles au lieu de loading infini.
+- Firebase : permission notification demandee et configuration non bloquante en dev.
+- Android : permission `POST_NOTIFICATIONS` ajoutee.
+- Documentation : ajout `REAL_DATA_TESTING.md` et `PRODUCTION_CHECKLIST.md`.

@@ -21,6 +21,12 @@ C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder
 C:\tools\php83\php.exe artisan db:seed --class=DemoDataSeeder
 ```
 
+Etat MVP verifie le 2026-05-18 :
+- Les 6 comptes de reference se connectent sur `/api/login`.
+- `/api/permissions/workspace` retourne le workspace attendu.
+- `/api/workspace/mvp` alimente les dashboards et pages MVP SuperAdmin, Distributeur, Depot, Livreur et Point de Vente.
+- Le role Livreur utilise maintenant les pages MVP pour `dashboard`, `stock_mobile`, `delivery`, `routes`, `profile` afin d'eviter l'ancien ecran Delivery blanc.
+
 Etat API verifie le 2026-05-17 :
 - `/api/login` fonctionne pour admin, commercial, livreur et depot.
 - `/api/products`, `/api/warehouses`, `/api/topackorders` retournent des donnees demo.
@@ -54,6 +60,9 @@ Resultat attendu :
 
 Statut manuel : OK / KO
 
+Verification API 2026-05-18 : OK.
+Pages MVP testables : Dashboard global, Distributeurs, Acteurs, Produits, Profil.
+
 ## Scenario Manager Distributeur
 
 Role : Manager Distributeur
@@ -75,6 +84,9 @@ Resultat attendu :
 - Compatibilite avec les menus admin existants.
 
 Statut manuel : OK / KO
+
+Verification API 2026-05-18 : OK.
+Pages MVP testables : Dashboard, Acteurs, Depots, Produits, Profil.
 
 ## Scenario Point de Vente
 
@@ -361,3 +373,29 @@ Resultat attendu :
 - Les donnees absentes affichent un etat vide/loading au lieu de crasher.
 
 Statut manuel : OK / KO
+
+## Scenario MVP workspaces 2026-05-18
+
+Role : SuperAdmin, Manager Distributeur, Depot, Livreur, Point de Vente
+
+Preconditions :
+- `php artisan db:seed --class=TestUsersByRoleSeeder --force`
+- `php artisan db:seed --class=DemoDataSeeder --force`
+- APK lance avec `--dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Etapes :
+1. Se connecter avec `superadmin@pushsales.local`, ouvrir Accueil, Distributeurs, Acteurs, Produits, Profil.
+2. Se connecter avec `manager.distributeur@pushsales.local`, ouvrir Accueil, Acteurs, Depots, Produits, Profil.
+3. Se connecter avec `depot.test@pushsales.local`, ouvrir Accueil, Preparations, Chargements, Stock, Profil.
+4. Se connecter avec `livreur.test@pushsales.local`, ouvrir Accueil, Stock, Delivery, Trajets, Profil.
+5. Se connecter avec `pointvente.test@pushsales.local`, ouvrir Accueil, Catalogue, Panier, Commandes, Profil.
+6. Sur chaque page, utiliser Actualiser et ouvrir au moins un detail.
+7. Sur Point de Vente, ajouter un produit au panier demo puis ouvrir Panier.
+
+Resultat attendu :
+- Chaque workspace charge ses donnees depuis `/api/workspace/mvp`.
+- Aucun onglet MVP ne reste blanc.
+- Aucun bouton visible ne reste sans feedback.
+- Les actions destructives non finalisees restent en mode demo clair.
+
+Statut API/Build 2026-05-18 : OK.

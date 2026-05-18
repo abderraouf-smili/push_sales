@@ -21,6 +21,7 @@ use App\Http\Controllers\Order\OrderController;
 
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\PermissionsController;
+use App\Http\Controllers\WorkspaceMvpController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\NotificationController;
 
@@ -147,6 +148,7 @@ Route::middleware('auth:api')->group(function () {
     //Permissions
     Route::post("permissions",  [PermissionsController::class, "index"]);
     Route::post("permissions/workspace",  [PermissionsController::class, "index"]);
+    Route::post("workspace/mvp", [WorkspaceMvpController::class, "index"]);
 
     //Send Push Notification
     Route::post("sendnotification", [NotificationController::class, "send"]);

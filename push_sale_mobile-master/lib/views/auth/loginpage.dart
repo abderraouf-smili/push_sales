@@ -147,6 +147,10 @@ class LoginPage extends StatelessWidget {
                               loginPageController.jumpToPage(1);
                               Map<String, dynamic> sign =
                                   await authController.SignInWithGoogle();
+                              if (sign["response"] != "logged" &&
+                                  sign["response"] != "create") {
+                                loginPageController.jumpToPage(0);
+                              }
                               CheckLoginSign(sign);
                             },
                           ),
@@ -160,6 +164,10 @@ class LoginPage extends StatelessWidget {
                               loginPageController.jumpToPage(2);
                               Map<String, dynamic> sign =
                                   await authController.SignInWithFacebook();
+                              if (sign["response"] != "logged" &&
+                                  sign["response"] != "create") {
+                                loginPageController.jumpToPage(0);
+                              }
                               CheckLoginSign(sign);
                             },
                           ),

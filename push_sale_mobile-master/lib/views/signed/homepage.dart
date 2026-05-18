@@ -16,6 +16,7 @@ import 'package:push_sale/views/signed/widgets/delivery/main_delivery_page.dart'
 import 'package:push_sale/views/signed/widgets/products/product_main_page.dart';
 import 'package:push_sale/views/signed/widgets/tracking/main_tracking_page.dart';
 import 'package:push_sale/views/signed/widgets/transfert/main_transfer_page.dart';
+import 'package:push_sale/views/signed/workspace/workspace_mvp_page.dart';
 import 'package:push_sale/widgets/common/app_loading_state.dart';
 
 class HomePage extends StatefulWidget {
@@ -92,54 +93,49 @@ class _HomePageState extends State<HomePage> {
                         _index = index;
                       });
                     },
-                    destinations: [
-                      NavigationDestination(
-                        icon: const Icon(Icons.dashboard_outlined),
-                        selectedIcon: const Icon(Icons.dashboard_rounded),
-                        label: "dashboard".tr,
-                      ),
-                      _secondDestination(),
-                      _thirdDestination(),
-                      _fourthDestination(),
-                      NavigationDestination(
-                        icon: const Icon(Icons.person_outline_rounded),
-                        selectedIcon: const Icon(Icons.person_rounded),
-                        label: "settings".tr,
-                      ),
-                    ],
+                    destinations: _bottomDestinations(),
                   )
                 : const SizedBox.shrink(),
           ),
           body: Obx(() {
             if (perm.PermissionLoaded.value) {
+              final bool workspaceMvp = _usesWorkspaceMvp();
               final bool deliveryWorkspace = _isDeliveryWorkspace();
-              screen = deliveryWorkspace
-                  ? [
-                      perm.check(StatsPage(), "HomePage.StatsPage"),
-                      const DeliveryStockMobilePage(),
-                      MainDeliveryPage(),
-                      const DeliveryRoutesPage(),
-                      perm.check(CompteSetting(), "HomePage.CompteSetting"),
-                    ]
-                  : [
-                      perm.check(StatsPage(), "HomePage.StatsPage"),
-                      perm.check(null, "HomePage.Clients")
-                          //for the prevente/classic profile
-                          ? Clients(_postedClientId)
-                          : perm.check(null, "HomePage.MainTransferPage")
-                              // for delivery profile
-                              ? MainTransferPage()
-                              : const Favorite(),
-                      perm.check(null, "HomePage.MainTrackingOrder")
-                          //for the prevente profile
-                          ? MainTrackingOrder()
-                          : perm.check(null, "HomePage.MainDeliveryPage")
-                              // for delivery profile
-                              ? MainDeliveryPage()
-                              : const Favorite(),
-                      perm.check(ProductMainPage(), "HomePage.ProductMainPage"),
-                      perm.check(CompteSetting(), "HomePage.CompteSetting"),
-                    ];
+              screen = workspaceMvp
+                  ? _workspaceTabs()
+                      .map((tab) => WorkspaceMvpPage(section: tab.section))
+                      .toList()
+                  : deliveryWorkspace
+                      ? [
+                          perm.check(StatsPage(), "HomePage.StatsPage"),
+                          const DeliveryStockMobilePage(),
+                          MainDeliveryPage(),
+                          const DeliveryRoutesPage(),
+                          perm.check(CompteSetting(), "HomePage.CompteSetting"),
+                        ]
+                      : [
+                          perm.check(StatsPage(), "HomePage.StatsPage"),
+                          perm.check(null, "HomePage.Clients")
+                              //for the prevente/classic profile
+                              ? Clients(_postedClientId)
+                              : perm.check(null, "HomePage.MainTransferPage")
+                                  // for delivery profile
+                                  ? MainTransferPage()
+                                  : const Favorite(),
+                          perm.check(null, "HomePage.MainTrackingOrder")
+                              //for the prevente profile
+                              ? MainTrackingOrder()
+                              : perm.check(null, "HomePage.MainDeliveryPage")
+                                  // for delivery profile
+                                  ? MainDeliveryPage()
+                                  : const Favorite(),
+                          perm.check(
+                              ProductMainPage(), "HomePage.ProductMainPage"),
+                          perm.check(CompteSetting(), "HomePage.CompteSetting"),
+                        ];
+              if (_index < 0 || _index >= screen.length) {
+                _index = 0;
+              }
               final Widget currentScreen = KeyedSubtree(
                 key: ValueKey<int>(_index),
                 child: screen[_index] as Widget,
@@ -159,21 +155,7 @@ class _HomePageState extends State<HomePage> {
                           _index = index;
                         });
                       },
-                      destinations: [
-                        NavigationRailDestination(
-                          icon: const Icon(Icons.dashboard_outlined),
-                          selectedIcon: const Icon(Icons.dashboard_rounded),
-                          label: Text("dashboard".tr),
-                        ),
-                        _secondRailDestination(),
-                        _thirdRailDestination(),
-                        _fourthRailDestination(),
-                        NavigationRailDestination(
-                          icon: const Icon(Icons.person_outline_rounded),
-                          selectedIcon: const Icon(Icons.person_rounded),
-                          label: Text("settings".tr),
-                        ),
-                      ],
+                      destinations: _railDestinations(),
                     ),
                     const VerticalDivider(width: 1),
                     Expanded(child: currentScreen),
@@ -215,6 +197,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<_DrawerItem> _drawerItems() {
+    if (_usesWorkspaceMvp()) {
+      return _workspaceTabs()
+          .map((tab) => _DrawerItem(label: tab.label, icon: tab.selectedIcon))
+          .toList();
+    }
+
     final bool deliveryWorkspace = _isDeliveryWorkspace();
     return [
       _DrawerItem(
@@ -259,10 +247,256 @@ class _HomePageState extends State<HomePage> {
   }
 
   bool _isDeliveryWorkspace() {
+    if (_usesWorkspaceMvp()) {
+      return false;
+    }
+
     return perm.check(null, "HomePage.MainDeliveryPage") &&
         !perm.check(null, "HomePage.MainTrackingOrder") &&
         !perm.check(null, "HomePage.Clients") &&
         !perm.check(null, "HomePage.MainTransferPage");
+  }
+
+  bool _usesWorkspaceMvp() {
+    return const {
+      "superadmin",
+      "distributeur",
+      "depot",
+      "livreur",
+      "point_vente",
+    }.contains(perm.workspaceType.value);
+  }
+
+  List<_WorkspaceTab> _workspaceTabs() {
+    switch (perm.workspaceType.value) {
+      case "superadmin":
+        return const [
+          _WorkspaceTab(
+            section: "dashboard",
+            label: "Accueil",
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home_rounded,
+          ),
+          _WorkspaceTab(
+            section: "distributors",
+            label: "Distributeurs",
+            icon: Icons.business_outlined,
+            selectedIcon: Icons.business_rounded,
+          ),
+          _WorkspaceTab(
+            section: "actors",
+            label: "Acteurs",
+            icon: Icons.groups_outlined,
+            selectedIcon: Icons.groups_rounded,
+          ),
+          _WorkspaceTab(
+            section: "products",
+            label: "Produits",
+            icon: Icons.inventory_2_outlined,
+            selectedIcon: Icons.inventory_2_rounded,
+          ),
+          _WorkspaceTab(
+            section: "profile",
+            label: "Profil",
+            icon: Icons.person_outline_rounded,
+            selectedIcon: Icons.person_rounded,
+          ),
+        ];
+      case "distributeur":
+        return const [
+          _WorkspaceTab(
+            section: "dashboard",
+            label: "Accueil",
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home_rounded,
+          ),
+          _WorkspaceTab(
+            section: "actors",
+            label: "Acteurs",
+            icon: Icons.groups_outlined,
+            selectedIcon: Icons.groups_rounded,
+          ),
+          _WorkspaceTab(
+            section: "warehouses",
+            label: "Depots",
+            icon: Icons.warehouse_outlined,
+            selectedIcon: Icons.warehouse_rounded,
+          ),
+          _WorkspaceTab(
+            section: "products",
+            label: "Produits",
+            icon: Icons.inventory_2_outlined,
+            selectedIcon: Icons.inventory_2_rounded,
+          ),
+          _WorkspaceTab(
+            section: "profile",
+            label: "Profil",
+            icon: Icons.person_outline_rounded,
+            selectedIcon: Icons.person_rounded,
+          ),
+        ];
+      case "depot":
+        return const [
+          _WorkspaceTab(
+            section: "dashboard",
+            label: "Accueil",
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home_rounded,
+          ),
+          _WorkspaceTab(
+            section: "prepare_orders",
+            label: "Preparations",
+            icon: Icons.fact_check_outlined,
+            selectedIcon: Icons.fact_check_rounded,
+          ),
+          _WorkspaceTab(
+            section: "loadings",
+            label: "Chargements",
+            icon: Icons.local_shipping_outlined,
+            selectedIcon: Icons.local_shipping_rounded,
+          ),
+          _WorkspaceTab(
+            section: "warehouse_stock",
+            label: "Stock",
+            icon: Icons.inventory_2_outlined,
+            selectedIcon: Icons.inventory_2_rounded,
+          ),
+          _WorkspaceTab(
+            section: "profile",
+            label: "Profil",
+            icon: Icons.person_outline_rounded,
+            selectedIcon: Icons.person_rounded,
+          ),
+        ];
+      case "livreur":
+        return const [
+          _WorkspaceTab(
+            section: "dashboard",
+            label: "Accueil",
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home_rounded,
+          ),
+          _WorkspaceTab(
+            section: "stock_mobile",
+            label: "Stock",
+            icon: Icons.inventory_2_outlined,
+            selectedIcon: Icons.inventory_2_rounded,
+          ),
+          _WorkspaceTab(
+            section: "delivery",
+            label: "Delivery",
+            icon: Icons.local_shipping_outlined,
+            selectedIcon: Icons.local_shipping_rounded,
+          ),
+          _WorkspaceTab(
+            section: "routes",
+            label: "Trajets",
+            icon: Icons.route_outlined,
+            selectedIcon: Icons.route_rounded,
+          ),
+          _WorkspaceTab(
+            section: "profile",
+            label: "Profil",
+            icon: Icons.person_outline_rounded,
+            selectedIcon: Icons.person_rounded,
+          ),
+        ];
+      case "point_vente":
+        return const [
+          _WorkspaceTab(
+            section: "dashboard",
+            label: "Accueil",
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home_rounded,
+          ),
+          _WorkspaceTab(
+            section: "catalog",
+            label: "Catalogue",
+            icon: Icons.storefront_outlined,
+            selectedIcon: Icons.storefront_rounded,
+          ),
+          _WorkspaceTab(
+            section: "cart",
+            label: "Panier",
+            icon: Icons.shopping_cart_outlined,
+            selectedIcon: Icons.shopping_cart_rounded,
+          ),
+          _WorkspaceTab(
+            section: "my_orders",
+            label: "Commandes",
+            icon: Icons.receipt_long_outlined,
+            selectedIcon: Icons.receipt_long_rounded,
+          ),
+          _WorkspaceTab(
+            section: "profile",
+            label: "Profil",
+            icon: Icons.person_outline_rounded,
+            selectedIcon: Icons.person_rounded,
+          ),
+        ];
+      default:
+        return const [];
+    }
+  }
+
+  List<NavigationDestination> _bottomDestinations() {
+    if (_usesWorkspaceMvp()) {
+      return _workspaceTabs()
+          .map(
+            (tab) => NavigationDestination(
+              icon: Icon(tab.icon),
+              selectedIcon: Icon(tab.selectedIcon),
+              label: tab.label,
+            ),
+          )
+          .toList();
+    }
+
+    return [
+      NavigationDestination(
+        icon: const Icon(Icons.dashboard_outlined),
+        selectedIcon: const Icon(Icons.dashboard_rounded),
+        label: "dashboard".tr,
+      ),
+      _secondDestination(),
+      _thirdDestination(),
+      _fourthDestination(),
+      NavigationDestination(
+        icon: const Icon(Icons.person_outline_rounded),
+        selectedIcon: const Icon(Icons.person_rounded),
+        label: "settings".tr,
+      ),
+    ];
+  }
+
+  List<NavigationRailDestination> _railDestinations() {
+    if (_usesWorkspaceMvp()) {
+      return _workspaceTabs()
+          .map(
+            (tab) => NavigationRailDestination(
+              icon: Icon(tab.icon),
+              selectedIcon: Icon(tab.selectedIcon),
+              label: Text(tab.label),
+            ),
+          )
+          .toList();
+    }
+
+    return [
+      NavigationRailDestination(
+        icon: const Icon(Icons.dashboard_outlined),
+        selectedIcon: const Icon(Icons.dashboard_rounded),
+        label: Text("dashboard".tr),
+      ),
+      _secondRailDestination(),
+      _thirdRailDestination(),
+      _fourthRailDestination(),
+      NavigationRailDestination(
+        icon: const Icon(Icons.person_outline_rounded),
+        selectedIcon: const Icon(Icons.person_rounded),
+        label: Text("settings".tr),
+      ),
+    ];
   }
 
   NavigationDestination _secondDestination() {
@@ -403,6 +637,20 @@ class _DrawerItem {
   final IconData icon;
 
   const _DrawerItem({required this.label, required this.icon});
+}
+
+class _WorkspaceTab {
+  final String section;
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+
+  const _WorkspaceTab({
+    required this.section,
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+  });
 }
 
 class _PushSalesDrawer extends StatelessWidget {

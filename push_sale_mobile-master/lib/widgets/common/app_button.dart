@@ -34,7 +34,7 @@ class AppButton extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: 46,
       child: ElevatedButton.icon(
         onPressed: loading ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -46,6 +46,7 @@ class AppButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           ),
+          visualDensity: VisualDensity.compact,
         ),
         icon: loading
             ? SizedBox(
@@ -56,8 +57,8 @@ class AppButton extends StatelessWidget {
                   color: foreground,
                 ),
               )
-            : Icon(icon ?? Icons.check, size: 20),
-        label: Text(label, style: AppTextStyles.button),
+            : Icon(icon ?? Icons.check, size: 18),
+        label: Text(label, style: AppTextStyles.button.copyWith(fontSize: 14)),
       ),
     );
   }
