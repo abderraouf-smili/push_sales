@@ -27,6 +27,76 @@ Etat API verifie le 2026-05-17 :
 - `/api/currentstock` retourne du stock pour livreur et depot.
 - `/api/toshiporders` retourne une commande demo pour livreur.
 
+Etat workspace verifie le 2026-05-18 :
+- `/api/permissions` garde `permission/type_actor`.
+- `/api/permissions` ajoute `workspace_type`, `menus`, `actions`, `permissions`.
+- Comptes demo cibles : SuperAdmin, manager distributeur, admin, commercial, depot, livreur, point de vente.
+
+## Scenario SuperAdmin plateforme
+
+Role : SuperAdmin
+
+Preconditions :
+- Compte `superadmin@pushsales.local`.
+- Migration `workspace_type` executee si possible.
+
+Etapes :
+1. Se connecter.
+2. Appeler `/api/permissions`.
+3. Verifier `workspace_type = superadmin`.
+4. Verifier menus : dashboard global, distributeurs, acteurs, audit, parametres.
+5. Verifier que le SuperAdmin n'est rattache a aucun distributeur obligatoire.
+6. Verifier qu'aucune donnee sensible ou token ne s'affiche.
+
+Resultat attendu :
+- Le contrat workspace est clair et exploitable par Flutter.
+- Les futurs ecrans SuperAdmin peuvent utiliser `menus/actions` sans casser l'ancien mobile.
+
+Statut manuel : OK / KO
+
+## Scenario Manager Distributeur
+
+Role : Manager Distributeur
+
+Preconditions :
+- Compte `manager.distributeur@pushsales.local`.
+- Donnees demo `DIST-TEST`.
+
+Etapes :
+1. Se connecter.
+2. Verifier `workspace_type = distributeur`.
+3. Verifier acces dashboard, depots, produits, clients, commandes et rapports selon permissions.
+4. Ouvrir depots et stock.
+5. Ouvrir produits et prix.
+6. Verifier que seules les donnees du distributeur de test sont visibles.
+
+Resultat attendu :
+- Workspace distributeur clair.
+- Compatibilite avec les menus admin existants.
+
+Statut manuel : OK / KO
+
+## Scenario Point de Vente
+
+Role : Point de Vente
+
+Preconditions :
+- Compte `pointvente.test@pushsales.local`.
+- Donnees demo catalogue disponibles.
+
+Etapes :
+1. Se connecter.
+2. Appeler `/api/permissions`.
+3. Verifier `workspace_type = point_vente`.
+4. Verifier menus cibles : home, catalog, cart, my_orders, credit, promotions, support, profile.
+5. Verifier que les ecrans Flutter historiques ne cassent pas si le portail point de vente n'est pas encore complet.
+
+Resultat attendu :
+- Base API et compte de test prets pour le futur portail B2B point de vente.
+- Les workflows client final restent documentes comme a finaliser cote UI.
+
+Statut manuel : OK / KO
+
 ## Scenario Admin
 
 Role : Admin

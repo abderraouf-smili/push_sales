@@ -141,10 +141,13 @@ C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder
 Comptes crees :
 
 ```text
+superadmin@pushsales.local / Test@123456
+manager.distributeur@pushsales.local / Test@123456
 admin.test@pushsales.local / Test@123456
 commercial.test@pushsales.local / Test@123456
 livreur.test@pushsales.local / Test@123456
 depot.test@pushsales.local / Test@123456
+pointvente.test@pushsales.local / Test@123456
 ```
 
 Ces comptes sont uniquement pour local/dev/test. Voir `TEST_ACCOUNTS.md`.
@@ -161,6 +164,27 @@ C:\tools\php83\php.exe artisan db:seed --class=DemoDataSeeder
 ```
 
 Le seeder est bloque en environnement `production`. Il cree aussi, si elles sont absentes, des vues de compatibilite dev utilisees par les controllers existants : `stock_warehouse`, `purchase_variants`, `full_variant`.
+
+## Workspaces B2B
+
+L'endpoint historique `POST /api/permissions` reste compatible avec Flutter (`permission` et `type_actor` restent presents). Il retourne aussi le contrat B2B progressif :
+
+```json
+{
+  "workspace_type": "commercial",
+  "menus": ["dashboard", "clients", "tracking", "products", "profile"],
+  "actions": ["create_client", "create_order", "track_order"],
+  "permissions": ["HomePage.Clients"]
+}
+```
+
+Alias disponible :
+
+```text
+POST /api/permissions/workspace
+```
+
+Workspaces cibles : `superadmin`, `distributeur`, `commercial`, `depot`, `livreur`, `point_vente`.
 
 ## Cles Google/Firebase
 

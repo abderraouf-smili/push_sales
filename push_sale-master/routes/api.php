@@ -146,6 +146,7 @@ Route::middleware('auth:api')->group(function () {
 
     //Permissions
     Route::post("permissions",  [PermissionsController::class, "index"]);
+    Route::post("permissions/workspace",  [PermissionsController::class, "index"]);
 
     //Send Push Notification
     Route::post("sendnotification", [NotificationController::class, "send"]);

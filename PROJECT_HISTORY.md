@@ -1,5 +1,19 @@
 # PROJECT_HISTORY
 
+## 2026-05-18 - Socle B2B workspaces, permissions et donnees demo etendues
+
+- Zone modifiee : backend Laravel permissions/workspaces, seeders demo, controller Flutter permissions, documentation projet.
+- Objectif : preparer Push Sales comme plateforme B2B multi-workspace sans casser les routes existantes ni les ecrans Flutter actuels.
+- Resume : ajout d'un resolver workspace Laravel (`superadmin`, `distributeur`, `commercial`, `depot`, `livreur`, `point_vente`), ajout du champ non destructif `actor_profile.workspace_type`, enrichissement de `/api/permissions` avec `menus`, `actions`, `workspace_type` et conservation du format legacy `permission`/`type_actor`.
+- Seeders : ajout des comptes SuperAdmin, Manager Distributeur et Point de Vente; extension des donnees demo a 20 produits, 10 points de vente, variants, prix, stock et workflows existants.
+- Flutter : `PermissionsController` lit maintenant le contrat workspace sans casser les anciennes permissions.
+- Risque : moyen, car le socle roles/workspaces touche l'authz et les seeders, mais les routes metier et formats legacy restent compatibles.
+- Impact logique metier : logique existante conservee; ajout de visibilite workspace et de donnees dev/test.
+- Tests effectues : migration OK, seeders OK, routes OK, login + permissions verifies pour 6 comptes, `flutter clean` OK, `flutter pub get` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug` OK, APK installe/lance sur SM A165F via ADB.
+- Warnings restants : `flutter analyze` strict conserve 762 issues historiques non bloquantes, surtout style, `print`, deprecations et widgets mutables.
+- Point d'attention : `AGENTS.md` est marque supprime dans le working tree avant cette finalisation; non restaure pour ne pas ecraser une action utilisateur.
+- Prochaine etape : implementer les vrais ecrans UI/API SuperAdmin, Manager Distributeur et Point de Vente au-dessus de ce contrat workspace.
+
 ## 2026-05-18 - Profil commercial moderne connecte API
 
 - Zone modifiee : Flutter mobile, dashboard commercial, clients, fiche client, tracking commandes et catalogue produits.

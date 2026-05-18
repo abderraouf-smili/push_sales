@@ -199,6 +199,159 @@ class DemoDataSeeder extends Seeder
                 'stock' => 220,
                 'package' => 24,
             ],
+            [
+                'ssin' => 'DEMO-LAIT-1L',
+                'name' => 'Lait UHT entier 1L',
+                'variant' => 'Carton 12',
+                'barcode' => 'DEMO000004',
+                'price' => 99,
+                'stock' => 180,
+                'package' => 12,
+            ],
+            [
+                'ssin' => 'DEMO-HUILE-1L',
+                'name' => 'Huile tournesol 1L',
+                'variant' => 'Carton 12',
+                'barcode' => 'DEMO000005',
+                'price' => 210,
+                'stock' => 70,
+                'package' => 12,
+            ],
+            [
+                'ssin' => 'DEMO-SUCRE-1KG',
+                'name' => 'Sucre blanc 1kg',
+                'variant' => 'Sac 10',
+                'barcode' => 'DEMO000006',
+                'price' => 135,
+                'stock' => 45,
+                'package' => 10,
+            ],
+            [
+                'ssin' => 'DEMO-RIZ-5KG',
+                'name' => 'Riz long grain 5kg',
+                'variant' => 'Sac',
+                'barcode' => 'DEMO000007',
+                'price' => 680,
+                'stock' => 32,
+                'package' => 1,
+            ],
+            [
+                'ssin' => 'DEMO-TOMATE-400',
+                'name' => 'Pulpe de tomate 400g',
+                'variant' => 'Carton 24',
+                'barcode' => 'DEMO000008',
+                'price' => 85,
+                'stock' => 210,
+                'package' => 24,
+            ],
+            [
+                'ssin' => 'DEMO-THON-160',
+                'name' => 'Thon huile vegetale 160g',
+                'variant' => 'Carton 48',
+                'barcode' => 'DEMO000009',
+                'price' => 155,
+                'stock' => 28,
+                'package' => 48,
+            ],
+            [
+                'ssin' => 'DEMO-CAFE-200',
+                'name' => 'Cafe moulu 200g',
+                'variant' => 'Carton 20',
+                'barcode' => 'DEMO000010',
+                'price' => 320,
+                'stock' => 55,
+                'package' => 20,
+            ],
+            [
+                'ssin' => 'DEMO-BISCUIT-12',
+                'name' => 'Biscuits fourres',
+                'variant' => 'Pack 12',
+                'barcode' => 'DEMO000011',
+                'price' => 145,
+                'stock' => 160,
+                'package' => 12,
+            ],
+            [
+                'ssin' => 'DEMO-DETERGENT-2L',
+                'name' => 'Detergent liquide 2L',
+                'variant' => 'Carton 6',
+                'barcode' => 'DEMO000012',
+                'price' => 390,
+                'stock' => 50,
+                'package' => 6,
+            ],
+            [
+                'ssin' => 'DEMO-SAVON-4',
+                'name' => 'Savon toilette x4',
+                'variant' => 'Pack 4',
+                'barcode' => 'DEMO000013',
+                'price' => 165,
+                'stock' => 90,
+                'package' => 4,
+            ],
+            [
+                'ssin' => 'DEMO-LINGETTES',
+                'name' => 'Lingettes bebe',
+                'variant' => 'Paquet',
+                'barcode' => 'DEMO000014',
+                'price' => 260,
+                'stock' => 64,
+                'package' => 1,
+            ],
+            [
+                'ssin' => 'DEMO-PATES-500',
+                'name' => 'Pates 500g',
+                'variant' => 'Carton 20',
+                'barcode' => 'DEMO000015',
+                'price' => 75,
+                'stock' => 140,
+                'package' => 20,
+            ],
+            [
+                'ssin' => 'DEMO-COUSCOUS-1KG',
+                'name' => 'Couscous moyen 1kg',
+                'variant' => 'Sac 10',
+                'barcode' => 'DEMO000016',
+                'price' => 125,
+                'stock' => 110,
+                'package' => 10,
+            ],
+            [
+                'ssin' => 'DEMO-FARINE-1KG',
+                'name' => 'Farine 1kg',
+                'variant' => 'Sac 10',
+                'barcode' => 'DEMO000017',
+                'price' => 95,
+                'stock' => 80,
+                'package' => 10,
+            ],
+            [
+                'ssin' => 'DEMO-CHIPS-50',
+                'name' => 'Chips salees 50g',
+                'variant' => 'Carton 36',
+                'barcode' => 'DEMO000018',
+                'price' => 45,
+                'stock' => 240,
+                'package' => 36,
+            ],
+            [
+                'ssin' => 'DEMO-CHOCOLAT-100',
+                'name' => 'Chocolat lait 100g',
+                'variant' => 'Carton 24',
+                'barcode' => 'DEMO000019',
+                'price' => 130,
+                'stock' => 75,
+                'package' => 24,
+            ],
+            [
+                'ssin' => 'DEMO-EAU-05',
+                'name' => 'Eau minerale 0.5L',
+                'variant' => 'Pack 12',
+                'barcode' => 'DEMO000020',
+                'price' => 145,
+                'stock' => 260,
+                'package' => 12,
+            ],
         ];
 
         $priceListId = DB::table('pricelist')->updateOrInsert(
@@ -315,9 +468,16 @@ class DemoDataSeeder extends Seeder
     private function seedClients($now): array
     {
         $clients = [
-            ['id' => 'CL-DEMO-001', 'actor' => 'ACT-TEST-COMMERCIAL', 'name' => 'Epicerie El Amane', 'typepv' => 1, 'lat' => 36.7602, 'lng' => 3.0501],
-            ['id' => 'CL-DEMO-002', 'actor' => 'ACT-TEST-COMMERCIAL', 'name' => 'Superette Atlas', 'typepv' => 2, 'lat' => 36.7489, 'lng' => 3.0721],
-            ['id' => 'CL-DEMO-003', 'actor' => 'ACT-TEST-ADMIN', 'name' => 'Client Admin Demo', 'typepv' => 1, 'lat' => 36.7550, 'lng' => 3.0600],
+            ['id' => 'CL-DEMO-001', 'actor' => 'ACT-TEST-COMMERCIAL', 'name' => 'Epicerie El Amane', 'typepv' => 1, 'lat' => 36.7602, 'lng' => 3.0501, 'days' => ['Lundi', 'Mercredi']],
+            ['id' => 'CL-DEMO-002', 'actor' => 'ACT-TEST-COMMERCIAL', 'name' => 'Superette Atlas', 'typepv' => 2, 'lat' => 36.7489, 'lng' => 3.0721, 'days' => ['Dimanche', 'Jeudi']],
+            ['id' => 'CL-DEMO-003', 'actor' => 'ACT-TEST-ADMIN', 'name' => 'Client Admin Demo', 'typepv' => 1, 'lat' => 36.7550, 'lng' => 3.0600, 'days' => ['Mardi']],
+            ['id' => 'CL-DEMO-004', 'actor' => 'ACT-TEST-COMMERCIAL', 'name' => 'Cafe Al Amal', 'typepv' => 1, 'lat' => 36.7641, 'lng' => 3.0442, 'days' => ['Samedi', 'Mardi']],
+            ['id' => 'CL-DEMO-005', 'actor' => 'ACT-TEST-COMMERCIAL', 'name' => 'Supermarche Marjane', 'typepv' => 2, 'lat' => 36.7415, 'lng' => 3.0861, 'days' => ['Lundi']],
+            ['id' => 'CL-DEMO-006', 'actor' => 'ACT-TEST-COMMERCIAL', 'name' => 'Epicerie Badr', 'typepv' => 1, 'lat' => 36.7322, 'lng' => 3.0913, 'days' => ['Mercredi', 'Vendredi']],
+            ['id' => 'CL-DEMO-007', 'actor' => 'ACT-TEST-COMMERCIAL', 'name' => 'Depot Al Ittihad', 'typepv' => 2, 'lat' => 36.7247, 'lng' => 3.1048, 'days' => ['Jeudi']],
+            ['id' => 'CL-DEMO-008', 'actor' => 'ACT-TEST-COMMERCIAL', 'name' => 'Boulangerie Les Delices', 'typepv' => 1, 'lat' => 36.7698, 'lng' => 3.0664, 'days' => ['Dimanche']],
+            ['id' => 'CL-DEMO-009', 'actor' => 'ACT-TEST-COMMERCIAL', 'name' => 'Pharmacie Andalous', 'typepv' => 2, 'lat' => 36.7509, 'lng' => 3.0385, 'days' => ['Mardi', 'Samedi']],
+            ['id' => 'CL-DEMO-010', 'actor' => 'ACT-TEST-COMMERCIAL', 'name' => 'Alimentation Rahma', 'typepv' => 1, 'lat' => 36.7399, 'lng' => 3.0562, 'days' => ['Vendredi']],
         ];
 
         $created = [];
@@ -352,6 +512,13 @@ class DemoDataSeeder extends Seeder
                     'address_id' => $addressId,
                 ]
             );
+
+            foreach ($client['days'] as $day) {
+                DB::table('visit_days')->updateOrInsert(
+                    ['client_id' => $client['id'], 'day' => $day],
+                    ['created_at' => $now, 'updated_at' => $now]
+                );
+            }
             $created[] = $client['id'];
         }
 

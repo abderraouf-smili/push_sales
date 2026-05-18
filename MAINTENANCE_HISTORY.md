@@ -1,5 +1,56 @@
 # MAINTENANCE_HISTORY
 
+## 2026-05-18 - Socle B2B workspaces, seeders et contrat permissions
+
+Objectif :
+- Poser une base backend/API claire pour les espaces SuperAdmin, Distributeur, Commercial, Depot, Livreur et Point de Vente, en gardant la compatibilite avec l'application Flutter existante.
+
+Resume technique :
+- Ajout de `WorkspaceResolver` pour centraliser la resolution `workspace_type`, les menus et les actions par espace.
+- Ajout d'une migration non destructive sur `actor_profile.workspace_type`.
+- Enrichissement de `PermissionsController` avec `user`, `actor`, `profile`, `workspace_type`, `menus`, `legacy_menus`, `actions`, `permissions`.
+- Conservation du contrat legacy `permission` et `type_actor` pour ne pas casser les ecrans Flutter actuels.
+- Extension de `TestUsersByRoleSeeder` avec SuperAdmin, Manager Distributeur et Point de Vente.
+- Extension de `DemoDataSeeder` avec plus de points de vente, produits, variants, prix et stock demo.
+- Mise a jour de `permissions_controller.dart` pour consommer le nouveau contrat workspace.
+
+Commandes executees :
+- `C:\tools\php83\php.exe artisan migrate --force`
+- `C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder`
+- `C:\tools\php83\php.exe artisan db:seed --class=DemoDataSeeder`
+- `C:\tools\php83\php.exe artisan route:list`
+- `C:\tools\php83\php.exe artisan config:clear`
+- `C:\tools\php83\php.exe artisan cache:clear`
+- `C:\tools\php83\php.exe artisan route:clear`
+- Verification HTTP login + `/api/permissions` pour les 6 comptes demo sans afficher les tokens.
+- `dart format lib\controllers\permissions_controller.dart`
+- `flutter clean`
+- `flutter pub get`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter analyze`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter devices`
+- `adb -s 10.212.134.2:35599 install -r build\app\outputs\flutter-apk\app-debug.apk`
+- `adb -s 10.212.134.2:35599 shell monkey -p com.softstarter.pushsale -c android.intent.category.LAUNCHER 1`
+
+Resultats :
+- Migration OK.
+- Seeders OK.
+- Routes OK, dont `api/permissions` et `api/permissions/workspace`.
+- Comptes demo OK : superadmin, manager distributeur, commercial, depot, livreur, point de vente.
+- Analyse no-fatal OK.
+- Analyse stricte KO avec 762 issues historiques non bloquantes.
+- APK debug genere avec succes : `push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk`.
+- APK installe et lance sur SM A165F `10.212.134.2:35599`.
+
+Risque :
+- Moyen. La base permissions/workspaces est compatible, mais les ecrans complets SuperAdmin, Manager Distributeur et Point de Vente restent a implementer au-dessus du socle.
+
+Points restants :
+- Nettoyer progressivement les 762 warnings Flutter stricts.
+- Implementer les CRUD/API/ecrans complets SuperAdmin, Distributeur et Point de Vente.
+- Restaurer ou recreer `AGENTS.md` si sa suppression actuelle n'est pas volontaire.
+
 ## 2026-05-18 - Profil commercial dashboard, clients, tracking et produits
 
 Objectif :

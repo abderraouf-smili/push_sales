@@ -29,10 +29,13 @@ Test@123456
 
 | Role | Email | Mot de passe | Permissions principales | Scenario associe |
 | --- | --- | --- | --- | --- |
+| SuperAdmin | superadmin@pushsales.local | Test@123456 | Workspace global, distributeurs, acteurs, audit, parametres globaux | Supervision plateforme |
+| Manager Distributeur | manager.distributeur@pushsales.local | Test@123456 | Dashboard distributeur, acteurs, depots, produits, stock, commandes, rapports | Pilotage distributeur |
 | Admin | admin.test@pushsales.local | Test@123456 | Dashboard, clients, produits, tracking, statistiques, coupons, promotions, acteurs, entrepots | Validation administration et supervision |
 | Commercial | commercial.test@pushsales.local | Test@123456 | Dashboard, clients, ajout client, catalogue, commandes, tracking, statistiques commerciales | Vente terrain et creation commande |
 | Livreur | livreur.test@pushsales.local | Test@123456 | Dashboard livraison, livraisons, produits, compte, encaissement, preuve de livraison si activee | Livraison, cash et impression |
 | Depot / Distributeur | depot.test@pushsales.local | Test@123456 | Dashboard, transfert/chargement, stock mobile, produits, compte | Preparation, chargement et stock |
+| Point de Vente | pointvente.test@pushsales.local | Test@123456 | Catalogue, commandes, credit, promotions, support | Portail B2B client final |
 
 ## Securite
 
@@ -44,7 +47,8 @@ Test@123456
 ## Notes techniques
 
 - Les roles reels de production sont controles par `actor.type`, `actor.profile_id`, `actor_profile` et `permissions`.
-- Le seeder cree des profils de test dedies avec des permissions coherentes pour les ecrans Flutter existants.
+- Le seeder cree des profils de test dedies avec des permissions coherentes pour les ecrans Flutter existants et les workspaces B2B cibles.
+- L'endpoint `/api/permissions` retourne l'ancien format `permission/type_actor` et le nouveau format `workspace_type/menus/actions/permissions`.
 - Il ne modifie pas les routes API, les migrations existantes ou la logique metier.
 - En mode debug Flutter, les comptes `@pushsales.local` utilisent un fallback Laravel direct si Firebase Auth ne les trouve pas. Les comptes normaux continuent a utiliser Firebase Auth.
 - En build release/production, garder le flux Firebase normal ou creer les utilisateurs Firebase correspondants avec des UID synchronises cote Laravel.

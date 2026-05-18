@@ -11,7 +11,7 @@ class ActorProfile extends Model
     use HasApiTokens,HasFactory;
     protected $table="actor_profile";
 
-    protected $fillable = ["id","code","name","name_ar","has_stock_mobile","add_client"];
+    protected $fillable = ["id","code","name","name_ar","workspace_type","has_stock_mobile","add_client"];
 
     protected $hidden = ["created_at","updated_at"];
 }

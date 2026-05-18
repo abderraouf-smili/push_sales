@@ -7,6 +7,11 @@ import 'package:push_sale/const/globals.dart' as global;
 class PermissionsController extends GetxController {
   //
   List<Permissions> localPermissions = [];
+  List<String> menus = [];
+  List<String> legacyMenus = [];
+  List<String> actions = [];
+  RxString workspaceType = ''.obs;
+  RxString actorType = ''.obs;
   RxBool PermissionLoaded = false.obs;
 
   void getInitialPermissions() async {
@@ -16,20 +21,42 @@ class PermissionsController extends GetxController {
       global.Permissions,
     );
     if (response.status == "SUCCESS") {
-      for (var item in response.data["permission"]) {
+      final data = response.data ?? {};
+      workspaceType.value = (data["workspace_type"] ?? '').toString();
+      actorType.value = (data["type_actor"] ?? '').toString();
+      menus = _stringList(data["menus"]);
+      legacyMenus = _stringList(data["legacy_menus"]);
+      actions = _stringList(data["actions"]);
+
+      for (var item in data["permission"] ?? []) {
         localPermissions.add(Permissions.fromMap(item));
       }
+      final isAdminLike = actorType.value == "admin" ||
+          workspaceType.value == "superadmin" ||
+          workspaceType.value == "distributeur";
       localPermissions.add(
         Permissions(
           id: -1,
           permission: "admin",
-          value: response.data["type_actor"] == "admin",
+          value: isAdminLike,
         ),
       );
       PermissionLoaded.value = true;
     } else {
       print(response.message);
     }
+  }
+
+  bool hasAction(String action) => actions.contains(action);
+
+  bool hasMenu(String menu) =>
+      menus.contains(menu) || legacyMenus.contains(menu);
+
+  List<String> _stringList(dynamic value) {
+    if (value is List) {
+      return value.map((item) => item.toString()).toList();
+    }
+    return [];
   }
 
   dynamic check(dynamic func, String function) {

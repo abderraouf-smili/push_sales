@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-05-18
+
+- Backend : ajout du contrat B2B progressif `workspace_type`, `menus`, `actions`, `permissions` sur `/api/permissions`, avec compatibilite legacy `permission/type_actor`.
+- Backend : ajout de l'alias `/api/permissions/workspace`.
+- Base de donnees : migration non destructive `actor_profile.workspace_type`.
+- Backend : ajout de `WorkspaceResolver` pour standardiser les workspaces `superadmin`, `distributeur`, `commercial`, `depot`, `livreur`, `point_vente`.
+- Seeders : comptes dev/test ajoutes pour `superadmin@pushsales.local`, `manager.distributeur@pushsales.local` et `pointvente.test@pushsales.local`.
+- Seeders : donnees demo etendues avec 20 produits et 10 points de vente/clients de demonstration.
+- Flutter : `PermissionsController` lit maintenant le nouveau contrat workspace sans casser les permissions existantes.
+- Documentation : ajout de `BUSINESS_WORKFLOWS.md`, `DATABASE_DESIGN.md`, `API_DOCUMENTATION.md` et `UI_UX_GUIDE.md`.
+- Documentation : mise a jour des comptes de test, scenarios et README dev pour la cible plateforme B2B.
+
 ## 2026-05-17
 
 - Audit UI : ajout de `UI_AUDIT.md` avec inventaire des pages Flutter principales et priorites restantes.
