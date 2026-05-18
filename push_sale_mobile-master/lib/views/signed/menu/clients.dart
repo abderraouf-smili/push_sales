@@ -42,6 +42,7 @@ class ListClients extends StatelessWidget {
   final PageController pageController = PageController();
   final TextEditingController searchController = TextEditingController();
   final RxString selectedVisitDay = "".obs;
+  final RxString selectedClientFilter = "all".obs;
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +51,8 @@ class ListClients extends StatelessWidget {
       child: Column(
         children: [
           AppPageHeader(
-            title: "clients".tr,
-            subtitle: "Recherche rapide, filtres et carte terrain",
+            title: "Clients",
+            subtitle: "Liste claire avec visites, commandes et acces carte",
             icon: Icons.groups_outlined,
           ),
           _SearchAndFilters(
@@ -60,6 +61,7 @@ class ListClients extends StatelessWidget {
             filterController: filterController,
             pageController: pageController,
             selectedVisitDay: selectedVisitDay,
+            selectedClientFilter: selectedClientFilter,
             countBuilder: () => _filteredClients().length,
           ),
           Expanded(
@@ -99,6 +101,7 @@ class ListClients extends StatelessWidget {
                                 filterController.selectedCity.value = 0;
                                 filterController.selectedTPV.value = 0;
                                 selectedVisitDay.value = "";
+                                selectedClientFilter.value = "all";
                                 clientController.filter = "";
                                 searchController.clear();
                                 clientController.ready.refresh();
@@ -170,6 +173,7 @@ class ListClients extends StatelessWidget {
     final nowDay = DateFormat("EEEE").format(DateTime.now()).toLowerCase();
     final query = clientController.filter.trim().toLowerCase();
     final selectedDay = selectedVisitDay.value;
+    final selectedFilter = selectedClientFilter.value;
 
     return clientController.clientsList.where((client) {
       final matchesSearch =
@@ -184,11 +188,18 @@ class ListClients extends StatelessWidget {
       final matchesSelectedDay = selectedDay.isEmpty ||
           (client.visitdays != null &&
               client.visitdays!.any((item) => item.day == selectedDay));
+      final matchesSmartFilter = switch (selectedFilter) {
+        "visit" => (client.visitdays ?? []).any((item) => item.day == nowDay),
+        "late" => (client.solde ?? 0) > 0 && (client.sales ?? 0) == 0,
+        "credit" => (client.solde ?? 0) > 0,
+        _ => true,
+      };
       return matchesSearch &&
           matchesCity &&
           matchesType &&
           matchesVisitDay &&
-          matchesSelectedDay;
+          matchesSelectedDay &&
+          matchesSmartFilter;
     }).toList();
   }
 }
@@ -199,6 +210,7 @@ class _SearchAndFilters extends StatelessWidget {
   final FilterController filterController;
   final PageController pageController;
   final RxString selectedVisitDay;
+  final RxString selectedClientFilter;
   final int Function() countBuilder;
 
   const _SearchAndFilters({
@@ -207,6 +219,7 @@ class _SearchAndFilters extends StatelessWidget {
     required this.filterController,
     required this.pageController,
     required this.selectedVisitDay,
+    required this.selectedClientFilter,
     required this.countBuilder,
   });
 
@@ -227,25 +240,38 @@ class _SearchAndFilters extends StatelessWidget {
         AppSpacing.md,
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextFormField(
-            controller: searchController,
-            decoration: InputDecoration(
-              hintText: "search".tr,
-              prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: IconButton(
-                onPressed: () {
-                  clientController.filter = "";
-                  searchController.clear();
-                  clientController.ready.refresh();
-                },
-                icon: const Icon(Icons.close_rounded, size: 18),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: "Rechercher client, ville, telephone...",
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        clientController.filter = "";
+                        searchController.clear();
+                        clientController.ready.refresh();
+                      },
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    clientController.filter = value;
+                    clientController.ready.refresh();
+                  },
+                ),
               ),
-            ),
-            onChanged: (value) {
-              clientController.filter = value;
-              clientController.ready.refresh();
-            },
+              const SizedBox(width: AppSpacing.sm),
+              FilledButton.icon(
+                onPressed: () => _goToClientPage(2),
+                icon: const Icon(Icons.map_outlined),
+                label: const Text("Voir carte"),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.sm),
           Obx(
@@ -281,90 +307,69 @@ class _SearchAndFilters extends StatelessWidget {
               duration: const Duration(milliseconds: 180),
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          _WeekdayScroller(selectedVisitDay: selectedVisitDay),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Obx(
-                () => Container(
-                  width: 42,
-                  height: 36,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    border: Border.all(color: AppColors.line),
+          const SizedBox(height: AppSpacing.md),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Obx(
+              () => Row(
+                children: [
+                  _ClientFilterPill(
+                    label: "Tous",
+                    count: countBuilder(),
+                    selected: selectedClientFilter.value == "all",
+                    onTap: () => selectedClientFilter.value = "all",
                   ),
-                  child: Text(
-                    countBuilder().toString(),
-                    style: AppTextStyles.caption.copyWith(
+                  _ClientFilterPill(
+                    label: "A visiter",
+                    selected: selectedClientFilter.value == "visit",
+                    onTap: () => selectedClientFilter.value = "visit",
+                  ),
+                  _ClientFilterPill(
+                    label: "En retard",
+                    selected: selectedClientFilter.value == "late",
+                    onTap: () => selectedClientFilter.value = "late",
+                  ),
+                  _ClientFilterPill(
+                    label: "Credit",
+                    selected: selectedClientFilter.value == "credit",
+                    onTap: () => selectedClientFilter.value = "credit",
+                  ),
+                  _ClientModeChip(
+                    label: "Filtres",
+                    icon: Icons.filter_alt_rounded,
+                    selected: filterController.filter_button.value,
+                    onTap: () {
+                      filterController.filter_button.value =
+                          !filterController.filter_button.value;
+                    },
+                  ),
+                  _ClientModeChip(
+                    label: "Liste",
+                    icon: Icons.view_headline_rounded,
+                    selected: clientController.page.value == 0,
+                    onTap: () => _goToClientPage(0),
+                  ),
+                  _ClientModeChip(
+                    label: "Grille",
+                    icon: Icons.grid_view_rounded,
+                    selected: clientController.page.value == 1,
+                    onTap: () => _goToClientPage(1),
+                  ),
+                  IconButton(
+                    onPressed: clientController.getClients,
+                    icon: const Icon(
+                      Icons.refresh_rounded,
                       color: AppColors.primary,
-                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Obx(
-                    () => Row(
-                      children: [
-                        _ClientModeChip(
-                          label: "Jour visite",
-                          icon: Icons.today_rounded,
-                          selected: clientController.visit_day_only.value,
-                          onTap: () {
-                            clientController.visit_day_only.value =
-                                !clientController.visit_day_only.value;
-                          },
-                        ),
-                        _ClientModeChip(
-                          label: "Filtres",
-                          icon: Icons.filter_alt_rounded,
-                          selected: filterController.filter_button.value,
-                          onTap: () {
-                            filterController.filter_button.value =
-                                !filterController.filter_button.value;
-                          },
-                        ),
-                        _ClientModeChip(
-                          label: "Liste",
-                          icon: Icons.view_headline_rounded,
-                          selected: clientController.page.value == 0,
-                          onTap: () {
-                            _goToClientPage(0);
-                          },
-                        ),
-                        _ClientModeChip(
-                          label: "Grille",
-                          icon: Icons.grid_view_rounded,
-                          selected: clientController.page.value == 1,
-                          onTap: () {
-                            _goToClientPage(1);
-                          },
-                        ),
-                        _ClientModeChip(
-                          label: "Carte",
-                          icon: Icons.language_rounded,
-                          selected: clientController.page.value == 2,
-                          onTap: () {
-                            _goToClientPage(2);
-                          },
-                        ),
-                        IconButton(
-                          onPressed: clientController.getClients,
-                          icon: const Icon(Icons.refresh_rounded,
-                              color: AppColors.primary),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            "Clients affectes",
+            style: AppTextStyles.display.copyWith(fontSize: 24),
           ),
         ],
       ),
@@ -372,60 +377,17 @@ class _SearchAndFilters extends StatelessWidget {
   }
 }
 
-class _WeekdayScroller extends StatelessWidget {
-  final RxString selectedVisitDay;
-
-  const _WeekdayScroller({required this.selectedVisitDay});
-
-  static const days = [
-    ("saturday", "Samedi"),
-    ("sunday", "Dimanche"),
-    ("monday", "Lundi"),
-    ("tuesday", "Mardi"),
-    ("wednesday", "Mercredi"),
-    ("thursday", "Jeudi"),
-    ("friday", "Vendredi"),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Obx(
-          () => Row(
-            children: [
-              _DayChip(
-                label: "Tous",
-                selected: selectedVisitDay.value.isEmpty,
-                onTap: () => selectedVisitDay.value = "",
-              ),
-              ...days.map(
-                (day) => _DayChip(
-                  label: day.$2,
-                  selected: selectedVisitDay.value == day.$1,
-                  onTap: () => selectedVisitDay.value =
-                      selectedVisitDay.value == day.$1 ? "" : day.$1,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DayChip extends StatelessWidget {
+class _ClientFilterPill extends StatelessWidget {
   final String label;
+  final int? count;
   final bool selected;
   final VoidCallback onTap;
 
-  const _DayChip({
+  const _ClientFilterPill({
     required this.label,
     required this.selected,
     required this.onTap,
+    this.count,
   });
 
   @override
@@ -433,12 +395,33 @@ class _DayChip extends StatelessWidget {
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
       child: ChoiceChip(
-        label: Text(label),
+        label: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label),
+            if (count != null) ...[
+              const SizedBox(width: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? Colors.white.withValues(alpha: 0.18)
+                      : AppColors.softBlue,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(count.toString()),
+              ),
+            ],
+          ],
+        ),
         selected: selected,
         selectedColor: AppColors.primary,
         backgroundColor: AppColors.surface,
-        labelStyle: AppTextStyles.caption.copyWith(
-          color: selected ? Colors.white : AppColors.ink,
+        labelStyle: AppTextStyles.body.copyWith(
+          color: selected ? Colors.white : AppColors.primaryDark,
           fontWeight: FontWeight.w800,
         ),
         side: BorderSide(color: selected ? AppColors.primary : AppColors.line),

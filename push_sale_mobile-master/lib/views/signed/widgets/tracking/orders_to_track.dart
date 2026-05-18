@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/order_controller.dart';
+import 'package:push_sale/models/order.dart';
 import 'package:push_sale/theme/app_colors.dart';
 import 'package:push_sale/theme/app_spacing.dart';
 import 'package:push_sale/theme/app_text_styles.dart';
@@ -14,6 +15,7 @@ import 'package:push_sale/widgets/common/app_page_header.dart';
 class OrderToTrack extends StatelessWidget {
   final OrderController orderController = Get.find();
   final PageController pageController;
+  final RxString selectedFilter = "all".obs;
 
   OrderToTrack(this.pageController, {super.key});
 
@@ -41,6 +43,14 @@ class OrderToTrack extends StatelessWidget {
         }
         final remaining = amountShipped - amountCash;
 
+        final filteredOrders = orderController.ordersToTrack.where((order) {
+          final stage = _trackStage(order);
+          return selectedFilter.value == "all" ||
+              selectedFilter.value == stage ||
+              (selectedFilter.value == "remaining" &&
+                  (stage == "new" || stage == "in_way"));
+        }).toList();
+
         return RefreshIndicator(
           onRefresh: orderController.getOrdersToTrack,
           child: CustomScrollView(
@@ -48,8 +58,8 @@ class OrderToTrack extends StatelessWidget {
             slivers: [
               SliverToBoxAdapter(
                 child: AppPageHeader(
-                  title: "orders.to.track".tr,
-                  subtitle: "Suivi livraison, cash et restants",
+                  title: "Tracking commandes",
+                  subtitle: "Nouveau, livre, encaisse et restant a suivre",
                   icon: Icons.route_outlined,
                   actions: [
                     IconButton.filledTonal(
@@ -67,39 +77,86 @@ class OrderToTrack extends StatelessWidget {
                     AppSpacing.lg,
                     AppSpacing.md,
                   ),
-                  child: Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _TrackingMetric(
-                        label: "Nouveau",
-                        value: formatter.format(totalNew),
-                        icon: Icons.shopping_cart_checkout_rounded,
-                        color: AppColors.warning,
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _TrackFilterChip(
+                              label: "Toutes",
+                              selected: selectedFilter.value == "all",
+                              onTap: () => selectedFilter.value = "all",
+                            ),
+                            _TrackFilterChip(
+                              label: "Nouveau",
+                              selected: selectedFilter.value == "new",
+                              onTap: () => selectedFilter.value = "new",
+                            ),
+                            _TrackFilterChip(
+                              label: "Livre",
+                              selected: selectedFilter.value == "shipped",
+                              onTap: () => selectedFilter.value = "shipped",
+                            ),
+                            _TrackFilterChip(
+                              label: "Restant",
+                              selected: selectedFilter.value == "remaining",
+                              onTap: () => selectedFilter.value = "remaining",
+                            ),
+                          ],
+                        ),
                       ),
-                      _TrackingMetric(
-                        label: "Livre",
-                        value: formatter.format(amountShipped),
-                        icon: Icons.local_shipping_rounded,
-                        color: AppColors.info,
-                      ),
-                      _TrackingMetric(
-                        label: "Encaisse",
-                        value: formatter.format(amountCash),
-                        icon: Icons.payments_rounded,
-                        color: AppColors.secondary,
-                      ),
-                      _TrackingMetric(
-                        label: "Restant",
-                        value: formatter.format(remaining),
-                        icon: Icons.account_balance_wallet_rounded,
-                        color: AppColors.danger,
+                      const SizedBox(height: AppSpacing.lg),
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: [
+                          _TrackingMetric(
+                            label: "Nouveau",
+                            value: formatter.format(totalNew),
+                            icon: Icons.shopping_cart_checkout_rounded,
+                            color: AppColors.warning,
+                          ),
+                          _TrackingMetric(
+                            label: "Livre",
+                            value: formatter.format(amountShipped),
+                            icon: Icons.local_shipping_rounded,
+                            color: AppColors.info,
+                          ),
+                          _TrackingMetric(
+                            label: "Encaisse",
+                            value: formatter.format(amountCash),
+                            icon: Icons.payments_rounded,
+                            color: AppColors.secondary,
+                          ),
+                          _TrackingMetric(
+                            label: "Restant",
+                            value: formatter.format(remaining),
+                            icon: Icons.account_balance_wallet_rounded,
+                            color: AppColors.danger,
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
               ),
-              if (orderController.ordersToTrack.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                  ),
+                  child: Text(
+                    "Etat des commandes",
+                    style: AppTextStyles.display.copyWith(fontSize: 24),
+                  ),
+                ),
+              ),
+              if (filteredOrders.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: AppEmptyState(
@@ -123,16 +180,18 @@ class OrderToTrack extends StatelessWidget {
                     AppSpacing.xl,
                   ),
                   sliver: SliverList.separated(
-                    itemCount: orderController.ordersToTrack.length,
+                    itemCount: filteredOrders.length,
                     separatorBuilder: (_, __) =>
                         const SizedBox(height: AppSpacing.sm),
                     itemBuilder: (context, index) {
-                      final item = orderController.ordersToTrack[index];
+                      final item = filteredOrders[index];
                       final last = item.tracking?.isNotEmpty == true
                           ? item.tracking!.last
                           : null;
+                      final stage = _trackStage(item);
+                      final stageColor = _stageColor(stage);
                       return AppCard(
-                        padding: const EdgeInsets.all(AppSpacing.md),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
                         onTap: () {
                           orderController.orderToTrack = item;
                           if (pageController.hasClients) {
@@ -143,91 +202,110 @@ class OrderToTrack extends StatelessWidget {
                             );
                           }
                         },
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ClipRRect(
-                              borderRadius:
-                                  BorderRadius.circular(AppSpacing.radiusMd),
-                              child: SizedBox(
-                                width: 58,
-                                height: 58,
-                                child: CachedNetworkImage(
-                                  imageUrl: item.client!.image,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => const Center(
-                                      child: CircularProgressIndicator()),
-                                  errorWidget: (context, url, error) =>
-                                      const ColoredBox(
-                                    color: AppColors.softBlue,
-                                    child: Icon(Icons.storefront_outlined),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.client!.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTextStyles.body.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    "${item.client!.address!.city.name} (${item.client!.address!.wilaya.code})",
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTextStyles.caption,
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    DateFormat("dd/MM/y HH:mm")
-                                        .format(item.planned_delivery_date),
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                            Row(
                               children: [
-                                Text(
-                                  formatter.format(item.delivery_amount),
-                                  style: AppTextStyles.body.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.xs),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.sm,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.softBlue,
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                  child: Text(
-                                    last == null
-                                        ? "-"
-                                        : ("state.${last.state}").tr,
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w800,
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(
+                                      AppSpacing.radiusMd),
+                                  child: SizedBox(
+                                    width: 58,
+                                    height: 58,
+                                    child: CachedNetworkImage(
+                                      imageUrl: item.client!.image,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) =>
+                                          const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          ColoredBox(
+                                        color:
+                                            stageColor.withValues(alpha: .12),
+                                        child: Icon(Icons.storefront_outlined,
+                                            color: stageColor),
+                                      ),
                                     ),
                                   ),
                                 ),
+                                const SizedBox(width: AppSpacing.md),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.code,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTextStyles.title
+                                            .copyWith(fontSize: 18),
+                                      ),
+                                      const SizedBox(height: AppSpacing.xs),
+                                      Text(
+                                        item.client?.name ?? "Client",
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTextStyles.subtitle.copyWith(
+                                          color: AppColors.primaryDark,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      Text(
+                                        item.client?.address?.city.name ?? "-",
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTextStyles.caption,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      DateFormat("dd MMM y", "fr_FR")
+                                          .format(item.planned_delivery_date),
+                                      style: AppTextStyles.caption,
+                                    ),
+                                    Text(
+                                      formatter.format(item.delivery_amount),
+                                      style: AppTextStyles.title.copyWith(
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: AppSpacing.sm,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            stageColor.withValues(alpha: 0.12),
+                                        borderRadius:
+                                            BorderRadius.circular(999),
+                                      ),
+                                      child: Text(
+                                        last == null
+                                            ? _stageLabel(stage)
+                                            : ("state.${last.state}").tr,
+                                        style: AppTextStyles.caption.copyWith(
+                                          color: stageColor,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(width: AppSpacing.xs),
+                                const Icon(Icons.chevron_right_rounded,
+                                    color: AppColors.primaryDark),
                               ],
                             ),
+                            const SizedBox(height: AppSpacing.lg),
+                            _OrderProgressMini(stage: stage),
                           ],
                         ),
                       );
@@ -254,6 +332,124 @@ class OrderToTrack extends StatelessWidget {
       await orderController.getOrdersToTrack(date: date);
     }
   }
+}
+
+class _TrackFilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TrackFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        selectedColor: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        labelStyle: AppTextStyles.body.copyWith(
+          color: selected ? Colors.white : AppColors.primaryDark,
+          fontWeight: FontWeight.w800,
+        ),
+        side: BorderSide(color: selected ? AppColors.primary : AppColors.line),
+        onSelected: (_) => onTap(),
+      ),
+    );
+  }
+}
+
+class _OrderProgressMini extends StatelessWidget {
+  final String stage;
+
+  const _OrderProgressMini({required this.stage});
+
+  @override
+  Widget build(BuildContext context) {
+    final current = switch (stage) {
+      "paid" => 4,
+      "shipped" => 3,
+      "in_way" => 2,
+      _ => 1,
+    };
+    const labels = ["Creee", "Preparee", "Livree", "Payee"];
+    return Row(
+      children: List.generate(labels.length, (index) {
+        final step = index + 1;
+        final active = step <= current;
+        final color = active ? _stageColor(stage) : AppColors.line;
+        return Expanded(
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color:
+                      active ? color.withValues(alpha: 0.16) : AppColors.canvas,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  step.toString(),
+                  style: AppTextStyles.caption.copyWith(
+                    color: active ? color : AppColors.muted,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  height: 3,
+                  color: step == labels.length ? Colors.transparent : color,
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+}
+
+String _trackStage(Order order) {
+  final lastState = order.tracking?.isNotEmpty == true
+      ? order.tracking!.last.state.toLowerCase()
+      : order.state.toLowerCase();
+  if (lastState == "paid" || lastState == "partially_paid") {
+    return "paid";
+  }
+  if (lastState == "shipped" || lastState == "delivered") {
+    return "shipped";
+  }
+  if (lastState == "in_way" || lastState == "taken" || lastState == "ready") {
+    return "in_way";
+  }
+  return "new";
+}
+
+Color _stageColor(String stage) {
+  return switch (stage) {
+    "paid" => AppColors.primary,
+    "shipped" => AppColors.success,
+    "in_way" => AppColors.warning,
+    _ => AppColors.info,
+  };
+}
+
+String _stageLabel(String stage) {
+  return switch (stage) {
+    "paid" => "Paye",
+    "shipped" => "Livre",
+    "in_way" => "En livraison",
+    _ => "Nouveau",
+  };
 }
 
 class _TrackingMetric extends StatelessWidget {

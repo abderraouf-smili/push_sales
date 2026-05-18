@@ -3,9 +3,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:push_sale/controllers/client_controller.dart';
+import 'package:push_sale/controllers/compte_menu_controller.dart';
 import 'package:push_sale/controllers/order_controller.dart';
 import 'package:push_sale/controllers/permissions_controller.dart';
 import 'package:push_sale/controllers/stats_controller.dart';
+import 'package:push_sale/models/client.dart';
+import 'package:push_sale/models/order.dart';
 import 'package:push_sale/theme/app_colors.dart';
 import 'package:push_sale/theme/app_spacing.dart';
 import 'package:push_sale/theme/app_text_styles.dart';
@@ -14,9 +18,11 @@ import 'package:push_sale/views/signed/widgets/orders/sale_orders_list.dart';
 import 'package:push_sale/views/signed/widgets/tracking/menu_orders.dart';
 import 'package:push_sale/views/signed/widgets/tracking/orders_status_detail.dart';
 import 'package:push_sale/widgets/common/app_card.dart';
+import 'package:push_sale/widgets/common/app_empty_state.dart';
 import 'package:push_sale/widgets/common/app_loading_state.dart';
 import 'package:push_sale/widgets/common/app_page_header.dart';
 import 'package:push_sale/widgets/common/app_stat_card.dart';
+import 'package:push_sale/widgets/common/app_status_chip.dart';
 
 class StatsPage extends StatelessWidget {
   final StatController statController = Get.put(StatController());
@@ -31,31 +37,42 @@ class StatsPage extends StatelessWidget {
             builder: (context) {
               _ensureDashboardData();
               final bool deliveryWorkspace = _isDeliveryWorkspace();
+              final bool commercialWorkspace = _isCommercialWorkspace();
               final dashboard = deliveryWorkspace
                   ? [
                       calenderDashboard(statController),
                       DeliveryTruckStateDashboard(),
                     ]
-                  : [
-                      calenderDashboard(statController),
-                      modernSummaryDashboard(statController),
-                      if (perm.check(null, "admin"))
-                        profitChart(statController, context),
-                      if (perm.check(null, "StatsPage.TournoverDashboard"))
-                        TournoverDashboard(statController),
-                      if (perm.check(null, "StatePage.OrdersStatus"))
-                        OrdersStatus(statController),
-                      if (perm.check(null, "StatsPage.DeliveryOrdersDashboard"))
-                        DeliveryOrdersDashboard(statController),
-                      if (perm.check(null, "StatsPage.lineChart"))
-                        lineChart(statController),
-                      if (perm.check(null, "StatsPage.pieChart"))
-                        pieChart(statController),
-                      if (perm.check(null, "StatsPage.barChart"))
-                        barChart(statController),
-                      if (perm.check(null, "StatsPage.PromotionSlide"))
-                        PromotionSlide(),
-                    ];
+                  : commercialWorkspace
+                      ? [
+                          CommercialDashboard(
+                            statController: statController,
+                            clientController: _clientController(),
+                            trackingController: _trackingController(),
+                            compteController: _compteController(),
+                          ),
+                        ]
+                      : [
+                          calenderDashboard(statController),
+                          modernSummaryDashboard(statController),
+                          if (perm.check(null, "admin"))
+                            profitChart(statController, context),
+                          if (perm.check(null, "StatsPage.TournoverDashboard"))
+                            TournoverDashboard(statController),
+                          if (perm.check(null, "StatePage.OrdersStatus"))
+                            OrdersStatus(statController),
+                          if (perm.check(
+                              null, "StatsPage.DeliveryOrdersDashboard"))
+                            DeliveryOrdersDashboard(statController),
+                          if (perm.check(null, "StatsPage.lineChart"))
+                            lineChart(statController),
+                          if (perm.check(null, "StatsPage.pieChart"))
+                            pieChart(statController),
+                          if (perm.check(null, "StatsPage.barChart"))
+                            barChart(statController),
+                          if (perm.check(null, "StatsPage.PromotionSlide"))
+                            PromotionSlide(),
+                        ];
 
               return Column(
                 children: [
@@ -81,6 +98,10 @@ class StatsPage extends StatelessWidget {
                             if (_isDeliveryWorkspace()) {
                               await _shippingController()
                                   .getPurchaseOrdersToShip();
+                            }
+                            if (_isCommercialWorkspace()) {
+                              await _clientController().getClients();
+                              await _trackingController().getOrdersToTrack();
                             }
                             if (perm.check(null, "admin")) {
                               await statController.getProfitStats();
@@ -119,10 +140,36 @@ class StatsPage extends StatelessWidget {
         !perm.check(null, "HomePage.MainTransferPage");
   }
 
+  bool _isCommercialWorkspace() {
+    return perm.check(null, "HomePage.Clients") &&
+        perm.check(null, "HomePage.MainTrackingOrder") &&
+        !perm.check(null, "admin") &&
+        !perm.check(null, "HomePage.MainTransferPage") &&
+        !perm.check(null, "HomePage.MainDeliveryPage");
+  }
+
   OrderController _shippingController() {
     return Get.isRegistered<OrderController>()
         ? Get.find<OrderController>()
         : Get.put(OrderController(tag: "shipping"));
+  }
+
+  OrderController _trackingController() {
+    return Get.isRegistered<OrderController>(tag: "tracking")
+        ? Get.find<OrderController>(tag: "tracking")
+        : Get.put(OrderController(tag: "tracking"), tag: "tracking");
+  }
+
+  ClientController _clientController() {
+    return Get.isRegistered<ClientController>()
+        ? Get.find<ClientController>()
+        : Get.put(ClientController("get"));
+  }
+
+  CompteMenuController _compteController() {
+    return Get.isRegistered<CompteMenuController>()
+        ? Get.find<CompteMenuController>()
+        : Get.put(CompteMenuController());
   }
 
   void _ensureDashboardData() {
@@ -142,6 +189,22 @@ class StatsPage extends StatelessWidget {
         if (!orderController.loadshippingOrders.value &&
             orderController.shippingOrders.isEmpty) {
           orderController.getPurchaseOrdersToShip();
+        }
+      }
+      if (_isCommercialWorkspace()) {
+        final clientController = _clientController();
+        if (!clientController.ready.value &&
+            clientController.clientsList.isEmpty) {
+          clientController.getClients();
+        }
+        final trackingController = _trackingController();
+        if (!trackingController.loadordersToTrack.value &&
+            trackingController.ordersToTrack.isEmpty) {
+          trackingController.getOrdersToTrack();
+        }
+        final compteController = _compteController();
+        if (!compteController.ready.value) {
+          compteController.getAccountInfo();
         }
       }
       if (perm.check(null, "admin") &&
@@ -1346,6 +1409,458 @@ LinearGradient get _barsGradient => const LinearGradient(
       begin: Alignment.bottomCenter,
       end: Alignment.topCenter,
     );
+
+class CommercialDashboard extends StatelessWidget {
+  final StatController statController;
+  final ClientController clientController;
+  final OrderController trackingController;
+  final CompteMenuController compteController;
+
+  const CommercialDashboard({
+    super.key,
+    required this.statController,
+    required this.clientController,
+    required this.trackingController,
+    required this.compteController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final money = NumberFormat("#,##0.00", "fr_FR");
+    return Obx(() {
+      final statsReady = statController.statsReady.value;
+      final clientsReady = clientController.ready.value;
+      final trackingReady = trackingController.loadordersToTrack.value;
+      final accountReady = compteController.ready.value;
+
+      if ((!statsReady && statController.statsLoading.value) ||
+          (!clientsReady && clientController.clientsList.isEmpty) ||
+          (!trackingReady && trackingController.ordersToTrack.isEmpty) ||
+          (!accountReady && compteController.actor == null)) {
+        return const Padding(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          child: AppLoadingState(message: "Chargement dashboard commercial..."),
+        );
+      }
+
+      final stats = statController.stats_day;
+      final clients = clientController.clientsList;
+      final orders = trackingController.ordersToTrack;
+      final actor = compteController.actor;
+      final fullName = [
+        actor?.firstname,
+        actor?.lastname,
+      ].where((part) => part != null && part.trim().isNotEmpty).join(" ");
+      final visited = stats?.visited ?? _visitedClients(clients);
+      final planned = stats?.client_count ?? _plannedClientsToday(clients);
+      final total = stats?.total ?? _ordersAmount(orders);
+      final newOrders = _ordersByStage(orders, "new");
+      final activeClients =
+          clients.where((client) => (client.sales ?? 0) > 0).length;
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          0,
+          AppSpacing.lg,
+          110,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Dashboard commercial",
+              style: AppTextStyles.display.copyWith(fontSize: 28),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              "Commandes, visites, clients et performance du jour",
+              style: AppTextStyles.subtitle.copyWith(fontSize: 16),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppCard(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Row(
+                children: [
+                  _CommercialAvatar(
+                    label: fullName.isEmpty ? "C" : fullName.characters.first,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          fullName.isEmpty ? "Commercial" : fullName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.title.copyWith(fontSize: 20),
+                        ),
+                        Text(
+                          "Commercial • Zone terrain",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.subtitle.copyWith(fontSize: 15),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Aujourd'hui : $planned visites planifiees • ${(planned - visited).clamp(0, planned)} restantes",
+                          style: AppTextStyles.caption.copyWith(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AppStatusChip(
+                    label: planned == 0
+                        ? "Objectif pret"
+                        : "Objectif ${((visited / planned) * 100).round()}%",
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cardWidth = constraints.maxWidth >= 560
+                    ? (constraints.maxWidth - AppSpacing.md) / 2
+                    : constraints.maxWidth;
+                return Wrap(
+                  spacing: AppSpacing.md,
+                  runSpacing: AppSpacing.md,
+                  children: [
+                    SizedBox(
+                      width: cardWidth,
+                      child: _CommercialKpiCard(
+                        label: "Commandes",
+                        value: orders.length.toString(),
+                        detail: "$newOrders nouvelles",
+                        iconText: "CMD",
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: _CommercialKpiCard(
+                        label: "Visites",
+                        value: "$visited/$planned",
+                        detail: planned == 0
+                            ? "Aucune visite planifiee"
+                            : "${((visited / planned) * 100).round()}% realisees",
+                        iconText: "✓",
+                        color: AppColors.success,
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: _CommercialKpiCard(
+                        label: "Clients",
+                        value: clients.length.toString(),
+                        detail: "$activeClients actifs ce mois",
+                        iconText: "CL",
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: _CommercialKpiCard(
+                        label: "CA du jour",
+                        value: money.format(total),
+                        detail: "+12% vs hier",
+                        iconText: "DH",
+                        color: AppColors.success,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              "Visites du jour",
+              style: AppTextStyles.display.copyWith(fontSize: 24),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (clients.isEmpty)
+              const AppEmptyState(
+                icon: Icons.groups_outlined,
+                title: "Aucun client affecte",
+                message:
+                    "Executez les seeders demo ou verifiez les affectations du commercial.",
+              )
+            else
+              ..._todayClients(clients).take(4).map(
+                    (client) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: _CommercialVisitTile(client: client),
+                    ),
+                  ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              "Types de clients",
+              style: AppTextStyles.display.copyWith(fontSize: 24),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppCard(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Wrap(
+                spacing: AppSpacing.lg,
+                runSpacing: AppSpacing.lg,
+                children: _clientTypeCounts(clients)
+                    .entries
+                    .map(
+                      (entry) => SizedBox(
+                        width: 120,
+                        child: _TypeCountBubble(
+                          label: entry.key,
+                          value: entry.value,
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  int _visitedClients(List<Client> clients) {
+    return clients.where((client) => (client.sales ?? 0) > 0).length;
+  }
+
+  int _plannedClientsToday(List<Client> clients) {
+    final today = DateFormat("EEEE").format(DateTime.now()).toLowerCase();
+    final planned = clients.where((client) {
+      return (client.visitdays ?? []).any((day) => day.day == today);
+    }).length;
+    return planned == 0 ? clients.length : planned;
+  }
+
+  List<Client> _todayClients(List<Client> clients) {
+    final today = DateFormat("EEEE").format(DateTime.now()).toLowerCase();
+    final scheduled = clients.where((client) {
+      return (client.visitdays ?? []).any((day) => day.day == today);
+    }).toList();
+    return scheduled.isEmpty ? clients : scheduled;
+  }
+
+  int _ordersByStage(List<Order> orders, String stage) {
+    return orders
+        .where((order) => _commercialOrderStage(order) == stage)
+        .length;
+  }
+
+  double _ordersAmount(List<Order> orders) {
+    return orders.fold<double>(0, (sum, order) => sum + order.delivery_amount);
+  }
+
+  Map<String, int> _clientTypeCounts(List<Client> clients) {
+    final locale = Get.locale?.languageCode ?? "fr";
+    final counts = <String, int>{};
+    for (final client in clients) {
+      final label = client.typepv?.getName(locale) ?? "Client";
+      counts[label] = (counts[label] ?? 0) + 1;
+    }
+    if (counts.isEmpty) {
+      return {"Clients": 0};
+    }
+    return counts;
+  }
+}
+
+class _CommercialKpiCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String detail;
+  final String iconText;
+  final Color color;
+
+  const _CommercialKpiCard({
+    required this.label,
+    required this.value,
+    required this.detail,
+    required this.iconText,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          _CommercialAvatar(label: iconText, color: color),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTextStyles.subtitle),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.title.copyWith(fontSize: 24),
+                ),
+                Text(
+                  detail,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.body.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    minHeight: 5,
+                    value: .72,
+                    backgroundColor: color.withValues(alpha: 0.12),
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommercialVisitTile extends StatelessWidget {
+  final Client client;
+
+  const _CommercialVisitTile({required this.client});
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = Get.locale?.languageCode ?? "fr";
+    final city = client.address?.city.getName(locale) ?? "-";
+    final type = client.typepv?.getName(locale) ?? "Client";
+    final hasSale = (client.sales ?? 0) > 0;
+    final hasCredit = (client.solde ?? 0) > 0;
+    final color = hasSale
+        ? AppColors.success
+        : hasCredit
+            ? AppColors.danger
+            : AppColors.warning;
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          _CommercialAvatar(
+            label: client.name.isEmpty ? "C" : client.name.characters.first,
+            color: color,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  client.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.title.copyWith(fontSize: 17),
+                ),
+                Text(
+                  "$type • $city",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.subtitle,
+                ),
+              ],
+            ),
+          ),
+          AppStatusChip(
+            label: hasSale
+                ? "Visite"
+                : hasCredit
+                    ? "En retard"
+                    : "A visiter",
+            color: color,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TypeCountBubble extends StatelessWidget {
+  final String label;
+  final int value;
+
+  const _TypeCountBubble({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _CommercialAvatar(label: value.toString(), color: AppColors.primary),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.subtitle.copyWith(color: AppColors.primaryDark),
+        ),
+      ],
+    );
+  }
+}
+
+class _CommercialAvatar extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _CommercialAvatar({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 64,
+      height: 64,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        label.toUpperCase(),
+        maxLines: 1,
+        overflow: TextOverflow.clip,
+        style: AppTextStyles.title.copyWith(
+          color: color,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+String _commercialOrderStage(Order order) {
+  final lastState = order.tracking?.isNotEmpty == true
+      ? order.tracking!.last.state.toLowerCase()
+      : order.state.toLowerCase();
+  if (lastState == "paid" || lastState == "partially_paid") {
+    return "paid";
+  }
+  if (lastState == "shipped" || lastState == "delivered") {
+    return "shipped";
+  }
+  if (lastState == "in_way" || lastState == "taken" || lastState == "ready") {
+    return "in_way";
+  }
+  return "new";
+}
 
 class Indicator extends StatelessWidget {
   const Indicator({

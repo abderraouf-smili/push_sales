@@ -2,7 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:push_sale/controllers/product_controller.dart';
+import 'package:push_sale/models/product.dart';
+import 'package:push_sale/models/purchase_variant.dart';
+import 'package:push_sale/models/variant.dart';
 import 'package:push_sale/theme/app_colors.dart';
 import 'package:push_sale/theme/app_spacing.dart';
 import 'package:push_sale/theme/app_text_styles.dart';
@@ -191,6 +195,10 @@ class _ProductMainPageState extends State<ProductMainPage> {
                               ),
                               child: AppCard(
                                 padding: const EdgeInsets.all(AppSpacing.md),
+                                onTap: () => Get.to(
+                                  () => CommercialProductDetailPage(
+                                      product: item),
+                                ),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -309,7 +317,11 @@ class _ProductMainPageState extends State<ProductMainPage> {
                                         ),
                                         const SizedBox(height: AppSpacing.md),
                                         OutlinedButton.icon(
-                                          onPressed: () {},
+                                          onPressed: () => Get.to(
+                                            () => CommercialProductDetailPage(
+                                              product: item,
+                                            ),
+                                          ),
                                           icon: const Icon(
                                               Icons.shopping_cart_outlined),
                                           label: const Text("Voir"),
@@ -428,6 +440,394 @@ class _ProductMainPageState extends State<ProductMainPage> {
               ),
             )
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class CommercialProductDetailPage extends StatelessWidget {
+  final Product product;
+
+  const CommercialProductDetailPage({super.key, required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = Get.locale?.languageCode ?? "fr";
+    final formatter = NumberFormat("#,##0.00", "fr_FR");
+    final saleVariants = product.variants ?? [];
+    final purchaseVariants = product.purchasevariants ?? [];
+    final minPrice = saleVariants.isEmpty
+        ? null
+        : saleVariants
+            .map((variant) => variant.price)
+            .where((price) => price > 0)
+            .fold<double?>(null, (min, price) {
+            if (min == null || price < min) {
+              return price;
+            }
+            return min;
+          });
+    final heroImage = saleVariants.isNotEmpty
+        ? saleVariants.first.image
+        : purchaseVariants.isNotEmpty
+            ? purchaseVariants.first.image
+            : product.image;
+    final hasPromotion = saleVariants.any((variant) => variant.discount > 0) ||
+        purchaseVariants.any((variant) => variant.discount > 0);
+
+    return Scaffold(
+      backgroundColor: AppColors.canvas,
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: AppPageHeader(
+                title: "Detail produit",
+                subtitle: "Variantes, prix, promotions et disponibilite",
+                icon: Icons.arrow_back_rounded,
+                actions: [
+                  IconButton.filledTonal(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.arrow_back_rounded),
+                  ),
+                ],
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: AppCard(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Row(
+                    children: [
+                      _ProductVisual(image: heroImage, size: 104),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.getLongDescription(locale),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style:
+                                  AppTextStyles.display.copyWith(fontSize: 24),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              "Ref. ${product.ssin}",
+                              style: AppTextStyles.subtitle,
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.xs,
+                              children: [
+                                if (hasPromotion)
+                                  const _ProductBadge(
+                                    label: "Promotion active",
+                                    color: AppColors.warning,
+                                  ),
+                                const _ProductBadge(
+                                  label: "Catalogue commercial",
+                                  color: AppColors.primary,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text("Prix des", style: AppTextStyles.caption),
+                          Text(
+                            minPrice == null
+                                ? product.showPrice ?? "-"
+                                : "${formatter.format(minPrice)} DH",
+                            style: AppTextStyles.title.copyWith(fontSize: 22),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Text(
+                  "Variantes disponibles",
+                  style: AppTextStyles.display.copyWith(fontSize: 24),
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
+            if (saleVariants.isNotEmpty)
+              SliverList.separated(
+                itemCount: saleVariants.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSpacing.md),
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    child: _SaleVariantTile(
+                      variant: saleVariants[index],
+                      formatter: formatter,
+                      locale: locale,
+                    ),
+                  );
+                },
+              )
+            else
+              SliverList.separated(
+                itemCount: purchaseVariants.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSpacing.md),
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    child: _PurchaseVariantTile(
+                      variant: purchaseVariants[index],
+                      formatter: formatter,
+                      locale: locale,
+                    ),
+                  );
+                },
+              ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.xl,
+                AppSpacing.lg,
+                110,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: AppCard(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Text(
+                    "Regles commerciales\n\n"
+                    "• Prix filtres selon le type de point de vente du client\n"
+                    "• Promotions visibles si applicables au client\n"
+                    "• Produits prives masques si non autorises\n"
+                    "• Stock verifie avant validation de commande",
+                    style: AppTextStyles.body.copyWith(height: 1.7),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SaleVariantTile extends StatelessWidget {
+  final Variant variant;
+  final NumberFormat formatter;
+  final String locale;
+
+  const _SaleVariantTile({
+    required this.variant,
+    required this.formatter,
+    required this.locale,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final title = [
+      variant.getVariantName1(locale),
+      variant.getVariantName2(locale),
+    ].where((part) => part.trim().isNotEmpty).join(" ");
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          _ProductVisual(image: variant.image, size: 70),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title.isEmpty ? variant.sku : title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.title.copyWith(fontSize: 17),
+                ),
+                Text(
+                  "${variant.unite} • ${variant.package} pcs",
+                  style: AppTextStyles.subtitle,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                _ProductBadge(
+                  label: variant.discount > 0
+                      ? "Promo -${variant.discount.toStringAsFixed(0)}%"
+                      : "Stock ${variant.quantity.toStringAsFixed(0)}",
+                  color: variant.discount > 0
+                      ? AppColors.warning
+                      : AppColors.success,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "${formatter.format(variant.price)} DH",
+                style: AppTextStyles.title.copyWith(fontSize: 18),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              FilledButton(
+                onPressed: () {},
+                child: const Text("Ajouter"),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PurchaseVariantTile extends StatelessWidget {
+  final PurchaseVariant variant;
+  final NumberFormat formatter;
+  final String locale;
+
+  const _PurchaseVariantTile({
+    required this.variant,
+    required this.formatter,
+    required this.locale,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final title = [
+      variant.getVariantName1(locale),
+      variant.getVariantName2(locale),
+    ].where((part) => part.trim().isNotEmpty).join(" ");
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          _ProductVisual(image: variant.image, size: 70),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title.isEmpty ? variant.sku : title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.title.copyWith(fontSize: 17),
+                ),
+                Text(
+                  "Pack ${variant.package}",
+                  style: AppTextStyles.subtitle,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                _ProductBadge(
+                  label: variant.discount > 0
+                      ? "Promo -${variant.discount.toStringAsFixed(0)}%"
+                      : "Reference ${variant.sku}",
+                  color: variant.discount > 0
+                      ? AppColors.warning
+                      : AppColors.primary,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "${formatter.format(variant.lastpurchaseprice)} DH",
+                style: AppTextStyles.title.copyWith(fontSize: 18),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              OutlinedButton(
+                onPressed: () {},
+                child: const Text("Voir"),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductVisual extends StatelessWidget {
+  final String image;
+  final double size;
+
+  const _ProductVisual({required this.image, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: image.isEmpty
+            ? const ColoredBox(
+                color: AppColors.softBlue,
+                child: Icon(Icons.inventory_2_outlined),
+              )
+            : CachedNetworkImage(
+                imageUrl: image,
+                fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => const ColoredBox(
+                  color: AppColors.softBlue,
+                  child: Icon(Icons.image_not_supported_outlined),
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+class _ProductBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _ProductBadge({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: color,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

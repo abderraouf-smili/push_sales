@@ -298,15 +298,18 @@ class _ClientHeroCard extends StatelessWidget {
     final city = client.address?.city.getName(locale) ?? "-";
     final wilaya = client.address?.wilaya.getName(locale) ?? "-";
     final type = client.typepv?.getName(locale) ?? "Point de vente";
+    final formatter = NumberFormat("#,##0.00", "fr_FR");
+    final balance = client.solde ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(color: AppColors.line),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.22),
+            color: AppColors.ink.withValues(alpha: 0.06),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -339,7 +342,7 @@ class _ClientHeroCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.title.copyWith(
-                    color: Colors.white,
+                    color: AppColors.primaryDark,
                     fontSize: 22,
                   ),
                 ),
@@ -349,7 +352,7 @@ class _ClientHeroCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.subtitle.copyWith(
-                    color: Colors.white.withValues(alpha: 0.82),
+                    color: AppColors.muted,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -371,6 +374,25 @@ class _ClientHeroCard extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: AppSpacing.md),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text("Credit", style: AppTextStyles.caption),
+              Text(
+                formatter.format(balance),
+                style: AppTextStyles.title.copyWith(
+                  fontSize: 20,
+                  color: balance > 0 ? AppColors.danger : AppColors.primaryDark,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              const AppStatusChip(
+                label: "Client actif",
+                color: AppColors.success,
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -383,9 +405,12 @@ class _ClientAvatarIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white.withValues(alpha: 0.16),
-      child:
-          const Icon(Icons.storefront_rounded, color: Colors.white, size: 38),
+      color: AppColors.softBlue,
+      child: const Icon(
+        Icons.storefront_rounded,
+        color: AppColors.primary,
+        size: 38,
+      ),
     );
   }
 }
@@ -404,7 +429,7 @@ class _LightChip extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: AppColors.softBlue,
         borderRadius: BorderRadius.circular(40),
       ),
       child: Row(
@@ -420,7 +445,7 @@ class _LightChip extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.caption.copyWith(color: Colors.white),
+              style: AppTextStyles.caption.copyWith(color: AppColors.primary),
             ),
           ),
         ],

@@ -1,5 +1,17 @@
 # PROJECT_HISTORY
 
+## 2026-05-18 - Profil commercial moderne connecte API
+
+- Zone modifiee : Flutter mobile, dashboard commercial, clients, fiche client, tracking commandes et catalogue produits.
+- Objectif : rapprocher le parcours commercial des maquettes fournies tout en gardant les controllers, endpoints et workflows metier existants.
+- Resume : ajout d'un dashboard commercial dedie avec carte acteur, KPI commandes/visites/clients/CA, visites du jour et repartition types clients; refonte de la page clients avec recherche, filtres `Tous / A visiter / En retard / Credit`, cartes clients lisibles et actions existantes conservees; modernisation de la fiche client en style dossier commercial; refonte du tracking avec filtres d'etat, KPI et progression de commande; ajout d'une page detail produit commerciale montrant variantes, prix et regles commerciales visibles.
+- Donnees : seeders `TestUsersByRoleSeeder` et `DemoDataSeeder` executes avec succes pour alimenter les comptes et donnees demo.
+- Risque : moyen-faible, car le changement touche plusieurs ecrans commerciaux mais reste limite a l'UI, aux filtres locaux et a la presentation des donnees existantes.
+- Impact logique metier : aucun changement de routes API, formats JSON, calculs prix/stock/commande/livraison/paiement, permissions ou authentification.
+- Tests effectues : `dart format` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK, `flutter devices` OK, lancement sur SM A165F `10.212.134.2:35599` OK avec API profil/acteur/permissions en 200.
+- Tests a faire : validation manuelle avec le compte commercial sur les onglets Accueil, Clients, Tracking, Produits, fiche client, detail produit et creation commande depuis le flux client.
+- Prochaine etape : relier les boutons visuels `Ajouter` du detail catalogue au flux commande seulement quand un client est selectionne, ou les masquer hors contexte commande.
+
 ## 2026-05-17 - Parcours livreur moderne stock, delivery et trajets
 
 - Zone modifiee : Flutter mobile, navigation HomePage et ecrans livreur.

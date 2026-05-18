@@ -1,5 +1,34 @@
 # MAINTENANCE_HISTORY
 
+## 2026-05-18 - Profil commercial dashboard, clients, tracking et produits
+
+Objectif :
+- Implementer le modele UI/UX commercial fourni : dashboard, clients, detail client, commandes/tracking et produits, avec donnees issues de l'API existante.
+
+Resume technique :
+- `StatsPage` detecte le workspace commercial via les permissions existantes et affiche un dashboard dedie connecte a `StatController`, `ClientController`, `OrderController` et `CompteMenuController`.
+- `Clients` propose recherche, filtres commerciaux, bouton carte, cartes modernes et conservation du flux existant vers fiche client/creation commande.
+- `FicheClient` garde les onglets et actions metier existants mais adopte une presentation dossier client plus claire.
+- `OrdersToTrack` ajoute les filtres Nouveau/Livre/Restant et une progression visuelle sans modifier les statuts backend.
+- `ProductMainPage` ajoute un detail produit commercial avec variantes/prix/promotions visibles en lecture, tout en conservant le flux commande existant dans `Products(client)`.
+- Seeders Laravel de comptes et donnees demo relances pour assurer des donnees de test.
+
+Commandes executees :
+- `dart format lib\views\signed\menu\stats_page.dart lib\views\signed\menu\clients.dart lib\views\signed\widgets\clients\listinglist.dart lib\views\signed\widgets\clients\ficheclient.dart lib\views\signed\widgets\tracking\orders_to_track.dart lib\views\signed\widgets\products\product_main_page.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `flutter devices`
+- `C:\tools\php83\php.exe artisan db:seed --class=TestUsersByRoleSeeder`
+- `C:\tools\php83\php.exe artisan db:seed --class=DemoDataSeeder`
+- `flutter run -d 10.212.134.2:35599 --debug --no-resident --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+
+Resultats :
+- Analyse non fatale OK.
+- APK debug genere.
+- Seeders comptes/donnees demo OK.
+- Application installee et lancee sur SM A165F; appels initiaux API profil/acteur/permissions retournes en 200.
+- Warnings stricts restants : historiques (`depend_on_referenced_packages`, deprecated APIs, style, logs), sans erreur bloquante dans ce lot.
+
 ## 2026-05-17 - Parcours livreur stock mobile, delivery et trajets
 
 Objectif :
