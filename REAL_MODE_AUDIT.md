@@ -1,5 +1,13 @@
 # REAL_MODE_AUDIT
 
+## 2026-05-19 - Produits SuperAdmin en mode reel
+
+- L'onglet Produits SuperAdmin utilise les donnees reelles `/api/workspace/real` et les actions `/api/superadmin/products`, `/api/superadmin/categories`, `/api/superadmin/products/{id}/variants`.
+- Le filtre categorie s'appuie sur `category_id/category_label` retournes par l'API.
+- La creation categorie est une action reelle SuperAdmin, pas une action demo.
+- La modification produit precharge `category_id` et `distributor_id`; aucune saisie manuelle d'ID n'est demandee a l'utilisateur.
+- Aucun bouton panier n'est expose au SuperAdmin.
+
 ## 2026-05-18 - Mode reel APP_ENV=vpn
 
 Objectif : neutraliser le comportement workspace demo dans l'application de test reel et forcer les pages principales a utiliser les APIs Laravel reelles.
@@ -91,3 +99,26 @@ Pages encore dependantes d'elements externes :
 | Firebase notification reelle | Necessite vraie configuration Firebase et cle restreinte |
 | Google Maps interne | Necessite cle Google Maps Android restreinte; fallback externe disponible |
 | Impression Bluetooth | Necessite imprimante physique et permissions Android accordees |
+## 2026-05-19 - Produits SuperAdmin variants en mode reel
+
+Pages passees/verifiees en reel :
+- SuperAdmin > Produits > Detail produit > Variants.
+
+APIs utilisees :
+- `GET /api/superadmin/products`
+- `GET /api/superadmin/products/{id}`
+- `GET /api/superadmin/products/{id}/variants`
+- `POST /api/superadmin/products/{id}/variants`
+- `POST /api/superadmin/variants/{id}/update`
+- `POST /api/superadmin/variants/{id}/delete`
+
+Comportement :
+- Aucune action demo.
+- Les variants viennent de la vraie table `variant`.
+- Groupage UI par `variant1_fr/group_label`.
+- Edition par clic sur la ligne.
+- Suppression par glissement, refusee si le variant est utilise dans stock/prix/commandes/promotions/mouvements.
+
+Principe metier :
+- SuperAdmin gere le catalogue maitre.
+- Distributeur gere prix, stock, promotions et disponibilite operationnelle.

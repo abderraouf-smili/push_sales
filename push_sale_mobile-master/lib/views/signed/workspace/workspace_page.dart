@@ -33,6 +33,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
   String _workspaceType = '';
   String _searchQuery = '';
   String _statusFilter = 'all';
+  String _categoryFilter = 'all';
 
   @override
   void initState() {
@@ -47,6 +48,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
       _deliveryFilter = 'Toutes';
       _searchQuery = '';
       _statusFilter = 'all';
+      _categoryFilter = 'all';
       _future = _load();
     }
   }
@@ -80,7 +82,8 @@ class _WorkspacePageState extends State<WorkspacePage> {
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         final scope = FocusScope.of(context);
-        if (!scope.hasPrimaryFocus && scope.focusedChild != null) {
+        final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+        if (keyboardOpen || scope.focusedChild != null) {
           scope.unfocus();
           return;
         }
@@ -149,14 +152,23 @@ class _WorkspacePageState extends State<WorkspacePage> {
                             SizedBox(
                                 height:
                                     compact ? AppSpacing.md : AppSpacing.xl),
-                            if (_isSuperAdminListSection()) ...[
+                            if (_usesCompactToolbar()) ...[
                               _SuperAdminToolbar(
                                 section: widget.section,
                                 searchQuery: _searchQuery,
                                 statusFilter: _statusFilter,
+                                categoryFilter: _categoryFilter,
+                                categoryOptions: widget.section == 'products'
+                                    ? _productCategoryOptions(_sections(data))
+                                    : const <Map<String, String>>[],
                                 onSearchChanged: (value) {
                                   setState(() {
                                     _searchQuery = value;
+                                  });
+                                },
+                                onCategoryChanged: (value) {
+                                  setState(() {
+                                    _categoryFilter = value;
                                   });
                                 },
                                 onStatusChanged: (value) {
@@ -169,11 +181,14 @@ class _WorkspacePageState extends State<WorkspacePage> {
                                   height:
                                       compact ? AppSpacing.md : AppSpacing.xl),
                             ],
-                            _StatsGrid(stats: _asList(data['stats'])),
-                            SizedBox(
-                                height:
-                                    compact ? AppSpacing.lg : AppSpacing.xl),
-                            if (_workspaceType == 'superadmin')
+                            if (data['section']?.toString() == 'dashboard') ...[
+                              _StatsGrid(stats: _asList(data['stats'])),
+                              SizedBox(
+                                  height:
+                                      compact ? AppSpacing.lg : AppSpacing.xl),
+                            ],
+                            if (_workspaceType == 'superadmin' ||
+                                _workspaceType == 'distributeur')
                               Padding(
                                 padding: EdgeInsets.only(
                                   bottom:
@@ -200,11 +215,13 @@ class _WorkspacePageState extends State<WorkspacePage> {
                                   deliveryFilter: _deliveryFilter,
                                   searchQuery: _searchQuery,
                                   statusFilter: _statusFilter,
+                                  categoryFilter: _categoryFilter,
                                   onItemAction: _handleItemAction,
                                 ),
                               ),
                             ),
-                            if (_workspaceType != 'superadmin')
+                            if (_workspaceType != 'superadmin' &&
+                                _workspaceType != 'distributeur')
                               _ActionsBar(
                                 actions: _asList(data['actions']),
                                 onAction: _handleAction,
@@ -233,9 +250,56 @@ class _WorkspacePageState extends State<WorkspacePage> {
         .toList();
   }
 
-  bool _isSuperAdminListSection() {
-    return _workspaceType == 'superadmin' &&
-        const {'distributors', 'actors', 'products'}.contains(widget.section);
+  List<Map<String, String>> _productCategoryOptions(
+    List<Map<String, dynamic>> sections,
+  ) {
+    final seen = <String>{};
+    final options = <Map<String, String>>[];
+    for (final section in sections) {
+      final title = section['title']?.toString().toLowerCase() ?? '';
+      if (!title.contains('produit')) continue;
+      for (final item in _asList(section['items'])) {
+        final id = _dropdownId(item['category_id']) ??
+            _dropdownId(item['category_label']) ??
+            _dropdownId(item['category']) ??
+            _dropdownId(item['subtitle']);
+        if (id == null || !seen.add(id)) continue;
+        final label = (item['category_label'] ??
+                item['category'] ??
+                item['category_name'] ??
+                item['subtitle'] ??
+                'Categorie')
+            .toString();
+        options.add({'id': id, 'label': label});
+      }
+    }
+    options.sort((a, b) => (a['label'] ?? '').compareTo(b['label'] ?? ''));
+    return options;
+  }
+
+  bool _usesCompactToolbar() {
+    return const {
+      'distributors',
+      'actors',
+      'products',
+      'warehouses',
+      'warehouse_stock',
+      'stock',
+      'clients',
+      'orders',
+      'my_orders',
+      'deliveries',
+      'delivery',
+      'prepare_orders',
+      'loadings',
+      'stock_mobile',
+      'routes',
+      'payments',
+      'credit',
+      'reports',
+      'promotions',
+      'coupons',
+    }.contains(widget.section);
   }
 
   List<Map<String, dynamic>> _primaryActions(
@@ -282,6 +346,10 @@ class _WorkspacePageState extends State<WorkspacePage> {
     }
 
     if (kind == 'product') {
+      if (const {'distributeur', 'depot'}.contains(_workspaceType)) {
+        _showDetailsSheet(item);
+        return;
+      }
       setState(() {
         _cart.add(Map<String, dynamic>.from(item));
       });
@@ -336,6 +404,10 @@ class _WorkspacePageState extends State<WorkspacePage> {
       }
       if (kind == 'create_product') {
         _showProductForm();
+        return;
+      }
+      if (kind == 'create_category') {
+        _showCategoryForm();
         return;
       }
       if (kind == 'view_audit_logs') {
@@ -584,25 +656,27 @@ class _WorkspacePageState extends State<WorkspacePage> {
     String? preselectedDistributorId,
   }) {
     final editing = item != null;
-    final title = item?['title']?.toString() ?? '';
-    final parts = title.split(' ');
+    final actorItem = _actorDisplayItem(item ?? const <String, dynamic>{});
     final firstname = TextEditingController(
-      text: editing && parts.isNotEmpty ? parts.first : '',
+      text: editing ? _actorFirstname(actorItem) : '',
     );
     final lastname = TextEditingController(
-      text: editing && parts.length > 1 ? parts.skip(1).join(' ') : '',
+      text: editing ? _actorLastname(actorItem) : '',
     );
-    final email = TextEditingController(text: item?['email']?.toString() ?? '');
-    final phone = TextEditingController(text: item?['phone']?.toString() ?? '');
+    final email = TextEditingController(
+      text: editing ? _actorEmail(actorItem) : '',
+    );
+    final phone = TextEditingController(
+      text: editing ? _actorPhone(actorItem) : '',
+    );
     final password = TextEditingController(text: 'Test@123456');
-    String workspace = item?['workspace_type']?.toString() ?? 'commercial';
-    String? distributorId =
-        item?['distributor_id']?.toString() ?? preselectedDistributorId;
-    if (distributorId != null && distributorId.trim().isEmpty) {
-      distributorId = null;
-    }
-    bool active = item?['is_active'] as bool? ?? true;
-    bool emailVerified = item?['email_verified'] as bool? ?? true;
+    String workspace = _actorWorkspace(actorItem);
+    String? distributorId = _dropdownId(
+      _actorDistributorId(actorItem, preselectedDistributorId),
+    );
+    bool active = _boolValue(actorItem['is_active'], fallback: true);
+    bool emailVerified =
+        _boolValue(actorItem['email_verified'], fallback: true);
 
     Get.bottomSheet(
       SafeArea(
@@ -612,7 +686,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
             return FutureBuilder<List<Map<String, dynamic>>>(
               future: _superAdminList('superadmin/distributors/query'),
               builder: (context, snapshot) {
-                final distributors = snapshot.data ?? const [];
+                final distributors = _dedupeById(snapshot.data ?? const []);
                 final distributorItems = <DropdownMenuItem<String?>>[
                   const DropdownMenuItem<String?>(
                     value: null,
@@ -620,7 +694,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                   ),
                   ...distributors.map(
                     (distributor) {
-                      final id = distributor['id']?.toString();
+                      final id = _dropdownId(distributor['id']);
                       final name = distributor['title'] ??
                           distributor['name'] ??
                           'Distributeur';
@@ -635,6 +709,41 @@ class _WorkspacePageState extends State<WorkspacePage> {
                     },
                   ),
                 ];
+                if (distributorId != null &&
+                    !distributorItems
+                        .any((item) => item.value == distributorId)) {
+                  distributorItems.add(
+                    DropdownMenuItem<String?>(
+                      value: distributorId,
+                      child: Text(
+                        'Distributeur actuel - ID $distributorId',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  );
+                }
+                distributorId =
+                    _safeDropdownValue(distributorId, distributorItems);
+                final workspaceItems = const [
+                  'superadmin',
+                  'distributeur',
+                  'commercial',
+                  'depot',
+                  'livreur',
+                  'point_vente',
+                ]
+                    .map(
+                      (value) => DropdownMenuItem(
+                        value: value,
+                        child: Text(value),
+                      ),
+                    )
+                    .toList();
+                workspace = _safeRequiredDropdownValue(
+                  workspace,
+                  workspaceItems,
+                  'commercial',
+                );
 
                 return _FormSheet(
                   title: editing ? 'Modifier acteur' : 'Ajouter acteur',
@@ -679,21 +788,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                       initialValue: workspace,
                       decoration: _fieldDecoration(
                           'Workspace', Icons.workspaces_rounded),
-                      items: const [
-                        'superadmin',
-                        'distributeur',
-                        'commercial',
-                        'depot',
-                        'livreur',
-                        'point_vente',
-                      ]
-                          .map(
-                            (value) => DropdownMenuItem(
-                              value: value,
-                              child: Text(value),
-                            ),
-                          )
-                          .toList(),
+                      items: workspaceItems,
                       onChanged: (value) {
                         if (value != null) {
                           setSheetState(() {
@@ -714,11 +809,8 @@ class _WorkspacePageState extends State<WorkspacePage> {
                         Icons.business_rounded,
                       ),
                       items: distributorItems,
-                      onChanged: workspace == 'superadmin'
-                          ? (value) =>
-                              setSheetState(() => distributorId = value)
-                          : (value) =>
-                              setSheetState(() => distributorId = value),
+                      onChanged: (value) => setSheetState(
+                          () => distributorId = _dropdownId(value)),
                     ),
                     if (!editing)
                       Row(
@@ -803,7 +895,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                           'email_verified': emailVerified,
                         };
                         final route = editing
-                            ? 'superadmin/actors/${item['id']}/update'
+                            ? 'superadmin/actors/${actorItem['id']}/update'
                             : 'superadmin/actors';
                         final response =
                             await _superAdminRequest(route, data: payload);
@@ -836,11 +928,8 @@ class _WorkspacePageState extends State<WorkspacePage> {
     final name = TextEditingController(text: item?['title']?.toString() ?? '');
     final ssin = TextEditingController(text: item?['ssin']?.toString() ?? '');
     final rate = TextEditingController(text: '0');
-    int? categoryId = int.tryParse(item?['category_id']?.toString() ?? '');
-    String? distributorId = item?['distributor_id']?.toString();
-    if (distributorId != null && distributorId.trim().isEmpty) {
-      distributorId = null;
-    }
+    String? categoryId = _dropdownId(item?['category_id']);
+    String? distributorId = _dropdownId(item?['distributor_id']);
     bool active = item?['is_active'] as bool? ?? true;
 
     Get.bottomSheet(
@@ -856,10 +945,55 @@ class _WorkspacePageState extends State<WorkspacePage> {
               builder: (context, snapshot) {
                 final refs =
                     snapshot.data ?? const <List<Map<String, dynamic>>>[];
-                final categories =
-                    refs.isNotEmpty ? refs[0] : const <Map<String, dynamic>>[];
-                final distributors =
-                    refs.length > 1 ? refs[1] : const <Map<String, dynamic>>[];
+                final categories = _dedupeById(
+                  refs.isNotEmpty ? refs[0] : const <Map<String, dynamic>>[],
+                );
+                final distributors = _dedupeById(
+                  refs.length > 1 ? refs[1] : const <Map<String, dynamic>>[],
+                );
+                final categoryItems = categories
+                    .map(
+                      (category) => DropdownMenuItem<String?>(
+                        value: _dropdownId(category['id']),
+                        child: Text(
+                          (category['short_description_fr'] ??
+                                  category['name'] ??
+                                  category['title'] ??
+                                  'Categorie')
+                              .toString(),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList();
+                final safeCategoryId = categoryItems.isEmpty
+                    ? categoryId
+                    : _safeDropdownValue(categoryId, categoryItems);
+                if (categoryItems.isNotEmpty) {
+                  categoryId = safeCategoryId;
+                }
+                final distributorItems = <DropdownMenuItem<String?>>[
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Global / tous les distributeurs'),
+                  ),
+                  ...distributors.map(
+                    (distributor) => DropdownMenuItem<String?>(
+                      value: _dropdownId(distributor['id']),
+                      child: Text(
+                        '${distributor['title'] ?? distributor['name'] ?? 'Distributeur'}'
+                        ' - ${distributor['code'] ?? distributor['id']}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ];
+                final safeDistributorId = distributors.isEmpty
+                    ? distributorId
+                    : _safeDropdownValue(distributorId, distributorItems);
+                if (distributors.isNotEmpty) {
+                  distributorId = safeDistributorId;
+                }
                 return _FormSheet(
                   title: editing ? 'Modifier produit' : 'Ajouter produit',
                   children: [
@@ -876,75 +1010,28 @@ class _WorkspacePageState extends State<WorkspacePage> {
                       decoration:
                           _fieldDecoration('Reference / SSIN', Icons.qr_code),
                     ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<int?>(
-                            initialValue: categoryId,
-                            decoration:
-                                _fieldDecoration('Categorie', Icons.category),
-                            items: categories
-                                .map(
-                                  (category) => DropdownMenuItem<int?>(
-                                    value: int.tryParse(
-                                        category['id']?.toString() ?? ''),
-                                    child: Text(
-                                      (category['short_description_fr'] ??
-                                              category['name'] ??
-                                              category['title'] ??
-                                              'Categorie')
-                                          .toString(),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (value) =>
-                                setSheetState(() => categoryId = value),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        SizedBox(
-                          height: 48,
-                          child: OutlinedButton.icon(
-                            onPressed: () => _showCategoryForm(
-                              onCreated: (category) => setSheetState(() {
-                                categoryId = int.tryParse(
-                                  category['id']?.toString() ?? '',
-                                );
-                              }),
-                            ),
-                            icon: const Icon(Icons.add_rounded, size: 18),
-                            label: const Text('Categorie'),
-                          ),
-                        ),
-                      ],
+                    DropdownButtonFormField<String?>(
+                      key: ValueKey(
+                        'product-category-${safeCategoryId ?? 'none'}-${categoryItems.length}',
+                      ),
+                      initialValue: safeCategoryId,
+                      decoration: _fieldDecoration('Categorie', Icons.category),
+                      items: categoryItems,
+                      onChanged: (value) =>
+                          setSheetState(() => categoryId = value),
                     ),
                     DropdownButtonFormField<String?>(
-                      initialValue: distributorId,
+                      key: ValueKey(
+                        'product-distributor-${safeDistributorId ?? 'global'}-${distributorItems.length}',
+                      ),
+                      initialValue: safeDistributorId,
                       decoration: _fieldDecoration(
                         'Distributeur',
                         Icons.business,
                       ),
-                      items: [
-                        const DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text('Global / tous les distributeurs'),
-                        ),
-                        ...distributors.map(
-                          (distributor) => DropdownMenuItem<String?>(
-                            value: distributor['id']?.toString(),
-                            child: Text(
-                              '${distributor['title'] ?? distributor['name'] ?? 'Distributeur'}'
-                              ' - ${distributor['code'] ?? distributor['id']}',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ],
-                      onChanged: (value) =>
-                          setSheetState(() => distributorId = value),
+                      items: distributorItems,
+                      onChanged: (value) => setSheetState(
+                          () => distributorId = _dropdownId(value)),
                     ),
                     TextField(
                       controller: rate,
@@ -970,7 +1057,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                           'ssin': ssin.text.trim().isEmpty
                               ? null
                               : ssin.text.trim(),
-                          'category_id': categoryId,
+                          'category_id': _dropdownInt(categoryId),
                           'distributor_id': distributorId,
                           'rate': int.tryParse(rate.text.trim()) ?? 0,
                           'is_active': active,
@@ -1057,14 +1144,15 @@ class _WorkspacePageState extends State<WorkspacePage> {
     VoidCallback? onSaved,
   }) {
     final editing = item != null;
-    final name = TextEditingController(
+    final family = TextEditingController(
       text: item?['variant1_fr']?.toString() ??
-          item?['name']?.toString() ??
-          item?['title']?.toString() ??
+          item?['group_label']?.toString() ??
           '',
     );
-    final option = TextEditingController(
-      text: item?['option1_fr']?.toString() ?? 'Conditionnement',
+    final detail = TextEditingController(
+      text: item?['variant2_fr']?.toString() ??
+          item?['detail_label']?.toString() ??
+          '',
     );
     final package = TextEditingController(
       text: item?['package']?.toString() ?? '1',
@@ -1080,18 +1168,26 @@ class _WorkspacePageState extends State<WorkspacePage> {
           title: editing ? 'Modifier variant' : 'Ajouter variant',
           children: [
             TextField(
-              controller: name,
-              decoration: _fieldDecoration('Nom variant', Icons.tune_rounded),
+              controller: family,
+              decoration: _fieldDecoration(
+                'Famille / type',
+                Icons.category_outlined,
+              ),
             ),
             TextField(
-              controller: option,
-              decoration:
-                  _fieldDecoration('Type / unite', Icons.inventory_2_outlined),
+              controller: detail,
+              decoration: _fieldDecoration(
+                'Detail / taille',
+                Icons.tune_rounded,
+              ),
             ),
             TextField(
               controller: package,
               keyboardType: TextInputType.number,
-              decoration: _fieldDecoration('Conditionnement', Icons.numbers),
+              decoration: _fieldDecoration(
+                'Conditionnement / stock colis',
+                Icons.inventory_2_outlined,
+              ),
             ),
             TextField(
               controller: barcode,
@@ -1100,16 +1196,20 @@ class _WorkspacePageState extends State<WorkspacePage> {
             _FormSubmitButton(
               label: editing ? 'Enregistrer variant' : 'Creer variant',
               onPressed: () async {
-                if (name.text.trim().isEmpty) {
-                  _showSnack('Champ requis', 'Le nom du variant est requis.');
+                if (family.text.trim().isEmpty) {
+                  _showSnack(
+                    'Champ requis',
+                    'La famille du variant est requise.',
+                  );
                   return;
                 }
                 final payload = {
-                  'variant1_fr': name.text.trim(),
-                  'name': name.text.trim(),
-                  'option1_fr': option.text.trim().isEmpty
-                      ? 'Conditionnement'
-                      : option.text.trim(),
+                  'option1_fr': 'Type',
+                  'variant1_fr': family.text.trim(),
+                  'name': family.text.trim(),
+                  'option2_fr': 'Detail',
+                  if (detail.text.trim().isNotEmpty)
+                    'variant2_fr': detail.text.trim(),
                   'package': int.tryParse(package.text.trim()) ?? 1,
                   if (barcode.text.trim().isNotEmpty)
                     'barcode': barcode.text.trim(),
@@ -1136,6 +1236,145 @@ class _WorkspacePageState extends State<WorkspacePage> {
     );
   }
 
+  void _showAttachActorSheet({
+    required String distributorId,
+    required String distributorName,
+    required Map<String, dynamic> distributorContext,
+  }) {
+    String search = '';
+
+    Get.bottomSheet(
+      SafeArea(
+        top: false,
+        child: StatefulBuilder(
+          builder: (context, setSheetState) {
+            return _StaticManagementSheet(
+              title: 'Affecter acteur',
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: _superAdminList(
+                  'superadmin/actors/query',
+                  data: {'unassigned': true},
+                ),
+                builder: (context, snapshot) {
+                  final actors = _dedupeById(snapshot.data ?? const [])
+                      .map(_actorDisplayItem)
+                      .where((actor) {
+                    final workspace = actor['workspace_type']?.toString() ?? '';
+                    if (workspace == 'superadmin') return false;
+                    if (search.trim().isEmpty) return true;
+                    final needle = search.trim().toLowerCase();
+                    return [
+                      actor['title'],
+                      actor['email'],
+                      actor['phone'],
+                      actor['workspace_type'],
+                      actor['distributor_label'],
+                      actor['subtitle'],
+                    ].whereType<Object>().any(
+                          (value) =>
+                              value.toString().toLowerCase().contains(needle),
+                        );
+                  }).toList();
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Rattacher un acteur existant a $distributorName.',
+                        style: AppTextStyles.subtitle,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        decoration: _fieldDecoration(
+                          'Rechercher acteur',
+                          Icons.search_rounded,
+                        ),
+                        onChanged: (value) =>
+                            setSheetState(() => search = value),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      if (snapshot.connectionState == ConnectionState.waiting)
+                        const AppLoadingState(message: 'Recherche acteurs...')
+                      else if (actors.isEmpty)
+                        AppEmptyState(
+                          icon: Icons.person_add_alt_1_rounded,
+                          title: 'Aucun acteur affectable',
+                          message:
+                              'Creez un acteur directement pour ce distributeur.',
+                          action: OutlinedButton.icon(
+                            onPressed: () {
+                              Get.back();
+                              Get.back();
+                              _showActorForm(
+                                preselectedDistributorId: distributorId,
+                              );
+                            },
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Creer acteur'),
+                          ),
+                        )
+                      else
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 360),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: actors.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: AppSpacing.sm),
+                            itemBuilder: (context, index) {
+                              final actor = actors[index];
+                              return _WorkspaceListItem(
+                                item: actor,
+                                workspaceType: 'superadmin',
+                                onTap: () async {
+                                  final actorId = actor['id']?.toString();
+                                  if (actorId == null || actorId.isEmpty) {
+                                    _showSnack(
+                                      'Acteur invalide',
+                                      'Identifiant acteur manquant.',
+                                    );
+                                    return;
+                                  }
+                                  final response = await _superAdminRequest(
+                                    'superadmin/distributors/$distributorId/attach-actor',
+                                    data: {'actor_id': actorId},
+                                  );
+                                  if (response.status == 'SUCCESS') {
+                                    Get.back();
+                                    Get.back();
+                                    _showSnack(
+                                      'Acteur affecte',
+                                      response.message.toString(),
+                                    );
+                                    _refresh();
+                                    _showSuperAdminDistributorSheet(
+                                      distributorContext,
+                                    );
+                                  } else {
+                                    _showSnack(
+                                      'Erreur',
+                                      response.message.toString(),
+                                    );
+                                  }
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
   void _showSuperAdminDistributorSheet(Map<String, dynamic> item) {
     final id = item['id']?.toString();
     if (id == null || id.isEmpty) {
@@ -1153,7 +1392,8 @@ class _WorkspacePageState extends State<WorkspacePage> {
         builder: (data) {
           final distributor = _asMap(data['distributor']);
           final stats = _asMap(data['stats']);
-          final actors = _asList(data['actors']);
+          final actors =
+              _asList(data['actors']).map(_actorDisplayItem).toList();
           final warehouses = _asList(data['warehouses']);
           final products = _asList(data['products']);
           final orders = _asList(data['orders']);
@@ -1256,24 +1496,75 @@ class _WorkspacePageState extends State<WorkspacePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Align(
-                                alignment: AlignmentDirectional.centerEnd,
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    visualDensity: VisualDensity.compact,
+                              _ManagementActions(
+                                children: [
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    onPressed: () => _showAttachActorSheet(
+                                      distributorId: id,
+                                      distributorName:
+                                          distributor['name']?.toString() ??
+                                              item['title']?.toString() ??
+                                              'Distributeur',
+                                      distributorContext: item,
+                                    ),
+                                    icon: const Icon(Icons.link_rounded,
+                                        size: 18),
+                                    label:
+                                        const Text('Affecter acteur existant'),
                                   ),
-                                  onPressed: () {
-                                    Get.back();
-                                    _showActorForm(
-                                      preselectedDistributorId: id,
-                                    );
-                                  },
-                                  icon: const Icon(Icons.add_rounded),
-                                  label: const Text('Acteur'),
-                                ),
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    onPressed: () {
+                                      Get.back();
+                                      _showActorForm(
+                                        preselectedDistributorId: id,
+                                      );
+                                    },
+                                    icon:
+                                        const Icon(Icons.add_rounded, size: 18),
+                                    label: const Text('Creer acteur'),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: AppSpacing.sm),
-                              _MiniList(items: actors),
+                              _MiniList(
+                                items: actors,
+                                onTap: _showSuperAdminActorSheet,
+                                dismissLabel: 'Retirer',
+                                onDismiss: (actor) async {
+                                  final actorId = actor['id']?.toString();
+                                  if (actorId == null || actorId.isEmpty) {
+                                    _showSnack('Acteur invalide',
+                                        'Identifiant acteur manquant.');
+                                    return false;
+                                  }
+                                  final ok = await _confirmAction(
+                                    'Retirer acteur',
+                                    'Supprimer l\'affectation de ${actor['title'] ?? 'cet acteur'} ?',
+                                  );
+                                  if (!ok) return false;
+                                  final response = await _superAdminRequest(
+                                    'superadmin/distributors/$id/detach-actor',
+                                    data: {'actor_id': actorId},
+                                  );
+                                  if (response.status == 'SUCCESS') {
+                                    _showSnack('Affectation retiree',
+                                        response.message.toString());
+                                    _refresh();
+                                    Get.back();
+                                    _showSuperAdminDistributorSheet(item);
+                                  } else {
+                                    _showSnack(
+                                        'Erreur', response.message.toString());
+                                  }
+                                  return false;
+                                },
+                              ),
                             ],
                           ),
                         ),
@@ -1309,11 +1600,15 @@ class _WorkspacePageState extends State<WorkspacePage> {
         title: item['title']?.toString() ?? 'Acteur',
         future: _superAdminRequest('superadmin/actors/$id', method: 'GET'),
         builder: (data) {
-          final actor = _asMap(data).isEmpty ? item : _asMap(data);
-          final active = actor['is_active'] as bool? ?? true;
-          final verified = actor['email_verified'] as bool? ?? false;
-          final title = actor['title']?.toString() ??
-              '${actor['firstname'] ?? ''} ${actor['lastname'] ?? ''}'.trim();
+          final payload = _asMap(data);
+          final apiActor = _asMap(payload['actor']);
+          final actor = _actorDisplayItem({
+            ...item,
+            ...(apiActor.isNotEmpty ? apiActor : payload),
+          });
+          final active = _boolValue(actor['is_active'], fallback: true);
+          final verified = _boolValue(actor['email_verified']);
+          final title = _actorFullName(actor);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1519,7 +1814,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                             'Statut': (product['is_active'] as bool? ?? true)
                                 ? 'Actif'
                                 : 'Inactif',
-                            'Prix indicatif': product['amount'],
+                            'Prix / stock': 'Geres par les distributeurs',
                             'Variants': variants.length,
                             'Description': product['description'] ??
                                 product['long_description_fr'],
@@ -1557,14 +1852,39 @@ class _WorkspacePageState extends State<WorkspacePage> {
                                     _showSuperAdminProductSheet(item);
                                   },
                                 ),
+                                onDelete: (variant) async {
+                                  final confirmed = await _confirmAction(
+                                    'Supprimer variant',
+                                    'Supprimer ce variant uniquement s il n est pas utilise dans le stock, les commandes, les prix ou les promotions ?',
+                                  );
+                                  if (!confirmed) return;
+                                  final response = await _superAdminRequest(
+                                    'superadmin/variants/${variant['id']}/delete',
+                                  );
+                                  if (response.status == 'SUCCESS') {
+                                    Get.back();
+                                    _showSnack(
+                                      'Variant supprime',
+                                      response.message.toString(),
+                                    );
+                                    _showSuperAdminProductSheet(item);
+                                    _refresh();
+                                  } else {
+                                    _showSnack(
+                                      'Suppression impossible',
+                                      response.message.toString(),
+                                    );
+                                  }
+                                },
                               ),
                               const SizedBox(height: AppSpacing.lg),
                               const AppCard(
                                 child: Text(
                                   'Regles d administration\n'
+                                  '- SuperAdmin injecte le catalogue maitre\n'
                                   '- Aucun bouton panier dans ce workspace\n'
-                                  '- Les prix restent lies aux regles distributeur/PV\n'
-                                  '- Les variants sont audites a la creation et modification',
+                                  '- Les prix sont definis par distributeur/type PV\n'
+                                  '- Le stock est gere par depot/distributeur',
                                   style: AppTextStyles.body,
                                 ),
                               ),
@@ -2014,6 +2334,196 @@ class _WorkspacePageState extends State<WorkspacePage> {
     }
     return [];
   }
+
+  static String _textValue(
+    Map<String, dynamic>? item,
+    List<String> keys, {
+    String fallback = '',
+  }) {
+    if (item == null) return fallback;
+    for (final key in keys) {
+      final value = item[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty && text.toLowerCase() != 'null') return text;
+    }
+    return fallback;
+  }
+
+  static bool _boolValue(dynamic value, {bool fallback = false}) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    final text = value?.toString().trim().toLowerCase();
+    if (text == null || text.isEmpty || text == 'null') return fallback;
+    if (['1', 'true', 'yes', 'oui', 'active', 'actif'].contains(text)) {
+      return true;
+    }
+    if (['0', 'false', 'no', 'non', 'inactive', 'inactif'].contains(text)) {
+      return false;
+    }
+    return fallback;
+  }
+
+  static String _actorFirstname(Map<String, dynamic>? item) {
+    final direct = _textValue(item, ['firstname', 'first_name', 'prenom']);
+    if (direct.isNotEmpty) return direct;
+    final name = _actorFullName(item);
+    final parts = name.split(' ').where((part) => part.trim().isNotEmpty);
+    return parts.isEmpty ? '' : parts.first;
+  }
+
+  static String _actorLastname(Map<String, dynamic>? item) {
+    final direct = _textValue(item, ['lastname', 'last_name', 'nom']);
+    if (direct.isNotEmpty) return direct;
+    final parts =
+        _actorFullName(item).split(' ').where((part) => part.trim().isNotEmpty);
+    return parts.length > 1 ? parts.skip(1).join(' ') : '';
+  }
+
+  static String _actorFullName(Map<String, dynamic>? item) {
+    final first = _textValue(item, ['firstname', 'first_name', 'prenom']);
+    final last = _textValue(item, ['lastname', 'last_name', 'nom']);
+    final composed = '$first $last'.trim();
+    if (composed.isNotEmpty) return composed;
+    return _textValue(item, ['title', 'full_name', 'name', 'mail', 'email'],
+        fallback: 'Acteur');
+  }
+
+  static String _actorEmail(Map<String, dynamic>? item) {
+    final user = _asMap(item?['user']);
+    return _textValue(item, ['email', 'mail', 'user_email'],
+        fallback: _textValue(user, ['email']));
+  }
+
+  static String _actorPhone(Map<String, dynamic>? item) {
+    return _textValue(item, ['phone', 'telephone', 'tel', 'mobile']);
+  }
+
+  static String _actorWorkspace(Map<String, dynamic>? item) {
+    final profile = _asMap(item?['profile']);
+    final workspace = _textValue(
+      item,
+      ['workspace_type', 'workspace', 'type_actor', 'type'],
+      fallback: _textValue(profile, ['workspace_type', 'code']),
+    ).toLowerCase();
+    const allowed = {
+      'superadmin',
+      'distributeur',
+      'commercial',
+      'depot',
+      'livreur',
+      'point_vente',
+    };
+    return allowed.contains(workspace) ? workspace : 'commercial';
+  }
+
+  static String? _actorDistributorId(
+    Map<String, dynamic>? item, [
+    String? fallback,
+  ]) {
+    final distributor = _asMap(item?['distributor']);
+    final legacyDistributor = _asMap(item?['Distributor']);
+    return _dropdownId(item?['distributor_id']) ??
+        _dropdownId(item?['id_distributor']) ??
+        _dropdownId(distributor['id']) ??
+        _dropdownId(legacyDistributor['id']) ??
+        _dropdownId(fallback);
+  }
+
+  static Map<String, dynamic> _actorDisplayItem(Map<String, dynamic> item) {
+    final nested = _asMap(item['actor']);
+    final source = <String, dynamic>{
+      ...item,
+      if (nested.isNotEmpty) ...nested,
+    };
+    final title = _actorFullName(source);
+    final email = _actorEmail(source);
+    final phone = _actorPhone(source);
+    final workspace = _actorWorkspace(source);
+    final distributor = _asMap(source['distributor']);
+    final legacyDistributor = _asMap(source['Distributor']);
+    final distributorLabel = _textValue(
+      source,
+      ['distributor_label', 'distributor_name'],
+      fallback: _textValue(
+        distributor,
+        ['name', 'title', 'code'],
+        fallback: _textValue(legacyDistributor, ['name', 'title', 'code']),
+      ),
+    );
+    final active = _boolValue(source['is_active'], fallback: true);
+    return {
+      ...source,
+      'title': title,
+      'email': email,
+      'phone': phone,
+      'workspace_type': workspace,
+      'distributor_id': _actorDistributorId(source),
+      'distributor_label': distributorLabel,
+      'subtitle': [
+        if (email.isNotEmpty) email,
+        if (workspace.isNotEmpty) workspace,
+        if (distributorLabel.isNotEmpty) distributorLabel,
+      ].join(' - '),
+      'status': active ? 'Actif' : 'Inactif',
+      'kind': 'actor',
+      'is_active': active,
+      'email_verified': _boolValue(source['email_verified']),
+    };
+  }
+
+  static String? _dropdownId(dynamic value) {
+    final text = value?.toString().trim();
+    if (text == null ||
+        text.isEmpty ||
+        text.toLowerCase() == 'null' ||
+        text.toLowerCase() == 'undefined') {
+      return null;
+    }
+    return text;
+  }
+
+  static int? _dropdownInt(dynamic value) {
+    final text = _dropdownId(value);
+    return text == null ? null : int.tryParse(text);
+  }
+
+  static List<Map<String, dynamic>> _dedupeById(
+    List<Map<String, dynamic>> items, {
+    String primary = 'id',
+    String secondary = 'code',
+  }) {
+    final seen = <String>{};
+    final result = <Map<String, dynamic>>[];
+    for (final item in items) {
+      final key = _dropdownId(item[primary]) ?? _dropdownId(item[secondary]);
+      if (key == null) continue;
+      if (seen.add(key)) {
+        result.add(item);
+      }
+    }
+    return result;
+  }
+
+  static String? _safeDropdownValue(
+    String? selected,
+    List<DropdownMenuItem<String?>> items,
+  ) {
+    if (selected == null) return null;
+    return items.where((item) => item.value == selected).length == 1
+        ? selected
+        : null;
+  }
+
+  static String _safeRequiredDropdownValue(
+    String selected,
+    List<DropdownMenuItem<String>> items,
+    String fallback,
+  ) {
+    return items.where((item) => item.value == selected).length == 1
+        ? selected
+        : fallback;
+  }
 }
 
 class _Header extends StatelessWidget {
@@ -2034,7 +2544,8 @@ class _Header extends StatelessWidget {
     final actor = _WorkspacePageState._asMap(data['actor']);
     final workspace = data['workspace_type']?.toString() ?? '';
     final section = data['section']?.toString() ?? 'dashboard';
-    final showActorCard = workspace != 'superadmin' || section == 'dashboard';
+    final showActorCard = !{'superadmin', 'distributeur'}.contains(workspace) ||
+        section == 'dashboard';
     final compact = MediaQuery.sizeOf(context).width < 430;
 
     return Column(
@@ -2154,50 +2665,113 @@ class _SuperAdminToolbar extends StatelessWidget {
   final String section;
   final String searchQuery;
   final String statusFilter;
+  final String categoryFilter;
+  final List<Map<String, String>> categoryOptions;
   final ValueChanged<String> onSearchChanged;
+  final ValueChanged<String> onCategoryChanged;
   final ValueChanged<String> onStatusChanged;
 
   const _SuperAdminToolbar({
     required this.section,
     required this.searchQuery,
     required this.statusFilter,
+    required this.categoryFilter,
+    required this.categoryOptions,
     required this.onSearchChanged,
+    required this.onCategoryChanged,
     required this.onStatusChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).width < 430;
-    return AppCard(
-      padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
+    return Container(
+      padding: EdgeInsets.all(compact ? AppSpacing.xs : AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.line),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      ),
       child: Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.sm,
+        spacing: AppSpacing.xs,
+        runSpacing: AppSpacing.xs,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           SizedBox(
             width: compact ? double.infinity : 420,
+            height: 44,
             child: TextField(
+              textAlignVertical: TextAlignVertical.center,
               onChanged: onSearchChanged,
               decoration: InputDecoration(
                 isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.sm,
+                ),
                 hintText: switch (section) {
-                  'actors' => 'Rechercher acteur, email, role...',
-                  'products' => 'Rechercher produit, reference...',
-                  _ => 'Rechercher distributeur, code, contact...',
+                  'actors' => 'Acteur, email, role...',
+                  'products' => 'Produit, reference...',
+                  _ => 'Distributeur, code, contact...',
                 },
-                prefixIcon: const Icon(Icons.search_rounded),
+                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                prefixIconConstraints:
+                    const BoxConstraints(minWidth: 40, minHeight: 40),
               ),
             ),
           ),
+          if (section == 'products')
+            SizedBox(
+              width: compact ? 150 : 180,
+              height: 44,
+              child: DropdownButtonFormField<String>(
+                key: ValueKey(
+                  'product-category-filter-$categoryFilter-${categoryOptions.length}',
+                ),
+                initialValue: categoryOptions
+                        .where((item) => item['id'] == categoryFilter)
+                        .isEmpty
+                    ? 'all'
+                    : categoryFilter,
+                decoration: const InputDecoration(
+                  isDense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                  prefixIcon: Icon(Icons.category_outlined, size: 18),
+                  prefixIconConstraints: BoxConstraints(minWidth: 36),
+                ),
+                items: [
+                  const DropdownMenuItem(
+                    value: 'all',
+                    child: Text('Categorie'),
+                  ),
+                  ...categoryOptions.map(
+                    (category) => DropdownMenuItem(
+                      value: category['id'],
+                      child: Text(
+                        category['label'] ?? 'Categorie',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    onCategoryChanged(value);
+                  }
+                },
+              ),
+            ),
           SizedBox(
-            width: compact ? 170 : 190,
+            width: compact ? 142 : 170,
+            height: 44,
             child: DropdownButtonFormField<String>(
               initialValue: statusFilter,
               decoration: const InputDecoration(
                 isDense: true,
-                prefixIcon: Icon(Icons.filter_alt_outlined),
-                labelText: 'Statut',
+                contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                prefixIcon: Icon(Icons.filter_alt_outlined, size: 18),
+                prefixIconConstraints: BoxConstraints(minWidth: 36),
               ),
               items: const [
                 DropdownMenuItem(value: 'all', child: Text('Tous')),
@@ -2507,8 +3081,16 @@ class _KeyValueList extends StatelessWidget {
 
 class _MiniList extends StatelessWidget {
   final List<Map<String, dynamic>> items;
+  final ValueChanged<Map<String, dynamic>>? onTap;
+  final Future<bool> Function(Map<String, dynamic> item)? onDismiss;
+  final String dismissLabel;
 
-  const _MiniList({required this.items});
+  const _MiniList({
+    required this.items,
+    this.onTap,
+    this.onDismiss,
+    this.dismissLabel = 'Retirer',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2537,9 +3119,10 @@ class _MiniList extends StatelessWidget {
             item['status'] ??
             item['created_at'] ??
             '';
-        return ListTile(
+        final tile = ListTile(
           dense: true,
           contentPadding: EdgeInsets.zero,
+          onTap: onTap == null ? null : () => onTap!(item),
           leading: CircleAvatar(
             backgroundColor: AppColors.softBlue,
             child: Text(
@@ -2562,6 +3145,38 @@ class _MiniList extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         );
+        if (onDismiss == null) {
+          return tile;
+        }
+        return Dismissible(
+          key: ValueKey('${item['kind'] ?? 'item'}-${item['id'] ?? index}'),
+          direction: DismissDirection.endToStart,
+          confirmDismiss: (_) => onDismiss!(item),
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.danger.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.link_off_rounded, color: AppColors.danger),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  dismissLabel,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.danger,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          child: tile,
+        );
       },
     );
   }
@@ -2570,10 +3185,12 @@ class _MiniList extends StatelessWidget {
 class _VariantList extends StatelessWidget {
   final List<Map<String, dynamic>> variants;
   final ValueChanged<Map<String, dynamic>> onEdit;
+  final Future<void> Function(Map<String, dynamic>)? onDelete;
 
   const _VariantList({
     required this.variants,
     required this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -2586,93 +3203,181 @@ class _VariantList extends StatelessWidget {
       );
     }
 
+    final grouped = <String, List<Map<String, dynamic>>>{};
+    for (final variant in variants) {
+      grouped.putIfAbsent(_variantGroup(variant), () => []).add(variant);
+    }
+
     return Column(
-      children: variants.map((variant) {
-        final title = variant['variant1_fr'] ??
-            variant['name'] ??
-            variant['title'] ??
-            'Variant';
-        final option = variant['option1_fr'] ?? 'Conditionnement';
-        final stock = variant['stock'] ??
-            variant['quantity'] ??
-            variant['available'] ??
-            variant['package'] ??
-            '';
-        final pricing = variant['pricing'];
-        final firstPrice = pricing is List && pricing.isNotEmpty
-            ? pricing.first
-            : const <String, dynamic>{};
-        final amount = variant['amount'] ??
-            variant['price'] ??
-            (pricing is Map ? pricing['price'] : null) ??
-            (firstPrice is Map ? firstPrice['price'] : null) ??
-            '';
+      children: grouped.entries.map((entry) {
+        final groupVariants = entry.value;
+        final packageLabels = groupVariants
+            .map(_variantPackageLabel)
+            .where((label) => label.isNotEmpty)
+            .toSet()
+            .toList();
+        final packageLabel = packageLabels.isEmpty
+            ? 'conditionnement a completer'
+            : packageLabels.length == 1
+                ? 'conditionnement ${packageLabels.first}'
+                : '${packageLabels.length} conditionnements';
+
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: AppCard(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
-              children: [
-                CircleAvatar(
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: AppCard(
+              padding: EdgeInsets.zero,
+              child: ExpansionTile(
+                initiallyExpanded: true,
+                tilePadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
+                ),
+                childrenPadding: const EdgeInsets.fromLTRB(
+                  AppSpacing.sm,
+                  0,
+                  AppSpacing.sm,
+                  AppSpacing.sm,
+                ),
+                leading: CircleAvatar(
                   backgroundColor: AppColors.softBlue,
                   child: Text(
-                    _initial(title.toString()),
+                    _initial(entry.key),
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title.toString(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.primaryDark,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      Text(
-                        '${variant['barcode'] ?? 'SKU'} - $option',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.caption,
-                      ),
-                      if (stock.toString().isNotEmpty)
-                        AppStatusChip(
-                          label: 'Stock $stock',
-                          color: AppColors.secondary,
-                        ),
-                    ],
+                title: Text(
+                  entry.key,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                if (amount.toString().isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: Text(
-                      amount.toString(),
-                      style: AppTextStyles.title.copyWith(
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                  ),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  onPressed: () => onEdit(variant),
-                  child: const Text('Modifier'),
+                subtitle: Text(
+                  '${groupVariants.length} variants - $packageLabel',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption,
                 ),
-              ],
+                children: groupVariants
+                    .map(
+                      (variant) => _VariantTile(
+                        variant: variant,
+                        onTap: () => onEdit(variant),
+                        onDelete: onDelete == null
+                            ? null
+                            : () async => onDelete!(variant),
+                      ),
+                    )
+                    .toList(),
+              ),
             ),
           ),
         );
       }).toList(),
+    );
+  }
+}
+
+class _VariantTile extends StatelessWidget {
+  final Map<String, dynamic> variant;
+  final VoidCallback onTap;
+  final Future<void> Function()? onDelete;
+
+  const _VariantTile({
+    required this.variant,
+    required this.onTap,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final detail = _variantDetail(variant);
+    final sku = _variantSku(variant);
+    final packageLabel = _variantPackageLabel(variant);
+
+    final tile = AppCard(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+      onTap: onTap,
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.softGreen,
+            child: Text(
+              _initial(detail),
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.secondary,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  detail,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  [
+                    if (sku.isNotEmpty) 'SKU $sku',
+                    if (packageLabel.isNotEmpty)
+                      'Conditionnement $packageLabel',
+                    'prix/stock distributeur',
+                  ].join(' - '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption,
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.edit_note_rounded,
+            color: AppColors.primary,
+            size: 20,
+          ),
+        ],
+      ),
+    );
+
+    if (onDelete == null) return tile;
+
+    final id = variant['id']?.toString() ?? detail;
+    return Dismissible(
+      key: ValueKey('variant-$id'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        await onDelete?.call();
+        return false;
+      },
+      background: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.danger.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        ),
+        child:
+            const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+      ),
+      child: tile,
     );
   }
 }
@@ -2825,6 +3530,7 @@ class _ListSection extends StatelessWidget {
   final String deliveryFilter;
   final String searchQuery;
   final String statusFilter;
+  final String categoryFilter;
   final ValueChanged<Map<String, dynamic>> onItemAction;
 
   const _ListSection({
@@ -2833,14 +3539,15 @@ class _ListSection extends StatelessWidget {
     required this.deliveryFilter,
     required this.searchQuery,
     required this.statusFilter,
+    required this.categoryFilter,
     required this.onItemAction,
   });
 
   @override
   Widget build(BuildContext context) {
-    final title = section['title']?.toString() ?? 'Liste';
+    final title = _filteredTitle(section['title']?.toString() ?? 'Liste');
     final items = _filteredItems(
-      title,
+      section['title']?.toString() ?? 'Liste',
       _WorkspacePageState._asList(section['items']),
     );
     final compact = MediaQuery.sizeOf(context).width < 430;
@@ -2894,7 +3601,7 @@ class _ListSection extends StatelessWidget {
     List<Map<String, dynamic>> items,
   ) {
     if (title != 'Demandes de livraison' || deliveryFilter == 'Toutes') {
-      return _applyCommonFilters(items);
+      return _applyCommonFilters(items, title);
     }
 
     final filtered = items.where((item) {
@@ -2909,13 +3616,15 @@ class _ListSection extends StatelessWidget {
         _ => true,
       };
     }).toList();
-    return _applyCommonFilters(filtered);
+    return _applyCommonFilters(filtered, title);
   }
 
   List<Map<String, dynamic>> _applyCommonFilters(
-      List<Map<String, dynamic>> items) {
+    List<Map<String, dynamic>> items,
+    String title,
+  ) {
     final search = searchQuery.trim().toLowerCase();
-    final filteredBySearch = search.isEmpty
+    var filtered = search.isEmpty
         ? items
         : items.where((item) {
             return [
@@ -2931,20 +3640,78 @@ class _ListSection extends StatelessWidget {
                 );
           }).toList();
 
-    if (statusFilter == 'all') {
-      return filteredBySearch;
+    if (title.toLowerCase().contains('produit') &&
+        categoryFilter != 'all' &&
+        categoryFilter.trim().isNotEmpty) {
+      final selected = categoryFilter.toLowerCase();
+      filtered = filtered.where((item) {
+        final values = [
+          item['category_id'],
+          item['category'],
+          item['category_label'],
+          item['category_name'],
+          item['subtitle'],
+        ].whereType<Object>().map((value) => value.toString().toLowerCase());
+        return values
+            .any((value) => value == selected || value.contains(selected));
+      }).toList();
     }
 
-    return filteredBySearch.where((item) {
+    if (statusFilter == 'all') {
+      return filtered;
+    }
+
+    return filtered.where((item) {
       final active = item['is_active'];
       if (active is bool) {
         return statusFilter == 'active' ? active : !active;
       }
       final status = item['status']?.toString().toLowerCase() ?? '';
-      return statusFilter == 'active'
-          ? status.contains('actif') || !status.contains('inactif')
-          : status.contains('inactif');
+      final inactive = _isInactiveStatus(status);
+      final isActive = !inactive &&
+          (status.contains('actif') ||
+              status.contains('active') ||
+              status.contains('ok') ||
+              status.contains('stock') ||
+              status.isEmpty);
+      return statusFilter == 'active' ? isActive : inactive;
     }).toList();
+  }
+
+  String _filteredTitle(String title) {
+    final lower = title.toLowerCase();
+    if (lower.contains('distributeur')) {
+      return switch (statusFilter) {
+        'active' => 'Distributeurs actifs',
+        'inactive' => 'Distributeurs inactifs',
+        _ => 'Distributeurs',
+      };
+    }
+    if (lower.contains('acteur')) {
+      return switch (statusFilter) {
+        'active' => 'Acteurs actifs',
+        'inactive' => 'Acteurs inactifs',
+        _ => 'Acteurs et roles',
+      };
+    }
+    if (lower.contains('produit')) {
+      return switch (statusFilter) {
+        'active' => 'Produits actifs',
+        'inactive' => 'Produits inactifs',
+        _ => 'Produits disponibles',
+      };
+    }
+    return title;
+  }
+
+  bool _isInactiveStatus(String status) {
+    return status.contains('inactif') ||
+        status.contains('inactive') ||
+        status.contains('desactiv') ||
+        status.contains('désactiv') ||
+        status.contains('bloque') ||
+        status.contains('bloqué') ||
+        status.contains('suspend');
   }
 }
 
@@ -2962,11 +3729,19 @@ class _WorkspaceListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _statusColor(item['status']?.toString());
-    final action = item['action']?.toString() ?? 'Ouvrir';
     final kind = item['kind']?.toString() ?? '';
-    final useChevronOnly = workspaceType == 'superadmin' &&
-        const {'actor', 'product', 'distributor', 'audit', 'setting'}
-            .contains(kind);
+    final showChevron = const {
+      'actor',
+      'product',
+      'distributor',
+      'audit',
+      'setting',
+      'warehouse',
+      'order',
+      'purchase_order',
+      'client',
+      'route',
+    }.contains(kind);
 
     return AppCard(
       padding: EdgeInsets.all(
@@ -3029,45 +3804,29 @@ class _WorkspaceListItem extends StatelessWidget {
             ],
           );
 
-          final trailing = Column(
-            crossAxisAlignment:
-                compact ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+          final trailing = Wrap(
+            alignment: compact ? WrapAlignment.start : WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
             children: [
               AppStatusChip(
                 label: item['status']?.toString() ?? 'OK',
                 color: color,
               ),
-              if ((item['amount']?.toString().isNotEmpty ?? false)) ...[
-                const SizedBox(height: AppSpacing.sm),
+              if ((item['amount']?.toString().isNotEmpty ?? false))
                 Text(
                   item['amount'].toString(),
                   style: AppTextStyles.title.copyWith(
                     color: AppColors.primaryDark,
+                    fontSize: compact ? 16 : 18,
                   ),
                 ),
-              ],
-              const SizedBox(height: AppSpacing.sm),
-              if (useChevronOnly)
+              if (showChevron)
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: AppColors.primaryDark,
-                  size: compact ? 26 : 30,
-                )
-              else
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    minimumSize: Size(0, compact ? 32 : 36),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: compact ? AppSpacing.md : AppSpacing.lg,
-                      vertical: AppSpacing.xs,
-                    ),
-                  ),
-                  onPressed: onTap,
-                  child: Text(
-                    action,
-                    style: TextStyle(fontSize: compact ? 12 : 14),
-                  ),
+                  color: AppColors.primaryDark.withValues(alpha: 0.72),
+                  size: compact ? 22 : 24,
                 ),
             ],
           );
@@ -3388,8 +4147,58 @@ String _initial(String? value) {
   return text.substring(0, 1).toUpperCase();
 }
 
+String _variantGroup(Map<String, dynamic> variant) {
+  final label = variant['group_label'] ??
+      variant['variant1_fr'] ??
+      variant['option1_fr'] ??
+      'Autres variants';
+  final text = label.toString().trim();
+  return text.isEmpty ? 'Autres variants' : text;
+}
+
+String _variantDetail(Map<String, dynamic> variant) {
+  final label = variant['detail_label'] ??
+      variant['variant2_fr'] ??
+      variant['variant1_fr'] ??
+      variant['name'] ??
+      'Variant';
+  final text = label.toString().trim();
+  return text.isEmpty ? 'Variant' : text;
+}
+
+String _variantSku(Map<String, dynamic> variant) {
+  final pricing = variant['pricing'];
+  dynamic firstPrice;
+  if (pricing is List && pricing.isNotEmpty) {
+    firstPrice = pricing.first;
+  }
+  final value = variant['sku'] ??
+      variant['barcode'] ??
+      (firstPrice is Map ? firstPrice['sku'] : null);
+  return value?.toString().trim() ?? '';
+}
+
+String _variantPackageLabel(Map<String, dynamic> variant) {
+  final value = variant['package'] ??
+      variant['conditioning'] ??
+      variant['conditionnement'] ??
+      variant['stock_label'];
+  final text = value?.toString().trim() ?? '';
+  if (text.isEmpty || text == 'null' || text == '0') return '';
+  return text;
+}
+
 Color _statusColor(String? status) {
   final normalized = status?.toLowerCase() ?? '';
+  if (normalized.contains('inactif') ||
+      normalized.contains('inactive') ||
+      normalized.contains('desactiv') ||
+      normalized.contains('désactiv') ||
+      normalized.contains('bloque') ||
+      normalized.contains('bloqué') ||
+      normalized.contains('suspend')) {
+    return AppColors.danger;
+  }
   if (normalized.contains('retard') ||
       normalized.contains('rupture') ||
       normalized.contains('annul')) {
@@ -3451,6 +4260,7 @@ IconData _actionIcon(String? kind) {
     'missing_real_api' => Icons.api_rounded,
     'create_distributor' => Icons.business_rounded,
     'create_actor' => Icons.person_add_alt_1_rounded,
+    'create_category' => Icons.category_rounded,
     'create_product' => Icons.add_box_rounded,
     'view_audit_logs' => Icons.history_rounded,
     _ => Icons.touch_app_rounded,

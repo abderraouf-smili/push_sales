@@ -1,5 +1,16 @@
 # PROJECT_HISTORY
 
+## 2026-05-19 - Produits SuperAdmin categories et edition pre-remplie
+
+- Zone modifiee : onglet Produits SuperAdmin Flutter, payload produits workspace reel, action categorie Laravel.
+- Objectif : rendre la gestion catalogue SuperAdmin plus fluide sur smartphone avec categorie accessible au bon endroit et formulaires qui chargent les donnees existantes.
+- Resume : ajout du filtre compact par categorie avant le filtre statut, ajout de l'action `Ajouter categorie` dans la barre d'actions Produits, retrait du bouton categorie dans le formulaire produit, et correction du pre-remplissage categorie/distributeur lors de la modification produit.
+- Backend : le payload `productItems` expose `category_id`, `category_label`, `distributor_id` et `distributor_label` pour alimenter les filtres et dropdowns sans saisie manuelle d'ID.
+- Risque : faible, changement limite a l'UX/catalogue SuperAdmin; aucune logique de prix/stock n'est transferee au SuperAdmin.
+- Impact logique metier : logique conservee; SuperAdmin gere le catalogue maitre et les variants, les distributeurs restent responsables des prix et stocks par depot.
+- Tests effectues : syntaxe PHP OK, routes categories/produits/variants OK, analyse Flutter no-fatal OK, APK debug VPN OK, installation et lancement smartphone `10.212.134.2:44261` OK.
+- Tests a faire : verification visuelle manuelle du filtre categorie et de la modification produit sur le smartphone.
+
 ## 2026-05-18 - SuperAdmin smartphone UX fixes
 
 - Zone modifiee : workspace Flutter SuperAdmin, APIs Laravel SuperAdmin, relation produit/distributeur, authentification comptes crees par SuperAdmin, documentation QA.
@@ -36,6 +47,18 @@
 - Tests effectues : `migrate --force` OK, seeders test/demo OK, route:list SuperAdmin OK, login SuperAdmin OK, permissions/workspace OK, dashboard OK, CRUD distributeur/acteur/produit OK, audit logs OK, analyse Flutter no-fatal OK, APK debug VPN OK.
 - Tests a faire : validation manuelle longue sur smartphone des formulaires SuperAdmin et nettoyage progressif des warnings Flutter stricts historiques.
 - Prochaine etape : brancher une UX plus riche de creation/modification variants et poursuivre la meme profondeur CRUD sur le workspace Distributeur.
+
+## 2026-05-19 - Stabilisation Produits/Acteurs et profil Distributeur reel
+
+- Zone modifiee : `WorkspaceMvpController`, workspace Flutter reel, listes et formulaires SuperAdmin/Distributeur.
+- Objectif : corriger les derniers blocages observes sur smartphone : onglet Produits, edition acteur vide, affectation acteur existant, et repetition des KPIs dans le profil Distributeur.
+- Resume : correction du chargement Produits en mode reel, pre-remplissage robuste du formulaire acteur, affichage des noms dans l'affectation acteur existant, detach acteur par swipe dans le detail distributeur, et masquage des statistiques hors dashboard pour SuperAdmin et Distributeur.
+- Distributeur : les onglets acteurs, depots et stock sont maintenant alimentes par le distributeur rattache a l'acteur connecte; les KPIs commandes/livraisons/encaissements/stock total restent uniquement dans le dashboard.
+- Risque : faible a moyen, car les changements filtrent mieux les donnees sans changer les routes historiques ni les calculs metier.
+- Impact logique metier : logique existante conservee; meilleure application du scope distributeur et meilleure ergonomie d'administration.
+- Tests effectues : login SuperAdmin OK, `workspace/real` produits OK, login manager distributeur OK, sections acteurs/warehouses/stock/products Distributeur OK avec `stats: []` hors dashboard, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN OK, installation et lancement sur SM A165F `10.212.134.2:32895` OK.
+- Tests a faire : validation tactile longue des formulaires Produits/Acteurs et du detach par swipe sur plusieurs distributeurs reels.
+- Prochaine etape : poursuivre la meme profondeur sur les workflows Distributeur CRUD complets prix/promotions/stock.
 
 ## 2026-05-18 - Socle B2B workspaces, permissions et donnees demo etendues
 
@@ -222,6 +245,18 @@
 - Tests effectues : migrations OK, seeders OK, login/workspace 6 comptes OK, endpoints metier/promotions/coupons OK, analyse no-fatal OK, APK debug OK. Un lancement SM A165F avait ete valide avant clean; sur la passe finale le port ADB wireless n'etait plus joignable.
 - Tests a faire : validation Gmail/Facebook avec vraies cles, push Firebase reel, impression Bluetooth avec materiel physique, build release signe, relance device quand le nouveau port ADB wireless est disponible.
 
+
+## 2026-05-19 - Variants SuperAdmin groupes et responsabilites catalogue/prix/stock
+
+- Zone modifiee : workspace Flutter SuperAdmin Produits, API Laravel SuperAdmin variants, documentation de validation.
+- Objectif : rendre le detail produit plus intelligent pour les variants et clarifier la responsabilite metier : SuperAdmin gere le catalogue maitre, les distributeurs gerent prix et stock par depot.
+- Resume : les variants sont maintenant regroupes par famille/type (`Confort`, `Coton`, etc.), avec ligne cliquable pour modification et suppression par glissement. La suppression est bloquee cote API si le variant est deja utilise dans stock, prix, commandes, promotions ou operations stock.
+- UI : l'onglet Variants n'affiche plus de bouton `Modifier` par ligne; un clic sur la carte ouvre l'edition. L'affichage met en avant detail, SKU et conditionnement, avec mention que prix/stock sont geres par distributeur.
+- Backend : ajout payload variant enrichi (`group_label`, `detail_label`, `sku`, `package`, `stock_label`) et route de suppression defensive `/api/superadmin/variants/{id}/delete`.
+- Risque : faible, car aucune suppression automatique n'est autorisee si le variant est rattache a des donnees metier.
+- Impact logique metier : clarification sans casser l'existant; SuperAdmin reste proprietaire du catalogue maitre, distributeur reste proprietaire des prix et stocks operationnels.
+- Tests effectues : `php -l SuperAdminController.php` OK, routes SuperAdmin produits/variants OK, API produit `Serviette Awane` OK avec 41 variants groupes, APK debug VPN OK, installation et lancement sur SM A165F `10.212.134.2:44261` OK.
+- Tests a faire : validation tactile sur smartphone du clic variant, swipe suppression et edition variant dans un cas reel non utilise.
 
 ## 2026-05-17 - Finalisation API config, seeders demo et verification device
 

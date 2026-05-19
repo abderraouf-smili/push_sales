@@ -165,6 +165,8 @@ Route::middleware('auth:api')->group(function () {
         Route::post("distributors/{id}/activate", [SuperAdminController::class, "activateDistributor"]);
         Route::post("distributors/{id}/deactivate", [SuperAdminController::class, "deactivateDistributor"]);
         Route::match(["get", "post"], "distributors/{id}/actors", [SuperAdminController::class, "distributorActors"]);
+        Route::post("distributors/{id}/attach-actor", [SuperAdminController::class, "attachActor"]);
+        Route::post("distributors/{id}/detach-actor", [SuperAdminController::class, "detachActor"]);
         Route::match(["get", "post"], "distributors/{id}/warehouses", [SuperAdminController::class, "distributorWarehouses"]);
         Route::match(["get", "post"], "distributors/{id}/products", [SuperAdminController::class, "distributorProducts"]);
         Route::match(["get", "post"], "distributors/{id}/orders", [SuperAdminController::class, "distributorOrders"]);
@@ -193,6 +195,8 @@ Route::middleware('auth:api')->group(function () {
         Route::post("products/{id}/variants", [SuperAdminController::class, "createVariant"]);
         Route::post("variants/{id}/update", [SuperAdminController::class, "updateVariant"]);
         Route::match(["put", "patch"], "variants/{id}", [SuperAdminController::class, "updateVariant"]);
+        Route::post("variants/{id}/delete", [SuperAdminController::class, "deleteVariant"]);
+        Route::delete("variants/{id}", [SuperAdminController::class, "deleteVariant"]);
         Route::get("categories", [SuperAdminController::class, "categories"]);
         Route::post("categories/query", [SuperAdminController::class, "categories"]);
         Route::post("categories", [SuperAdminController::class, "createCategory"]);

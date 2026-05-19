@@ -69,3 +69,77 @@ push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk
 - Le flux de validation panier Point de Vente est volontairement bloque en mode reel tant que l'API de commande point de vente complete n'est pas branchee. Le bouton ne simule plus une commande.
 - Les endpoints legacy doivent etre testes avec le bon role. Exemple : `currentstock` est OK avec le compte livreur, mais peut retourner une erreur metier avec SuperAdmin.
 - Les warnings stricts Flutter restent historiques et non bloquants pour le build no-fatal.
+
+## 2026-05-19 - Validation ciblee Produits/Acteurs/Distributeur
+
+Contexte :
+- Backend teste : Laravel local `http://127.0.0.1:8000/api`
+- Flutter build : `APP_ENV=vpn`, `API_BASE_URL=http://192.168.1.20:8000`
+- Device : SM A165F via ADB `10.212.134.2:32895`
+- Protection donnees : aucun `migrate:fresh`, aucun `db:wipe`, aucun `DemoDataSeeder`.
+
+| Test | Resultat | Notes |
+| --- | --- | --- |
+| Lint `WorkspaceMvpController.php` | OK | PHP syntax OK |
+| Login SuperAdmin | OK | Token valide |
+| `workspace/real` SuperAdmin `products` | OK | Correction de l'erreur de chargement Produits |
+| Login manager distributeur | OK | Token valide |
+| `workspace/real` Distributeur `actors` | OK | Donnees limitees au distributeur rattache, `stats=[]` |
+| `workspace/real` Distributeur `warehouses` | OK | Depots limites au distributeur rattache, `stats=[]` |
+| `workspace/real` Distributeur `stock` | OK | Stock limite au distributeur rattache, `stats=[]` |
+| `workspace/real` Distributeur `products` | OK | Catalogue reel charge, `stats=[]` |
+| Flutter analyse no-fatal | OK | Aucun blocage build |
+| APK debug VPN | OK | APK genere |
+| Installation smartphone | OK | `adb install -r` success |
+| Lancement smartphone | OK | App lancee par `monkey` |
+
+Points verifies par code :
+- Le formulaire modification acteur lit les champs existants et les normalise avant affichage.
+- Les dropdowns distributeur/categorie/workspace utilisent des valeurs string dedupliquees et une valeur sure.
+- L'affectation acteur existant affiche nom, email, workspace et statut.
+- Le detach acteur du distributeur est disponible par swipe avec confirmation.
+- Les statistiques distributeur ne s'affichent que dans le dashboard.
+
+## 2026-05-19 - Validation variants SuperAdmin
+
+Contexte :
+- Backend : Laravel local `http://127.0.0.1:8000/api`
+- Flutter : `APP_ENV=vpn`, `API_BASE_URL=http://192.168.1.20:8000`
+- Device : SM A165F via ADB `10.212.134.2:44261`
+
+| Test | Resultat | Notes |
+| --- | --- | --- |
+| `php -l SuperAdminController.php` | OK | Syntaxe backend OK |
+| `route:list --path=api/superadmin` | OK | Routes produits/variants/delete visibles |
+| Login SuperAdmin | OK | Token Passport valide |
+| `GET /api/superadmin/products/1` | OK | Produit `Serviette Awane` charge |
+| `GET /api/superadmin/products/1/variants` | OK | 41 variants retournes |
+| Groupes variants | OK | `Confort`, `Coton`, `Dry`, `Dry duo pack`, `Intima` |
+| Payload variant | OK | `group_label`, `detail_label`, `sku`, `package`, `stock_label` |
+| APK debug VPN | OK | Build genere |
+| Installation smartphone | OK | `adb install -r` success |
+| Lancement smartphone | OK | App lancee par `monkey` |
+
+Principe metier valide :
+- SuperAdmin gere le catalogue maitre : categories, produits et variants.
+- Distributeur gere les prix, stocks par depot, promotions et disponibilites operationnelles.
+- La suppression variant est defensive : refusee si le variant est utilise par stock, prix, commandes, promotions ou mouvements.
+
+## 2026-05-19 - Validation filtre categorie Produits SuperAdmin
+
+Contexte :
+- Flutter : `APP_ENV=vpn`, `API_BASE_URL=http://192.168.1.20:8000`
+- Device : SM A165F via ADB `10.212.134.2:44261`
+
+| Test | Resultat | Notes |
+| --- | --- | --- |
+| Syntaxe `WorkspaceMvpController.php` | OK | Pas d'erreur PHP |
+| Routes `categories/products/variants` | OK | Routes SuperAdmin visibles |
+| Filtre categorie Produits | OK build | Dropdown compact ajoute avant statut |
+| Action Ajouter categorie | OK build | Action disponible dans toolbar Produits |
+| Formulaire modifier produit | OK build | Categorie/distributeur conserves pendant chargement references |
+| Bouton categorie dans formulaire produit | OK | Retire pour eviter doublon UX |
+| Analyse Flutter no-fatal | OK | Sortie 0, warnings historiques |
+| APK debug VPN | OK | Build genere |
+| Installation smartphone | OK | `adb install -r` success |
+| Lancement smartphone | OK | App lancee par `monkey` |

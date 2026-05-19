@@ -235,6 +235,14 @@ class SuperAdminController extends Controller
             $workspace = $request->input('workspace_type');
             $query->whereHas('Profile', fn ($profile) => $profile->where('workspace_type', $workspace));
         }
+        if ($request->boolean('unassigned')) {
+            if (Schema::hasColumn('actor', 'distributor_id')) {
+                $query->where(fn ($q) => $q->whereNull('distributor_id')->orWhere('distributor_id', ''));
+            }
+            if (Schema::hasColumn('actor', 'id_distributor')) {
+                $query->where(fn ($q) => $q->whereNull('id_distributor')->orWhere('id_distributor', ''));
+            }
+        }
         if ($request->filled('distributor_id')) {
             $distributorId = $request->input('distributor_id');
             $query->where(function ($actorQuery) use ($distributorId) {
@@ -246,6 +254,99 @@ class SuperAdminController extends Controller
         }
 
         return $this->success($query->limit(150)->get()->map(fn ($actor) => $this->actorPayload($actor))->values());
+    }
+
+    public function attachActor(Request $request, $id)
+    {
+        $guard = $this->guard();
+        if ($guard) {
+            return $guard;
+        }
+
+        $data = $request->validate([
+            'actor_id' => 'required|string',
+        ]);
+
+        $distributor = Distributor::find($id);
+        if (!$distributor) {
+            return $this->fail('Distributeur introuvable.', 404);
+        }
+
+        $actor = Actor::with(['Profile', 'Distributor', 'User'])->find($data['actor_id']);
+        if (!$actor) {
+            return $this->fail('Acteur introuvable.', 404);
+        }
+
+        if (WorkspaceResolver::type($actor) === WorkspaceResolver::SUPERADMIN) {
+            return $this->fail('Un SuperAdmin ne peut pas etre rattache a un distributeur.');
+        }
+
+        return DB::transaction(function () use ($actor, $distributor) {
+            $old = $this->safeAudit($actor);
+            if (Schema::hasColumn('actor', 'distributor_id')) {
+                $actor->distributor_id = $distributor->id;
+            }
+            if (Schema::hasColumn('actor', 'id_distributor')) {
+                $actor->id_distributor = $distributor->id;
+            }
+            $actor->save();
+
+            $this->audit(
+                'attach_actor_to_distributor',
+                'actor',
+                $actor->id,
+                $old,
+                $this->safeAudit($actor->fresh()),
+                $distributor->id
+            );
+
+            return $this->success(
+                $this->actorPayload($actor->fresh(['Profile', 'Distributor', 'User'])),
+                'Acteur affecte au distributeur.'
+            );
+        });
+    }
+
+    public function detachActor(Request $request, $id)
+    {
+        $guard = $this->guard();
+        if ($guard) {
+            return $guard;
+        }
+
+        $data = $request->validate([
+            'actor_id' => 'required|string',
+        ]);
+
+        $actor = Actor::with(['Profile', 'Distributor', 'User'])->find($data['actor_id']);
+        if (!$actor) {
+            return $this->fail('Acteur introuvable.', 404);
+        }
+
+        return DB::transaction(function () use ($actor, $id) {
+            $old = $this->safeAudit($actor);
+            if (Schema::hasColumn('actor', 'distributor_id')) {
+                $actor->distributor_id = null;
+            }
+            if (Schema::hasColumn('actor', 'id_distributor')) {
+                $actor->id_distributor = null;
+            }
+            $actor->save();
+
+            $this->audit(
+                'detach_actor_from_distributor',
+                'actor',
+                $actor->id,
+                $old,
+                $this->safeAudit($actor->fresh()),
+                $id
+            );
+
+            return $this->success(
+                $this->actorPayload($actor->fresh(['Profile', 'Distributor', 'User'])),
+                'Acteur detache du distributeur.'
+            );
+        });
     }
 
     public function createActor(Request $request)
@@ -293,23 +394,28 @@ class SuperAdminController extends Controller
                 ]
             );
 
-            $actor = Actor::updateOrCreate(
-                ['mail' => $data['email']],
-                [
-                    'id' => Actor::where('mail', $data['email'])->value('id') ?: (string) Str::uuid(),
-                    'type' => $data['workspace_type'] === WorkspaceResolver::SUPERADMIN ? 'superadmin' : 'user',
-                    'firstname' => $data['firstname'],
-                    'lastname' => $data['lastname'] ?? '',
-                    'phone' => $data['phone'] ?? null,
-                    'user_id' => $user->id,
-                    'profile_id' => $profile->id,
-                    'distributor_id' => $data['workspace_type'] === WorkspaceResolver::SUPERADMIN ? null : $data['distributor_id'],
-                    'rate' => 0,
-                    'is_active' => Schema::hasColumn('actor', 'is_active') ? $request->boolean('is_active', true) : null,
-                ]
-            );
+            $targetDistributorId = $data['workspace_type'] === WorkspaceResolver::SUPERADMIN
+                ? null
+                : $data['distributor_id'];
+            $actorPayload = [
+                'id' => Actor::where('mail', $data['email'])->value('id') ?: (string) Str::uuid(),
+                'type' => $data['workspace_type'] === WorkspaceResolver::SUPERADMIN ? 'superadmin' : 'user',
+                'firstname' => $data['firstname'],
+                'lastname' => $data['lastname'] ?? '',
+                'phone' => $data['phone'] ?? null,
+                'user_id' => $user->id,
+                'profile_id' => $profile->id,
+                'distributor_id' => $targetDistributorId,
+                'rate' => 0,
+                'is_active' => Schema::hasColumn('actor', 'is_active') ? $request->boolean('is_active', true) : null,
+            ];
+            if (Schema::hasColumn('actor', 'id_distributor')) {
+                $actorPayload['id_distributor'] = $targetDistributorId;
+            }
 
-            $this->audit('create_actor', 'actor', $actor->id, null, $this->safeAudit($actor), $actor->distributor_id);
+            $actor = Actor::updateOrCreate(['mail' => $data['email']], $actorPayload);
+
+            $this->audit('create_actor', 'actor', $actor->id, null, $this->safeAudit($actor), $targetDistributorId);
 
             return $this->success($this->actorPayload($actor->fresh(['Profile', 'Distributor', 'User'])), 'Acteur cree.');
         });
@@ -358,6 +464,9 @@ class SuperAdminController extends Controller
                     $payload[$field] = $data[$field];
                 }
             }
+            if (array_key_exists('distributor_id', $data) && Schema::hasColumn('actor', 'id_distributor')) {
+                $payload['id_distributor'] = $data['distributor_id'];
+            }
             if (!empty($data['email'])) {
                 $payload['mail'] = $data['email'];
                 if ($actor->User) {
@@ -369,12 +478,17 @@ class SuperAdminController extends Controller
                 $payload['type'] = $data['workspace_type'] === WorkspaceResolver::SUPERADMIN ? 'superadmin' : 'user';
                 if ($data['workspace_type'] === WorkspaceResolver::SUPERADMIN) {
                     $payload['distributor_id'] = null;
+                    if (Schema::hasColumn('actor', 'id_distributor')) {
+                        $payload['id_distributor'] = null;
+                    }
                 }
             }
             $targetWorkspace = $data['workspace_type'] ?? WorkspaceResolver::type($actor);
             $targetDistributor = array_key_exists('distributor_id', $data)
                 ? $data['distributor_id']
-                : ($payload['distributor_id'] ?? $actor->distributor_id);
+                : ($payload['distributor_id']
+                    ?? $actor->distributor_id
+                    ?? (Schema::hasColumn('actor', 'id_distributor') ? $actor->id_distributor : null));
             if ($targetWorkspace !== WorkspaceResolver::SUPERADMIN && empty($targetDistributor)) {
                 return $this->fail('Un acteur non SuperAdmin doit etre lie a un distributeur.');
             }
@@ -386,7 +500,15 @@ class SuperAdminController extends Controller
             }
 
             $actor->update($payload);
-            $this->audit('update_actor', 'actor', $actor->id, $old, $this->safeAudit($actor->fresh()), $actor->distributor_id);
+            $fresh = $actor->fresh();
+            $this->audit(
+                'update_actor',
+                'actor',
+                $actor->id,
+                $old,
+                $this->safeAudit($fresh),
+                $fresh->distributor_id ?? (Schema::hasColumn('actor', 'id_distributor') ? $fresh->id_distributor : null)
+            );
 
             return $this->success($this->actorPayload($actor->fresh(['Profile', 'Distributor', 'User'])), 'Acteur modifie.');
         });
@@ -498,7 +620,9 @@ class SuperAdminController extends Controller
 
             return [
                 'product' => $this->productPayload($product),
-                'variants' => $product->allVariants,
+                'variants' => $product->allVariants
+                    ->map(fn ($variant) => $this->variantPayload($variant))
+                    ->values(),
             ];
         }, 'Produit introuvable.');
     }
@@ -534,7 +658,13 @@ class SuperAdminController extends Controller
 
     public function productVariants($id)
     {
-        return $this->guardedList(fn () => Variant::where('product_id', $id)->orderBy('variant1_fr')->get());
+        return $this->guardedList(fn () => Variant::with(['pricing', 'promotion'])
+            ->where('product_id', $id)
+            ->orderBy('variant1_fr')
+            ->orderBy('variant2_fr')
+            ->get()
+            ->map(fn ($variant) => $this->variantPayload($variant))
+            ->values());
     }
 
     public function createVariant(Request $request, $id)
@@ -552,15 +682,19 @@ class SuperAdminController extends Controller
             'barcode' => $request->input('barcode', $this->nextCode('BAR')),
             'image' => $request->input('image', 'demo.png'),
             'package' => (int) $request->input('package', 1),
-            'option1_fr' => $request->input('option1_fr', 'Conditionnement'),
+            'option1_fr' => $request->input('option1_fr', 'Type'),
             'variant1_fr' => $request->input('variant1_fr', $request->input('name', 'Unite')),
+            'option2_fr' => $request->input('option2_fr', 'Detail'),
+            'variant2_fr' => $request->input('variant2_fr'),
             'option1_ar' => $request->input('option1_ar'),
             'variant1_ar' => $request->input('variant1_ar'),
+            'option2_ar' => $request->input('option2_ar'),
+            'variant2_ar' => $request->input('variant2_ar'),
             'product_id' => $id,
         ]);
         $this->audit('create_variant', 'variant', $variant->id, null, $this->safeAudit($variant));
 
-        return $this->success($variant, 'Variant cree.');
+        return $this->success($this->variantPayload($variant->fresh(['pricing', 'promotion'])), 'Variant cree.');
     }
 
     public function updateVariant(Request $request, $id)
@@ -590,7 +724,34 @@ class SuperAdminController extends Controller
         ]));
         $this->audit('update_variant', 'variant', $variant->id, $old, $this->safeAudit($variant));
 
-        return $this->success($variant, 'Variant modifie.');
+        return $this->success($this->variantPayload($variant->fresh(['pricing', 'promotion'])), 'Variant modifie.');
+    }
+
+    public function deleteVariant($id)
+    {
+        $guard = $this->guard();
+        if ($guard) {
+            return $guard;
+        }
+
+        $variant = Variant::find($id);
+        if (!$variant) {
+            return $this->fail('Variant introuvable.', 404);
+        }
+
+        $usageCount = $this->variantUsageCount($variant);
+        if ($usageCount > 0) {
+            return $this->fail(
+                'Ce variant est deja utilise dans le stock, les prix, les commandes ou les promotions. Modifiez-le ou retirez ses dependances avant suppression.',
+                422
+            );
+        }
+
+        $old = $this->safeAudit($variant);
+        $variant->delete();
+        $this->audit('delete_variant', 'variant', $id, $old, null);
+
+        return $this->success(['id' => $id], 'Variant supprime.');
     }
 
     public function categories()
@@ -736,6 +897,13 @@ class SuperAdminController extends Controller
 
     private function actorPayload(Actor $actor): array
     {
+        $distributorId = $actor->distributor_id
+            ?? (Schema::hasColumn('actor', 'id_distributor') ? $actor->id_distributor : null);
+        $distributor = $actor->relationLoaded('Distributor') ? $actor->Distributor : null;
+        if (!$distributor && $distributorId) {
+            $distributor = Distributor::find($distributorId);
+        }
+
         return [
             'id' => $actor->id,
             'firstname' => $actor->firstname,
@@ -746,8 +914,10 @@ class SuperAdminController extends Controller
             'workspace_type' => WorkspaceResolver::type($actor),
             'profile' => optional($actor->Profile)->name,
             'profile_id' => $actor->profile_id,
-            'distributor_id' => $actor->distributor_id,
-            'distributor' => optional($actor->Distributor)->name,
+            'distributor_id' => $distributorId,
+            'distributor' => optional($distributor)->name,
+            'distributor_label' => optional($distributor)->name,
+            'distributor_code' => optional($distributor)->code,
             'is_active' => Schema::hasColumn('actor', 'is_active') ? (bool) $actor->is_active : true,
             'status' => (Schema::hasColumn('actor', 'is_active') ? $actor->is_active : true) ? 'Actif' : 'Inactif',
             'email_verified' => $actor->User ? (bool) $actor->User->email_verified_at : false,
@@ -778,6 +948,65 @@ class SuperAdminController extends Controller
             'sample_variant' => optional($variant)->variant1_fr,
             'image' => $product->image,
         ];
+    }
+
+    private function variantPayload(Variant $variant): array
+    {
+        $pricing = $variant->relationLoaded('pricing') ? $variant->pricing : collect();
+        $firstPrice = $pricing instanceof \Illuminate\Support\Collection ? $pricing->first() : null;
+        $stockTotal = null;
+        if (Schema::hasTable('stock_quantity') && Schema::hasColumn('stock_quantity', 'variant_id')) {
+            $stockQuery = DB::table('stock_quantity')->where('variant_id', $variant->id);
+            $stockTotal = $stockQuery->exists() ? (int) $stockQuery->sum('quantity') : null;
+        }
+
+        $groupLabel = trim((string) ($variant->variant1_fr ?: $variant->option1_fr ?: 'Autres variants'));
+        $detailLabel = trim((string) ($variant->variant2_fr ?: $variant->variant1_fr ?: 'Variant'));
+        $sku = optional($firstPrice)->sku ?: $variant->barcode;
+        $price = optional($firstPrice)->price;
+
+        return [
+            'id' => $variant->id,
+            'product_id' => $variant->product_id,
+            'barcode' => $variant->barcode,
+            'sku' => $sku,
+            'image' => $variant->image,
+            'package' => $variant->package,
+            'option1_fr' => $variant->option1_fr,
+            'variant1_fr' => $variant->variant1_fr,
+            'option2_fr' => $variant->option2_fr,
+            'variant2_fr' => $variant->variant2_fr,
+            'group_label' => $groupLabel,
+            'detail_label' => $detailLabel,
+            'name' => trim($groupLabel . ' ' . ($detailLabel !== $groupLabel ? $detailLabel : '')),
+            'price' => $price,
+            'amount' => $price,
+            'stock_total' => $stockTotal,
+            'stock_label' => $stockTotal !== null ? $stockTotal : $variant->package,
+            'stock_source' => $stockTotal !== null ? 'stock' : 'package',
+            'pricing' => $pricing,
+            'promotion' => $variant->relationLoaded('promotion') ? $variant->promotion : null,
+        ];
+    }
+
+    private function variantUsageCount(Variant $variant): int
+    {
+        $tables = [
+            'stock_quantity',
+            'orderitem',
+            'purchaseorderitem',
+            'pricelist_item',
+            'promotionitem',
+            'stock_operation_items',
+        ];
+
+        return collect($tables)->sum(function ($table) use ($variant) {
+            if (!Schema::hasTable($table) || !Schema::hasColumn($table, 'variant_id')) {
+                return 0;
+            }
+
+            return DB::table($table)->where('variant_id', $variant->id)->count();
+        });
     }
 
     private function distributorStats(string $id): array

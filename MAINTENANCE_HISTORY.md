@@ -1,5 +1,32 @@
 # MAINTENANCE_HISTORY
 
+## 2026-05-19 - Filtre categorie et edition produit SuperAdmin
+
+Objectif :
+- Finaliser l'ergonomie de l'onglet Produits SuperAdmin : filtre categorie visible, action creation categorie accessible, et formulaire modification produit correctement pre-rempli.
+
+Resume technique :
+- Ajout de l'etat `categoryFilter` dans `WorkspacePage`.
+- Ajout d'un dropdown compact `Categorie` dans la toolbar Produits, avant le filtre statut.
+- Ajout de l'action `create_category` et de son icone dans la barre d'actions Produits.
+- Retrait du bouton de creation categorie depuis le formulaire produit pour eviter l'ambiguite pendant l'edition.
+- Normalisation du pre-remplissage categorie/distributeur avec valeurs dropdown sures et `ValueKey` de rafraichissement.
+- Enrichissement du payload workspace produits avec `category_label`.
+
+Commandes executees :
+- `dart format lib/views/signed/workspace/workspace_page.dart`
+- `php -l app/Http/Controllers/WorkspaceMvpController.php`
+- `php artisan route:list --path=api/superadmin`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.2:44261`
+- `adb install -r build/app/outputs/flutter-apk/app-debug.apk`
+- `adb shell monkey -p com.softstarter.pushsale -c android.intent.category.LAUNCHER 1`
+
+Resultats :
+- APK debug VPN genere, installe et lance sur SM A165F.
+- Les warnings Flutter stricts restent historiques et non bloquants.
+
 ## 2026-05-18 - SuperAdmin smartphone UX fixes
 
 Objectif :
@@ -15,6 +42,38 @@ Resume technique :
 - Details distributeur/acteur/produit : suppression des donnees JSON brutes, tabs scrollables et informations metier.
 - Profil SuperAdmin : bottom sheets utiles pour Firebase, Google Maps, Bluetooth printer et Google/Facebook Login.
 - Backend : filtrage acteurs distributeur corrige, `email_verified_at` garanti pour les acteurs crees/reset par SuperAdmin, payloads produits enrichis avec categorie/distributeur.
+
+# 2026-05-19 - Variants produit SuperAdmin et APK smartphone
+
+Fichiers modifies :
+- `push_sale-master/app/Http/Controllers/SuperAdminController.php`
+- `push_sale-master/routes/api.php`
+- `push_sale_mobile-master/lib/views/signed/workspace/workspace_page.dart`
+- `PROJECT_HISTORY.md`
+- `MAINTENANCE_HISTORY.md`
+- `TEST_REAL_RESULTS.md`
+- `UI_AUDIT.md`
+
+Commandes executees :
+- `php -l app/Http/Controllers/SuperAdminController.php`
+- `php artisan route:list --path=api/superadmin`
+- Test API login SuperAdmin + `GET /api/superadmin/products/1` + `GET /api/superadmin/products/1/variants`
+- `dart format lib/views/signed/workspace/workspace_page.dart`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.2:44261`
+- `adb install -r build/app/outputs/flutter-apk/app-debug.apk`
+- `adb shell monkey -p com.softstarter.pushsale -c android.intent.category.LAUNCHER 1`
+
+Resultats :
+- Variants produits SuperAdmin regroupes par famille/type et affiches en liste moderne.
+- Clic sur un variant ouvre l'edition.
+- Glissement d'un variant lance une suppression securisee avec controle backend des dependances.
+- SuperAdmin n'est pas presente comme gestionnaire stock/prix; l'UI indique que prix et stock sont geres par distributeur/depot.
+- API `Serviette Awane` verifiee : 41 variants, groupes `Confort`, `Coton`, `Dry`, etc.
+- APK debug VPN genere, installe et lance sur SM A165F.
+
+Risque :
+- Faible; la suppression d'un variant est refusee si des donnees metier y sont rattachees.
 
 Commandes executees :
 - `php artisan route:list --path=api/superadmin`
@@ -894,3 +953,38 @@ Resultats :
 
 Risque :
 - Moyen-faible; les changements ajoutent une couche de fiabilite et d'audit sans supprimer de donnees ni remplacer les anciens endpoints.
+
+# 2026-05-19 - Correctifs mode reel SuperAdmin/Distributeur
+
+Fichiers modifies :
+- `push_sale-master/app/Http/Controllers/WorkspaceMvpController.php`
+- `push_sale_mobile-master/lib/views/signed/workspace/workspace_page.dart`
+- `PROJECT_HISTORY.md`
+- `MAINTENANCE_HISTORY.md`
+- `TEST_REAL_RESULTS.md`
+- `TEST_RESULTS_SUPERADMIN.md`
+- `REAL_MODE_AUDIT.md`
+- `UI_AUDIT.md`
+
+Commandes executees :
+- `php -l app/Http/Controllers/WorkspaceMvpController.php`
+- `php -l app/Http/Controllers/SuperAdminController.php`
+- Tests API login SuperAdmin et manager distributeur
+- Tests API `workspace/real` sections `products`, `actors`, `warehouses`, `stock`
+- `dart format lib/views/signed/workspace/workspace_page.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.2:32895`
+- `adb install -r build/app/outputs/flutter-apk/app-debug.apk`
+- `adb shell monkey -p com.softstarter.pushsale -c android.intent.category.LAUNCHER 1`
+
+Resultats :
+- Onglet Produits SuperAdmin charge de nouveau en mode reel.
+- Edition acteur pre-remplit nom, prenom, email, telephone, workspace et distributeur rattache.
+- Affectation acteur existant affiche les noms/emails/workspaces et permet detach par swipe dans le detail distributeur.
+- Profil Distributeur : les statistiques globales ne sont plus repetees dans les onglets; elles restent dans le dashboard.
+- Distributeur : acteurs, depots et stock sont filtres par distributeur rattache au manager connecte.
+- APK debug genere, installe et lance sur SM A165F.
+
+Risque :
+- Faible; corrections de mapping, scope et UI defensive sans operation destructive ni changement de workflow metier.

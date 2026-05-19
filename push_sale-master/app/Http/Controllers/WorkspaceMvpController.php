@@ -134,6 +134,7 @@ class WorkspaceMvpController extends Controller
 
     private function actorPayload(Actor $actor): array
     {
+        $distributorId = $this->actorDistributorId($actor);
         return [
             'id' => $actor->id,
             'name' => trim(($actor->firstname ?? '') . ' ' . ($actor->lastname ?? '')) ?: $actor->mail,
@@ -141,14 +142,17 @@ class WorkspaceMvpController extends Controller
             'type' => $actor->type,
             'profile' => optional($actor->Profile)->name,
             'workspace_type' => WorkspaceResolver::type($actor),
-            'distributor_id' => $actor->distributor_id,
+            'distributor_id' => $distributorId,
             'distributor' => optional($actor->Distributor)->name,
         ];
     }
 
     private function stats(string $workspace, Actor $actor, string $section): array
     {
-        if ($workspace === WorkspaceResolver::SUPERADMIN && $section !== 'dashboard') {
+        if (
+            in_array($workspace, [WorkspaceResolver::SUPERADMIN, WorkspaceResolver::DISTRIBUTEUR], true)
+            && $section !== 'dashboard'
+        ) {
             return [];
         }
 
@@ -232,7 +236,7 @@ class WorkspaceMvpController extends Controller
                 ['title' => 'Livraisons liees au stock', 'items' => $this->purchaseOrderItems($workspace, $actor, ['new', 'taken', 'in_way', 'shipped'])],
             ],
             'products', 'catalog' => [
-                ['title' => 'Produits disponibles', 'items' => $this->productItems($workspace)],
+                ['title' => 'Produits disponibles', 'items' => $this->productItems($workspace, $actor)],
             ],
             'clients' => [
                 ['title' => 'Clients affectes', 'items' => $this->clientItems($workspace, $actor)],
@@ -293,7 +297,7 @@ class WorkspaceMvpController extends Controller
             ],
             WorkspaceResolver::POINT_VENTE => [
                 ['title' => 'Mes commandes recentes', 'items' => $this->orderItems($workspace, $actor)],
-                ['title' => 'Catalogue recommande', 'items' => $this->productItems($workspace)],
+                ['title' => 'Catalogue recommande', 'items' => $this->productItems($workspace, $actor)],
             ],
             default => [
                 ['title' => 'Priorites', 'items' => $this->priorityItems($workspace, $actor)],
@@ -308,7 +312,10 @@ class WorkspaceMvpController extends Controller
             ['label' => 'Actualiser', 'kind' => 'refresh', 'enabled' => true],
         ];
 
-        if (in_array($section, ['products', 'catalog'], true) && $workspace !== WorkspaceResolver::SUPERADMIN) {
+        if (
+            in_array($section, ['products', 'catalog'], true)
+            && in_array($workspace, [WorkspaceResolver::COMMERCIAL, WorkspaceResolver::POINT_VENTE], true)
+        ) {
             $actions[] = ['label' => 'Ajouter au panier', 'kind' => 'cart', 'enabled' => true];
         }
 
@@ -344,6 +351,7 @@ class WorkspaceMvpController extends Controller
 
         if ($workspace === WorkspaceResolver::SUPERADMIN && $section === 'products') {
             $actions[] = ['label' => 'Ajouter produit', 'kind' => 'create_product', 'enabled' => true];
+            $actions[] = ['label' => 'Ajouter categorie', 'kind' => 'create_category', 'enabled' => true];
         }
 
         if ($workspace === WorkspaceResolver::SUPERADMIN && $section === 'dashboard') {
@@ -443,11 +451,27 @@ class WorkspaceMvpController extends Controller
         })->values()->all();
     }
 
-    private function productItems(?string $workspace = null): array
+    private function productItems(?string $workspace = null, ?Actor $actor = null): array
     {
-        return Product::with(['category', 'allVariants.pricing'])->limit(30)->get()->map(function ($product) {
+        $query = Product::with(['category', 'Distributor', 'allVariants'])->limit(30);
+        if (
+            $workspace !== WorkspaceResolver::SUPERADMIN
+            && $actor
+            && $this->actorDistributorId($actor)
+            && Schema::hasColumn('product', 'distributor_id')
+        ) {
+            $distributorId = $this->actorDistributorId($actor);
+            $query->where(function ($q) use ($distributorId) {
+                $q->whereNull('distributor_id')
+                    ->orWhere('distributor_id', $distributorId);
+            });
+        }
+
+        return $query->get()->map(function ($product) use ($workspace) {
             $variant = $product->allVariants->first();
-            $price = optional(optional($variant)->pricing->first())->price;
+            $price = data_get($variant, 'price')
+                ?? data_get($variant, 'sale_price')
+                ?? data_get($variant, 'amount');
             return [
                 'id' => $product->id,
                 'title' => $product->short_description_fr ?: 'Produit sans nom',
@@ -457,11 +481,15 @@ class WorkspaceMvpController extends Controller
                     : ($price ? 'En stock' : 'Prix a verifier'),
                 'amount' => $price ? $this->money((float) $price) : '',
                 'meta' => 'Ref. ' . ($product->ssin ?? $product->id),
-                'action' => $workspace === WorkspaceResolver::SUPERADMIN ? 'Ouvrir' : 'Ajouter',
+                'action' => in_array($workspace, [WorkspaceResolver::COMMERCIAL, WorkspaceResolver::POINT_VENTE], true)
+                    ? 'Ajouter'
+                    : 'Ouvrir',
                 'kind' => 'product',
                 'ssin' => $product->ssin,
                 'category_id' => $product->category_id,
+                'category_label' => optional($product->category)->short_description_fr,
                 'distributor_id' => $product->distributor_id ?? null,
+                'distributor_label' => optional($product->Distributor)->name,
                 'is_active' => Schema::hasColumn('product', 'is_active') ? (bool) $product->is_active : true,
                 'variant_count' => $product->allVariants->count(),
             ];
@@ -696,8 +724,9 @@ class WorkspaceMvpController extends Controller
         }
 
         $query = DB::table('audit_logs')->orderByDesc('created_at');
-        if ($workspace !== WorkspaceResolver::SUPERADMIN && $actor->distributor_id) {
-            $query->where('distributor_id', $actor->distributor_id);
+        $distributorId = $this->actorDistributorId($actor);
+        if ($workspace !== WorkspaceResolver::SUPERADMIN && $distributorId) {
+            $query->where('distributor_id', $distributorId);
         }
 
         return $query->limit(20)->get()->map(function ($log) {
@@ -748,8 +777,9 @@ class WorkspaceMvpController extends Controller
     private function distributorsQuery(string $workspace, Actor $actor): Builder
     {
         $query = Distributor::query()->with('address');
-        if ($workspace !== WorkspaceResolver::SUPERADMIN && $actor->distributor_id) {
-            $query->where('id', $actor->distributor_id);
+        $distributorId = $this->actorDistributorId($actor);
+        if ($workspace !== WorkspaceResolver::SUPERADMIN && $distributorId) {
+            $query->where('id', $distributorId);
         }
 
         return $query;
@@ -758,8 +788,14 @@ class WorkspaceMvpController extends Controller
     private function actorsQuery(string $workspace, Actor $actor): Builder
     {
         $query = Actor::query()->with(['Profile', 'Distributor']);
-        if ($workspace !== WorkspaceResolver::SUPERADMIN && $actor->distributor_id) {
-            $query->where('distributor_id', $actor->distributor_id);
+        $distributorId = $this->actorDistributorId($actor);
+        if ($workspace !== WorkspaceResolver::SUPERADMIN && $distributorId) {
+            $query->where(function ($q) use ($distributorId) {
+                $q->where('distributor_id', $distributorId);
+                if (Schema::hasColumn('actor', 'id_distributor')) {
+                    $q->orWhere('id_distributor', $distributorId);
+                }
+            });
         } elseif ($workspace !== WorkspaceResolver::SUPERADMIN) {
             $query->where('id', $actor->id);
         }
@@ -770,8 +806,9 @@ class WorkspaceMvpController extends Controller
     private function warehousesQuery(string $workspace, Actor $actor): Builder
     {
         $query = Warehouse::query()->with(['address.City']);
-        if ($workspace !== WorkspaceResolver::SUPERADMIN && $actor->distributor_id) {
-            $query->where('distributor_id', $actor->distributor_id);
+        $distributorId = $this->actorDistributorId($actor);
+        if ($workspace !== WorkspaceResolver::SUPERADMIN && $distributorId) {
+            $query->where('distributor_id', $distributorId);
         }
 
         return $query;
@@ -784,8 +821,14 @@ class WorkspaceMvpController extends Controller
             $query->whereIn('id', $this->pointVenteClientIds($actor));
         } elseif ($workspace === WorkspaceResolver::COMMERCIAL) {
             $query->where('actor_id', $actor->id);
-        } elseif ($workspace !== WorkspaceResolver::SUPERADMIN && $actor->distributor_id) {
-            $query->whereHas('Actor', fn ($q) => $q->where('distributor_id', $actor->distributor_id));
+        } elseif ($workspace !== WorkspaceResolver::SUPERADMIN && $this->actorDistributorId($actor)) {
+            $distributorId = $this->actorDistributorId($actor);
+            $query->whereHas('Actor', function ($q) use ($distributorId) {
+                $q->where('distributor_id', $distributorId);
+                if (Schema::hasColumn('actor', 'id_distributor')) {
+                    $q->orWhere('id_distributor', $distributorId);
+                }
+            });
         }
 
         return $query;
@@ -798,8 +841,9 @@ class WorkspaceMvpController extends Controller
             $query->whereIn('client_id', $this->pointVenteClientIds($actor));
         } elseif ($workspace === WorkspaceResolver::COMMERCIAL) {
             $query->where('actor_id', $actor->id);
-        } elseif ($workspace !== WorkspaceResolver::SUPERADMIN && $actor->distributor_id) {
-            $query->whereHas('PurchaseOrders.warehouse', fn ($q) => $q->where('distributor_id', $actor->distributor_id));
+        } elseif ($workspace !== WorkspaceResolver::SUPERADMIN && $this->actorDistributorId($actor)) {
+            $distributorId = $this->actorDistributorId($actor);
+            $query->whereHas('PurchaseOrders.warehouse', fn ($q) => $q->where('distributor_id', $distributorId));
         }
 
         return $query;
@@ -815,14 +859,16 @@ class WorkspaceMvpController extends Controller
         if ($workspace === WorkspaceResolver::POINT_VENTE) {
             $query->whereIn('client_id', $this->pointVenteClientIds($actor));
         } elseif ($workspace === WorkspaceResolver::LIVREUR) {
-            $query->where(function ($q) use ($actor) {
+            $distributorId = $this->actorDistributorId($actor);
+            $query->where(function ($q) use ($actor, $distributorId) {
                 $q->where('actor_id', $actor->id);
-                if ($actor->distributor_id) {
-                    $q->orWhereHas('warehouse', fn ($warehouse) => $warehouse->where('distributor_id', $actor->distributor_id));
+                if ($distributorId) {
+                    $q->orWhereHas('warehouse', fn ($warehouse) => $warehouse->where('distributor_id', $distributorId));
                 }
             });
-        } elseif ($workspace !== WorkspaceResolver::SUPERADMIN && $actor->distributor_id) {
-            $query->whereHas('warehouse', fn ($q) => $q->where('distributor_id', $actor->distributor_id));
+        } elseif ($workspace !== WorkspaceResolver::SUPERADMIN && $this->actorDistributorId($actor)) {
+            $distributorId = $this->actorDistributorId($actor);
+            $query->whereHas('warehouse', fn ($q) => $q->where('distributor_id', $distributorId));
         }
 
         return $query;
@@ -835,8 +881,14 @@ class WorkspaceMvpController extends Controller
             $query->whereIn('client_id', $this->pointVenteClientIds($actor));
         } elseif ($workspace === WorkspaceResolver::COMMERCIAL) {
             $query->where('actor_id', $actor->id);
-        } elseif ($workspace !== WorkspaceResolver::SUPERADMIN && $actor->distributor_id) {
-            $query->whereHas('client.Actor', fn ($q) => $q->where('distributor_id', $actor->distributor_id));
+        } elseif ($workspace !== WorkspaceResolver::SUPERADMIN && $this->actorDistributorId($actor)) {
+            $distributorId = $this->actorDistributorId($actor);
+            $query->whereHas('client.Actor', function ($q) use ($distributorId) {
+                $q->where('distributor_id', $distributorId);
+                if (Schema::hasColumn('actor', 'id_distributor')) {
+                    $q->orWhere('id_distributor', $distributorId);
+                }
+            });
         }
 
         return $query;
@@ -858,6 +910,19 @@ class WorkspaceMvpController extends Controller
             ->where('is_active', true)
             ->pluck('client_id')
             ->all();
+    }
+
+    private function actorDistributorId(?Actor $actor): ?string
+    {
+        if (!$actor) {
+            return null;
+        }
+
+        $id = $actor->distributor_id
+            ?? (Schema::hasColumn('actor', 'id_distributor') ? $actor->id_distributor : null);
+
+        $id = trim((string) $id);
+        return $id === '' ? null : $id;
     }
 
     private function stateLabel(?string $state): string

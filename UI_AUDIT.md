@@ -123,3 +123,38 @@ Objectif : rapprocher le workspace SuperAdmin des maquettes fournies tout en gar
 
 - Validation visuelle smartphone a refaire apres reconnexion ADB.
 - Warnings Flutter stricts historiques hors workspace SuperAdmin a nettoyer par module.
+
+## SuperAdmin produits / variants 2026-05-19
+
+Objectif : rendre le detail produit lisible et coherent avec le role SuperAdmin.
+
+Corrections UI :
+- Variants regroupes par famille/type avec sections repliables.
+- Ligne variant cliquable pour ouvrir la modification, sans bouton `Modifier` repete sur chaque ligne.
+- Suppression par glissement lateral, avec confirmation et securite backend.
+- Affichage centre sur catalogue maitre : famille, detail, SKU, conditionnement.
+- Mention claire : prix et stock sont geres par les distributeurs/depots, pas par SuperAdmin.
+
+Regle UX/metier :
+- SuperAdmin cree et organise le catalogue global lisible par les distributeurs.
+- Le distributeur fixe ses prix, gere ses depots et alimente ses stocks.
+- L'interface SuperAdmin ne doit pas donner l'impression qu'il gere les prix ou stocks operationnels.
+
+Validation :
+- API `Serviette Awane` : 41 variants regroupes correctement.
+- Build APK debug VPN OK.
+- Installation et lancement smartphone OK sur SM A165F.
+
+## SuperAdmin produits / categories 2026-05-19
+
+Objectif : simplifier la gestion catalogue sur petit smartphone.
+
+Corrections UI :
+- Filtre `Categorie` ajoute dans la barre compacte Produits, avant `Statut`.
+- Bouton `Ajouter categorie` ajoute aux actions rapides de l'onglet Produits.
+- Formulaire produit nettoye : plus de bouton categorie interne pendant creation/modification.
+- Edition produit : categorie et distributeur sont precharges avec des valeurs dropdown sures, meme apres chargement asynchrone des references.
+
+Regle metier affichee :
+- SuperAdmin organise categories, produits et variants du catalogue maitre.
+- Les prix, stocks et mouvements restent dans le perimetre distributeur/depot.
