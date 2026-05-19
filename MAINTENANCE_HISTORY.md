@@ -986,5 +986,11 @@ Resultats :
 - Distributeur : acteurs, depots et stock sont filtres par distributeur rattache au manager connecte.
 - APK debug genere, installe et lance sur SM A165F.
 
+Validation supplementaire 2026-05-19 :
+- `adb connect 10.212.134.2:39423` OK.
+- `Test-NetConnection 10.212.134.2 -Port 39423` OK.
+- APK debug VPN reinstalle avec succes sur SM A165F.
+- Application relancee par `adb shell monkey`.
+
 Risque :
 - Faible; corrections de mapping, scope et UI defensive sans operation destructive ni changement de workflow metier.

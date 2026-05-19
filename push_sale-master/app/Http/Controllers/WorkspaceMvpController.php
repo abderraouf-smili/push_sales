@@ -3,22 +3,36 @@
 namespace App\Http\Controllers;
 
 use App\Models\Actor;
+use App\Models\ActorProfile;
+use App\Models\Address;
+use App\Models\Category;
 use App\Models\Client;
 use App\Models\Distributor;
 use App\Models\Order;
+use App\Models\PriceList;
+use App\Models\PriceListItem;
 use App\Models\Product;
+use App\Models\Coupon;
+use App\Models\Promotion;
+use App\Models\PromotionItem;
+use App\Models\PromotionType;
 use App\Models\PurchaseOrder;
 use App\Models\StockMobile;
 use App\Models\StockQuantity;
 use App\Models\Transactions;
+use App\Models\TypePV;
+use App\Models\User;
+use App\Models\Variant;
 use App\Models\Warehouse;
 use App\Support\WorkspaceResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Throwable;
 
 class WorkspaceMvpController extends Controller
@@ -35,6 +49,7 @@ class WorkspaceMvpController extends Controller
 
             $workspace = WorkspaceResolver::type($actor);
             $section = (string) $request->input('section', 'dashboard');
+            $dashboardDistributorId = $this->dashboardDistributorScope($workspace, $actor, $section, $request);
 
             return response()->json([
                 'status' => 'SUCCESS',
@@ -49,9 +64,10 @@ class WorkspaceMvpController extends Controller
                         'email' => $user->email,
                     ],
                     'actor' => $this->actorPayload($actor),
-                    'stats' => $this->stats($workspace, $actor, $section),
+                    'dashboard_filters' => $this->dashboardFilters($workspace, $actor, $dashboardDistributorId),
+                    'stats' => $this->stats($workspace, $actor, $section, $dashboardDistributorId),
                     'lists' => $this->lists($workspace, $actor, $section),
-                    'actions' => $this->actions($workspace, $section),
+                    'actions' => $this->actions($workspace, $actor, $section),
                 ],
             ]);
         } catch (Throwable $e) {
@@ -65,6 +81,454 @@ class WorkspaceMvpController extends Controller
                 'message' => 'Unable to load workspace data',
             ]);
         }
+    }
+
+    public function distributorContext()
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+
+        $workspace = WorkspaceResolver::DISTRIBUTEUR;
+        $productsQuery = Product::with(['allVariants', 'category', 'Distributor'])->limit(100);
+        if ($this->actorDistributorId($actor) && Schema::hasColumn('product', 'distributor_id')) {
+            $distributorId = $this->actorDistributorId($actor);
+            $productsQuery->where(function ($query) use ($distributorId) {
+                $query->whereNull('distributor_id')
+                    ->orWhere('distributor_id', $distributorId);
+            });
+        }
+        $products = $productsQuery->get();
+        $warehouseIds = $this->warehouseIds($workspace, $actor);
+
+        return response()->json([
+            'status' => 'SUCCESS',
+            'message' => 'Referentiels distributeur charges.',
+            'data' => [
+                'distributor_id' => $this->actorDistributorId($actor),
+                'warehouses_count' => count($warehouseIds),
+                'warehouses' => $this->warehousesQuery($workspace, $actor)
+                    ->limit(100)
+                    ->get()
+                    ->map(fn ($warehouse) => [
+                        'id' => $warehouse->id,
+                        'title' => $warehouse->name,
+                        'subtitle' => optional($warehouse->address)->commune,
+                    ])
+                    ->values(),
+                'products' => $products->map(fn ($product) => [
+                    'id' => $product->id,
+                    'title' => $product->short_description_fr ?: $product->name ?: ('Produit ' . $product->id),
+                    'subtitle' => optional($product->category)->short_description_fr ?: ($product->ssin ?: 'Catalogue'),
+                    'category_id' => $product->category_id,
+                    'category_name' => optional($product->category)->short_description_fr,
+                ])->values(),
+                'variants' => $products->flatMap(function ($product) use ($warehouseIds, $actor) {
+                    return $product->allVariants->map(function ($variant) use ($product, $warehouseIds, $actor) {
+                        $stock = StockQuantity::where('variant_id', $variant->id)
+                            ->whereIn('emplacement_id', $warehouseIds)
+                            ->sum('quantity');
+                        $price = $this->priceForVariant($variant->id, $this->actorDistributorId($actor));
+
+                        return [
+                            'id' => $variant->id,
+                            'title' => trim(($product->name ?: 'Produit') . ' - ' . ($variant->variant1_fr ?: $variant->variant2_fr ?: $variant->barcode ?: $variant->id)),
+                            'subtitle' => 'Stock ' . (int) $stock . ' - prix ' . ($price !== null ? $this->money((float) $price) : 'a definir'),
+                            'product_id' => $product->id,
+                            'product_name' => $product->name,
+                            'price' => $price,
+                            'stock_quantity' => (int) $stock,
+                        ];
+                    });
+                })->values(),
+                'type_pv' => TypePV::query()
+                    ->limit(100)
+                    ->get()
+                    ->map(fn ($type) => [
+                        'id' => $type->id,
+                        'title' => $type->name,
+                    ])
+                    ->values(),
+                'categories' => Category::query()
+                    ->limit(100)
+                    ->get()
+                    ->map(fn ($category) => [
+                        'id' => $category->id,
+                        'title' => $category->short_description_fr
+                            ?? $category->short_description
+                            ?? $category->name
+                            ?? $category->label
+                            ?? $category->id,
+                    ])
+                    ->values(),
+                'promotion_types' => PromotionType::query()
+                    ->limit(100)
+                    ->get()
+                    ->map(fn ($type) => [
+                        'id' => $type->id,
+                        'title' => $type->name ?? $type->description ?? $type->id,
+                    ])
+                    ->values(),
+                'actor_profiles' => ActorProfile::query()
+                    ->whereIn('workspace_type', ['distributeur', 'commercial', 'depot', 'livreur'])
+                    ->orWhereIn('code', ['distributeur', 'commercial', 'depot', 'livreur'])
+                    ->limit(50)
+                    ->get()
+                    ->map(fn ($profile) => [
+                        'id' => $profile->id,
+                        'title' => $profile->name ?? $profile->code ?? $profile->type ?? 'Profil',
+                        'workspace_type' => $profile->workspace_type ?? $profile->code,
+                    ])
+                    ->values(),
+            ],
+        ]);
+    }
+
+    public function createDistributorActor(Request $request)
+    {
+        $manager = $this->currentDistributorActor();
+        if (!$manager) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+
+        $workspace = (string) $request->input('workspace_type', 'commercial');
+        if (!in_array($workspace, ['distributeur', 'commercial', 'depot', 'livreur'], true)) {
+            return $this->fail('Workspace acteur non autorise pour le distributeur.');
+        }
+
+        $email = trim((string) $request->input('email'));
+        $firstname = trim((string) $request->input('firstname'));
+        if ($email === '' || $firstname === '') {
+            return $this->fail('Prenom et email sont obligatoires.');
+        }
+        if (User::where('email', $email)->exists()) {
+            return $this->fail('Un utilisateur existe deja avec cet email.');
+        }
+
+        $profile = $this->profileForWorkspace($workspace);
+        if (!$profile) {
+            return $this->fail('Profil acteur introuvable pour ' . $workspace . '.');
+        }
+
+        $password = (string) $request->input('password', 'Test@123456');
+        $userId = $this->makeId('USR', $email);
+        $actorId = $this->makeId('ACT', $email);
+        $addressId = $this->makeId('ADDR', $email);
+
+        $user = User::create([
+            'id' => $userId,
+            'name' => trim($firstname . ' ' . (string) $request->input('lastname')),
+            'email' => $email,
+            'email_verified_at' => $request->boolean('email_verified', true) ? now() : null,
+            'password' => Hash::make($password),
+        ]);
+
+        $address = Address::create([
+            'id' => $addressId,
+            'street' => (string) $request->input('street', ''),
+            'commune' => (string) $request->input('commune', ''),
+        ]);
+
+        $actor = Actor::create([
+            'id' => $actorId,
+            'type' => 'distributor_staff',
+            'firstname' => $firstname,
+            'lastname' => (string) $request->input('lastname', ''),
+            'mail' => $email,
+            'phone' => (string) $request->input('phone', ''),
+            'user_id' => $user->id,
+            'profile_id' => $profile->id,
+            'distributor_id' => $this->actorDistributorId($manager),
+            'address_id' => $address->id,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
+        if (Schema::hasColumn('actor', 'id_distributor')) {
+            Actor::where('id', $actor->id)->update(['id_distributor' => $this->actorDistributorId($manager)]);
+        }
+
+        if (($profile->has_stock_mobile ?? false) && Schema::hasTable('stock_mobile')) {
+            StockMobile::firstOrCreate(['actor_id' => $actor->id], [
+                'id' => $this->makeId('MOB', $actor->id),
+                'name' => 'Stock mobile ' . trim($actor->firstname . ' ' . $actor->lastname),
+                'code' => $actor->id,
+            ]);
+        }
+
+        $this->auditDistributorAction('create_actor', 'actor', $actor->id, $actor->toArray(), $this->actorDistributorId($manager));
+
+        return $this->ok(['actor' => $actor->load(['Profile', 'Distributor'])], 'Acteur cree et rattache au distributeur.');
+    }
+
+    public function createDistributorWarehouse(Request $request)
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+        $name = trim((string) $request->input('name'));
+        if ($name === '') {
+            return $this->fail('Nom depot obligatoire.');
+        }
+
+        $warehouseId = $this->makeId('WH', $name);
+        $address = Address::create([
+            'id' => $this->makeId('ADDR', $warehouseId),
+            'street' => (string) $request->input('street', ''),
+            'commune' => (string) $request->input('commune', ''),
+        ]);
+        $warehouse = Warehouse::create([
+            'id' => $warehouseId,
+            'name' => $name,
+            'code' => $this->uniqueCode(
+                'warehouse',
+                'code',
+                (string) ($request->input('code') ?: $name),
+                'WH'
+            ),
+            'distributor_id' => $this->actorDistributorId($actor),
+            'address_id' => $address->id,
+        ]);
+
+        $this->auditDistributorAction('create_warehouse', 'warehouse', $warehouse->id, $warehouse->toArray(), $this->actorDistributorId($actor));
+
+        return $this->ok(['warehouse' => $warehouse], 'Depot cree pour le distributeur.');
+    }
+
+    public function createDistributorClient(Request $request)
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+        $name = trim((string) $request->input('name'));
+        if ($name === '') {
+            return $this->fail('Nom client obligatoire.');
+        }
+
+        $typePv = $request->input('typepv_id') ?: optional(TypePV::query()->first())->id;
+        if (!$typePv) {
+            return $this->fail('Type de point de vente indisponible. Creez au moins un type PV avant de creer un client.');
+        }
+        $address = Address::create([
+            'id' => $this->makeId('ADDR', $name),
+            'street' => (string) $request->input('street', ''),
+            'commune' => (string) $request->input('commune', ''),
+        ]);
+        $clientPayload = [
+            'id' => $this->makeId('CL', $name),
+            'name' => $name,
+            'mobile' => (string) $request->input('phone', ''),
+            'actor_id' => $actor->id,
+            'address_id' => $address->id,
+            'typepv_id' => $typePv,
+        ];
+        if (Schema::hasColumn('client', 'code')) {
+            $clientPayload['code'] = $this->uniqueCode('client', 'code', $name, 'CL');
+        }
+        $client = Client::create($clientPayload);
+
+        $this->auditDistributorAction('create_client', 'client', $client->id, $client->toArray(), $this->actorDistributorId($actor));
+
+        return $this->ok(['client' => $client], 'Client cree pour le distributeur.');
+    }
+
+    public function createDistributorCoupon(Request $request)
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+
+        $code = trim((string) $request->input('code'));
+        if ($code === '') {
+            return $this->fail('Code coupon obligatoire.');
+        }
+
+        $coupon = Coupon::create([
+            'id' => $this->makeId('CPN', $code),
+            'description' => (string) $request->input('description', $code),
+            'code' => $code,
+            'is_pourcentage' => $request->boolean('is_pourcentage', true),
+            'discount' => (float) $request->input('discount', 0),
+            'count' => (int) $request->input('count', 100),
+            'min_amount' => (float) $request->input('min_amount', 0),
+            'start_date' => $request->input('start_date') ?: now(),
+            'end_date' => $request->input('end_date') ?: now()->addMonth(),
+            'distributor_id' => $this->actorDistributorId($actor),
+        ]);
+
+        $this->auditDistributorAction('create_coupon', 'coupon', $coupon->id, $coupon->toArray(), $this->actorDistributorId($actor));
+
+        return $this->ok(['coupon' => $coupon], 'Coupon cree.');
+    }
+
+    public function createDistributorPromotion(Request $request)
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+
+        $description = trim((string) $request->input('description'));
+        if ($description === '') {
+            return $this->fail('Description promotion obligatoire.');
+        }
+
+        $typePv = $request->input('typepv_id') ?: optional(TypePV::query()->first())->id;
+        $typePromotion = $request->input('type_promotion_id') ?: optional(PromotionType::query()->first())->id;
+        if (!$typePv || !$typePromotion) {
+            return $this->fail('Configuration promotion incomplete. Type PV et type promotion sont requis.');
+        }
+        $discount = (float) $request->input('discount', 0);
+        if ($discount <= 0) {
+            return $this->fail('La remise doit etre superieure a 0.');
+        }
+
+        $promotion = Promotion::create([
+            'id' => $this->makeId('PROM', $description),
+            'description' => $description,
+            'start_date' => $request->input('start_date') ?: now(),
+            'end_date' => $request->input('end_date') ?: now()->addMonth(),
+            'typepv_id' => $typePv,
+            'type_promotion_id' => $typePromotion,
+            'distributor_id' => $this->actorDistributorId($actor),
+        ]);
+
+        $lines = $request->input('lines', []);
+        if (!is_array($lines) || empty($lines)) {
+            $lines = [[
+                'category_id' => $request->input('category_id'),
+                'product_id' => $request->input('product_id'),
+                'variant_id' => $request->input('variant_id'),
+                'discount' => $discount,
+                'unite' => $request->input('unite', '%'),
+                'minimum' => (int) $request->input('minimum', 1),
+            ]];
+        }
+
+        $createdLines = [];
+        foreach ($lines as $index => $line) {
+            $createdLines[] = PromotionItem::create([
+                'id' => $this->makeId('PROMITEM', $promotion->id . $index . json_encode($line)),
+                'promotion_id' => $promotion->id,
+                'category_id' => $line['category_id'] ?? null,
+                'product_id' => $line['product_id'] ?? null,
+                'variant_id' => $line['variant_id'] ?? null,
+                'discount' => (float) ($line['discount'] ?? $discount),
+                'unite' => (string) ($line['unite'] ?? $request->input('unite', '%')),
+                'minimum' => (int) ($line['minimum'] ?? $request->input('minimum', 1)),
+            ]);
+        }
+
+        $this->auditDistributorAction('create_promotion', 'promotion', $promotion->id, [
+            ...$promotion->toArray(),
+            'lines_count' => count($createdLines),
+        ], $this->actorDistributorId($actor));
+
+        return $this->ok(['promotion' => $promotion, 'items' => $createdLines], 'Promotion creee avec lignes applicables.');
+    }
+
+    public function adjustDistributorStock(Request $request)
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+
+        $warehouseId = (string) $request->input('warehouse_id');
+        $variantId = (string) $request->input('variant_id');
+        if ($warehouseId === '' || $variantId === '') {
+            return $this->fail('Depot et variant obligatoires.');
+        }
+
+        $warehouse = $this->warehousesQuery(WorkspaceResolver::DISTRIBUTEUR, $actor)->where('id', $warehouseId)->first();
+        if (!$warehouse) {
+            return $this->fail('Depot non autorise pour ce distributeur.');
+        }
+        if (!Variant::where('id', $variantId)->exists()) {
+            return $this->fail('Variant introuvable.');
+        }
+
+        $quantity = (int) $request->input('quantity', 0);
+        $mode = (string) $request->input('mode', 'set');
+        $stock = StockQuantity::firstOrCreate([
+            'emplacement_id' => $warehouseId,
+            'is_mobile' => false,
+            'variant_id' => $variantId,
+        ], [
+            'id' => $this->makeId('STK', $warehouseId . $variantId),
+            'quantity' => 0,
+            'previsionnel' => 0,
+            'lastpurchaseprice' => (float) $request->input('lastpurchaseprice', 0),
+            'stock_price' => (float) $request->input('stock_price', 0),
+        ]);
+
+        $old = (int) $stock->quantity;
+        $new = match ($mode) {
+            'add' => $old + $quantity,
+            'sub' => max(0, $old - $quantity),
+            default => max(0, $quantity),
+        };
+        $stock->quantity = $new;
+        $stock->previsionnel = $new;
+        if ($request->has('lastpurchaseprice')) {
+            $stock->lastpurchaseprice = (float) $request->input('lastpurchaseprice', 0);
+        }
+        $stock->save();
+
+        $this->auditDistributorAction('adjust_stock', 'stock_quantity', $stock->id, ['old_quantity' => $old, 'new_quantity' => $new, 'variant_id' => $variantId, 'warehouse_id' => $warehouseId], $this->actorDistributorId($actor));
+
+        return $this->ok(['stock' => $stock], 'Stock ajuste.');
+    }
+
+    public function saveDistributorVariantPrice(Request $request, $id)
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+        if (!Variant::where('id', $id)->exists()) {
+            return $this->fail('Variant introuvable.');
+        }
+
+        $price = (float) $request->input('price', 0);
+        if ($price <= 0) {
+            return $this->fail('Prix de vente obligatoire.');
+        }
+
+        $typePvId = $request->input('typepv_id') ?: optional(TypePV::query()->first())->id;
+        $priceList = PriceList::firstOrCreate([
+            'distributor_id' => $this->actorDistributorId($actor),
+            'typepv_id' => $typePvId,
+        ], [
+            'id' => $this->makeId('PL', $this->actorDistributorId($actor) . $typePvId),
+            'code' => 'DEFAULT-' . $this->actorDistributorId($actor),
+            'name' => 'Liste prix distributeur',
+            'description' => 'Liste prix creee depuis workspace distributeur',
+            'start_date' => now(),
+            'end_date' => now()->addYear(),
+            'active' => true,
+        ]);
+
+        $item = PriceListItem::where('pricelist_id', $priceList->id)
+            ->where('variant_id', $id)
+            ->first();
+        if (!$item) {
+            $item = new PriceListItem([
+                'id' => $this->makeId('PLI', $priceList->id . $id),
+                'pricelist_id' => $priceList->id,
+                'variant_id' => $id,
+            ]);
+        }
+        $item->sku = (string) $request->input('sku', $id);
+        $item->price = $price;
+        $item->save();
+
+        $this->auditDistributorAction('save_variant_price', 'pricelist_item', $item->id, $item->toArray(), $this->actorDistributorId($actor));
+
+        return $this->ok(['price' => $item], 'Prix variant enregistre.');
     }
 
     private function title(string $workspace, string $section): string
@@ -102,6 +566,9 @@ class WorkspaceMvpController extends Controller
             'audit_logs' => 'Audit logs',
             'settings' => 'Parametres',
             'profile' => 'Profil',
+            'promotions' => 'Promotions',
+            'coupons' => 'Coupons',
+            'more' => 'Plus',
         ];
 
         return $map[$section] ?? ucfirst(str_replace('_', ' ', $section));
@@ -128,8 +595,62 @@ class WorkspaceMvpController extends Controller
                 ? 'Parametres application, securite et services externes'
                 : 'Compte, preferences et securite',
             'clients' => 'Liste claire avec visites, commandes et acces carte',
+            'promotions' => 'Promotions terrain gerees par le distributeur',
+            'coupons' => 'Coupons et remises controles par le distributeur',
+            'more' => 'Operations avancees du distributeur',
             default => 'Donnees reelles de la base pour valider le workflow',
         };
+    }
+
+    private function dashboardDistributorScope(string $workspace, Actor $actor, string $section, Request $request): ?string
+    {
+        if ($section !== 'dashboard') {
+            return null;
+        }
+
+        if ($workspace === WorkspaceResolver::DISTRIBUTEUR) {
+            return $this->actorDistributorId($actor);
+        }
+
+        if ($workspace !== WorkspaceResolver::SUPERADMIN) {
+            return null;
+        }
+
+        $id = trim((string) $request->input('distributor_id', ''));
+        if ($id === '' || $id === 'all') {
+            return null;
+        }
+
+        return Distributor::query()->where('id', $id)->exists() ? $id : null;
+    }
+
+    private function dashboardFilters(string $workspace, Actor $actor, ?string $selectedDistributorId): array
+    {
+        if ($workspace !== WorkspaceResolver::SUPERADMIN) {
+            return [];
+        }
+
+        $items = [[
+            'id' => 'all',
+            'title' => 'Tous les distributeurs',
+            'subtitle' => 'Vue globale plateforme',
+            'selected' => $selectedDistributorId === null,
+        ]];
+
+        Distributor::query()
+            ->orderBy('name')
+            ->limit(100)
+            ->get()
+            ->each(function ($distributor) use (&$items, $selectedDistributorId) {
+                $items[] = [
+                    'id' => (string) $distributor->id,
+                    'title' => $distributor->name ?: ('Distributeur ' . $distributor->id),
+                    'subtitle' => 'Code ' . ($distributor->code ?: $distributor->id),
+                    'selected' => (string) $selectedDistributorId === (string) $distributor->id,
+                ];
+            });
+
+        return ['distributors' => $items];
     }
 
     private function actorPayload(Actor $actor): array
@@ -147,7 +668,7 @@ class WorkspaceMvpController extends Controller
         ];
     }
 
-    private function stats(string $workspace, Actor $actor, string $section): array
+    private function stats(string $workspace, Actor $actor, string $section, ?string $dashboardDistributorId = null): array
     {
         if (
             in_array($workspace, [WorkspaceResolver::SUPERADMIN, WorkspaceResolver::DISTRIBUTEUR], true)
@@ -156,8 +677,14 @@ class WorkspaceMvpController extends Controller
             return [];
         }
 
-        $warehouseIds = $this->warehouseIds($workspace, $actor);
-        $purchaseBase = $this->purchaseOrdersQuery($workspace, $actor);
+        $warehouseIds = $dashboardDistributorId
+            ? Warehouse::query()->where('distributor_id', $dashboardDistributorId)->pluck('id')->all()
+            : $this->warehouseIds($workspace, $actor);
+        $purchaseBase = $dashboardDistributorId
+            ? PurchaseOrder::query()
+                ->with(['client.Address', 'warehouse', 'orderitem'])
+                ->whereHas('warehouse', fn ($q) => $q->where('distributor_id', $dashboardDistributorId))
+            : $this->purchaseOrdersQuery($workspace, $actor);
 
         $stockQuery = StockQuantity::query();
         if ($workspace === WorkspaceResolver::LIVREUR && $actor->StockMobile) {
@@ -166,19 +693,35 @@ class WorkspaceMvpController extends Controller
             $stockQuery->whereIn('emplacement_id', $warehouseIds);
         }
 
-        $ordersCount = (string) $this->ordersQuery($workspace, $actor)->count();
+        $ordersCount = (string) ($dashboardDistributorId
+            ? Order::query()->whereHas('PurchaseOrders.warehouse', fn ($q) => $q->where('distributor_id', $dashboardDistributorId))->count()
+            : $this->ordersQuery($workspace, $actor)->count());
         $stockUnits = (string) (int) (clone $stockQuery)->sum('quantity');
         $deliveriesCount = (string) (clone $purchaseBase)->count();
         $toDeliverCount = (string) (clone $purchaseBase)->whereIn('state', ['new', 'prepared', 'packed', 'taken', 'in_way'])->count();
         $deliveredCount = (string) (clone $purchaseBase)->whereIn('state', ['shipped', 'paid', 'partially_paid'])->count();
-        $cashTotal = $this->money((float) $this->transactionsQuery($workspace, $actor)->sum('debit'));
+        $cashQuery = $dashboardDistributorId
+            ? Transactions::query()->whereHas('client.Actor', function ($q) use ($dashboardDistributorId) {
+                $q->where('distributor_id', $dashboardDistributorId);
+                if (Schema::hasColumn('actor', 'id_distributor')) {
+                    $q->orWhere('id_distributor', $dashboardDistributorId);
+                }
+            })
+            : $this->transactionsQuery($workspace, $actor);
+        $cashTotal = $this->money((float) $cashQuery->sum('debit'));
 
         return match ($workspace) {
             WorkspaceResolver::SUPERADMIN => [
-                $this->stat('Distributeurs', (string) $this->distributorsQuery($workspace, $actor)->count(), 'actifs', 'blue', 'business'),
-                $this->stat('Acteurs', (string) $this->actorsQuery($workspace, $actor)->count(), 'comptes lies', 'purple', 'users'),
+                $this->stat('Distributeurs', (string) ($dashboardDistributorId ? 1 : $this->distributorsQuery($workspace, $actor)->count()), $dashboardDistributorId ? 'scope selectionne' : 'actifs', 'blue', 'business'),
+                $this->stat('Acteurs', (string) ($dashboardDistributorId ? $this->actorsForDistributorCount($dashboardDistributorId) : $this->actorsQuery($workspace, $actor)->count()), 'comptes lies', 'purple', 'users'),
                 $this->stat('Commandes', $ordersCount, 'global', 'orange', 'orders'),
                 $this->stat('Stock total', $stockUnits, 'unites suivies', 'green', 'inventory'),
+            ],
+            WorkspaceResolver::DISTRIBUTEUR => [
+                $this->stat('Commandes', $ordersCount, 'dans le reseau', 'orange', 'orders'),
+                $this->stat('Livraisons', $deliveriesCount, $toDeliverCount . ' a traiter', 'purple', 'delivery'),
+                $this->stat('Encaissements', $cashTotal, 'transactions', 'green', 'cash'),
+                $this->stat('Stock faible', (string) (clone $stockQuery)->where('quantity', '<=', 10)->count(), 'a surveiller', 'red', 'inventory'),
             ],
             WorkspaceResolver::LIVREUR => [
                 $this->stat('Stock camion', $stockUnits, 'unites a bord', 'green', 'inventory'),
@@ -245,7 +788,7 @@ class WorkspaceMvpController extends Controller
                 ['title' => 'Commandes', 'items' => $this->orderItems($workspace, $actor)],
                 ['title' => 'Suivi operationnel', 'items' => $this->purchaseOrderItems($workspace, $actor)],
             ],
-            'prepare_orders', 'loadings', 'delivery' => [
+            'prepare_orders', 'loadings', 'delivery', 'deliveries' => [
                 ['title' => 'Filtre intelligent', 'items' => $this->deliveryFilterItems($workspace, $actor)],
                 ['title' => 'Demandes de livraison', 'items' => $this->purchaseOrderItems($workspace, $actor)],
             ],
@@ -254,6 +797,15 @@ class WorkspaceMvpController extends Controller
             ],
             'payments', 'credit' => [
                 ['title' => 'Solde et transactions', 'items' => $this->transactionItems($workspace, $actor)],
+            ],
+            'promotions' => [
+                ['title' => 'Promotions', 'items' => $this->promotionItems($workspace, $actor)],
+            ],
+            'coupons' => [
+                ['title' => 'Coupons', 'items' => $this->couponItems($workspace, $actor)],
+            ],
+            'more' => [
+                ['title' => 'Operations distributeur', 'items' => $this->moreItems($workspace, $actor)],
             ],
             'support' => [
                 ['title' => 'Support', 'items' => $this->supportItems()],
@@ -266,7 +818,11 @@ class WorkspaceMvpController extends Controller
                 ...($workspace === WorkspaceResolver::SUPERADMIN ? [
                     ['title' => 'Parametres application', 'items' => $this->superAdminSettingsItems()],
                     ['title' => 'Securite et services externes', 'items' => $this->superAdminSecurityItems()],
-                ] : []),
+                ] : ($workspace === WorkspaceResolver::DISTRIBUTEUR ? [
+                    ['title' => 'Informations distributeur', 'items' => $this->distributorProfileItems($actor)],
+                    ['title' => 'Configuration terrain', 'items' => $this->distributorConfigurationItems()],
+                    ['title' => 'Audit distributeur', 'items' => $this->auditItems($workspace, $actor)],
+                ] : [])),
             ],
             default => $this->dashboardLists($workspace, $actor),
         };
@@ -280,8 +836,10 @@ class WorkspaceMvpController extends Controller
                 ['title' => 'Transactions et alertes', 'items' => $this->superAdminTransactionAlertItems($actor)],
             ],
             WorkspaceResolver::DISTRIBUTEUR => [
+                ['title' => 'Alertes operationnelles', 'items' => $this->distributorAlertItems($actor)],
                 ['title' => 'Commandes recentes', 'items' => $this->orderItems($workspace, $actor)],
-                ['title' => 'Depots sous surveillance', 'items' => $this->warehouseItems($workspace, $actor)],
+                ['title' => 'Derniers paiements', 'items' => $this->transactionItems($workspace, $actor)],
+                ['title' => 'Activite equipe', 'items' => $this->actorItems($workspace, $actor)],
             ],
             WorkspaceResolver::COMMERCIAL => [
                 ['title' => 'Clients a visiter', 'items' => $this->clientItems($workspace, $actor)],
@@ -306,8 +864,12 @@ class WorkspaceMvpController extends Controller
         };
     }
 
-    private function actions(string $workspace, string $section): array
+    private function actions(string $workspace, Actor $actor, string $section): array
     {
+        $hasWarehouse = $workspace === WorkspaceResolver::DISTRIBUTEUR
+            ? $this->warehousesQuery($workspace, $actor)->exists()
+            : true;
+
         $actions = [
             ['label' => 'Actualiser', 'kind' => 'refresh', 'enabled' => true],
         ];
@@ -323,7 +885,7 @@ class WorkspaceMvpController extends Controller
             $actions[] = ['label' => 'Valider la commande', 'kind' => 'submit_order', 'enabled' => true];
         }
 
-        if (in_array($section, ['delivery', 'prepare_orders', 'loadings'], true)) {
+        if (in_array($section, ['delivery', 'deliveries', 'prepare_orders', 'loadings'], true)) {
             if ($workspace === WorkspaceResolver::LIVREUR) {
                 $actions[] = ['label' => 'Generer bon de reception', 'kind' => 'reception_note', 'enabled' => true];
                 $actions[] = ['label' => 'Confirmer livraison', 'kind' => 'confirm_delivery', 'enabled' => true];
@@ -339,7 +901,10 @@ class WorkspaceMvpController extends Controller
             $actions[] = ['label' => 'Ouvrir Maps', 'kind' => 'maps', 'enabled' => true];
         }
 
-        if (in_array($section, ['distributors', 'actors', 'warehouses', 'clients'], true)) {
+        if (
+            in_array($section, ['distributors', 'actors', 'warehouses', 'clients'], true)
+            && $workspace !== WorkspaceResolver::DISTRIBUTEUR
+        ) {
             if ($workspace === WorkspaceResolver::SUPERADMIN && $section === 'distributors') {
                 $actions[] = ['label' => 'Ajouter distributeur', 'kind' => 'create_distributor', 'enabled' => true];
             } elseif ($workspace === WorkspaceResolver::SUPERADMIN && $section === 'actors') {
@@ -360,7 +925,64 @@ class WorkspaceMvpController extends Controller
             $actions[] = ['label' => 'Voir audit logs', 'kind' => 'view_audit_logs', 'enabled' => true];
         }
 
+        if ($workspace === WorkspaceResolver::DISTRIBUTEUR) {
+            if ($section === 'dashboard') {
+                $actions[] = ['label' => 'Ajouter acteur', 'kind' => 'distributor_create_actor', 'enabled' => true];
+                $actions[] = [
+                    'label' => 'Ajuster stock',
+                    'kind' => 'distributor_adjust_stock',
+                    'enabled' => $hasWarehouse,
+                    'subtitle' => $hasWarehouse ? 'Stock depot' : 'Creez un depot avant ajustement',
+                ];
+                $actions[] = ['label' => 'Livraisons urgentes', 'kind' => 'open_delivery', 'enabled' => true];
+            } elseif ($section === 'actors') {
+                $actions[] = ['label' => 'Ajouter acteur', 'kind' => 'distributor_create_actor', 'enabled' => true];
+            } elseif (in_array($section, ['warehouses', 'stock', 'warehouse_stock'], true)) {
+                $actions[] = ['label' => 'Ajouter depot', 'kind' => 'distributor_create_warehouse', 'enabled' => true];
+                $actions[] = [
+                    'label' => 'Ajuster stock',
+                    'kind' => 'distributor_adjust_stock',
+                    'enabled' => $hasWarehouse,
+                    'subtitle' => $hasWarehouse ? 'Stock depot' : 'Creez un depot avant ajustement',
+                ];
+            } elseif ($section === 'products') {
+                $actions[] = ['label' => 'Definir prix', 'kind' => 'distributor_manage_prices', 'enabled' => true];
+                $actions[] = [
+                    'label' => 'Ajuster stock',
+                    'kind' => 'distributor_adjust_stock',
+                    'enabled' => $hasWarehouse,
+                    'subtitle' => $hasWarehouse ? 'Stock depot' : 'Creez un depot avant ajustement',
+                ];
+            } elseif ($section === 'clients') {
+                $actions[] = ['label' => 'Ajouter client', 'kind' => 'distributor_create_client', 'enabled' => true];
+            } elseif ($section === 'promotions') {
+                $actions[] = ['label' => 'Creer promotion', 'kind' => 'distributor_create_promotion', 'enabled' => true];
+            } elseif ($section === 'coupons') {
+                $actions[] = ['label' => 'Creer coupon', 'kind' => 'distributor_create_coupon', 'enabled' => true];
+            }
+        }
+
         return $actions;
+    }
+
+    private function moreItems(string $workspace, Actor $actor): array
+    {
+        if ($workspace !== WorkspaceResolver::DISTRIBUTEUR) {
+            return [
+                ['title' => 'Profil', 'subtitle' => 'Parametres du compte', 'status' => 'OK', 'kind' => 'workspace_link', 'target_section' => 'profile', 'action' => 'Ouvrir'],
+            ];
+        }
+
+        return [
+            ['title' => 'Acteurs', 'subtitle' => 'Equipes terrain, roles et activite', 'status' => (string) $this->actorsQuery($workspace, $actor)->count(), 'kind' => 'workspace_link', 'target_section' => 'actors', 'action' => 'Ouvrir'],
+            ['title' => 'Stock', 'subtitle' => 'Stock depot, alertes et mouvements', 'status' => 'Operationnel', 'kind' => 'workspace_link', 'target_section' => 'stock', 'action' => 'Ouvrir'],
+            ['title' => 'Livraisons', 'subtitle' => 'Demandes a livrer, retards et preuves', 'status' => (string) $this->purchaseOrdersQuery($workspace, $actor)->count(), 'kind' => 'workspace_link', 'target_section' => 'deliveries', 'action' => 'Ouvrir'],
+            ['title' => 'Promotions', 'subtitle' => 'Promotions par produits, clients et zones', 'status' => (string) count($this->promotionItems($workspace, $actor)), 'kind' => 'workspace_link', 'target_section' => 'promotions', 'action' => 'Ouvrir'],
+            ['title' => 'Coupons', 'subtitle' => 'Coupons, remises et utilisations', 'status' => (string) count($this->couponItems($workspace, $actor)), 'kind' => 'workspace_link', 'target_section' => 'coupons', 'action' => 'Ouvrir'],
+            ['title' => 'Creances', 'subtitle' => 'Encaissements, solde et clients a relancer', 'status' => 'Finance', 'kind' => 'workspace_link', 'target_section' => 'payments', 'action' => 'Ouvrir'],
+            ['title' => 'Audit', 'subtitle' => 'Journal des actions du distributeur', 'status' => Schema::hasTable('audit_logs') ? 'Actif' : 'A faire', 'kind' => 'workspace_link', 'target_section' => 'audit_logs', 'action' => 'Ouvrir'],
+            ['title' => 'Profil', 'subtitle' => 'Configuration, services et deconnexion', 'status' => 'Compte', 'kind' => 'workspace_link', 'target_section' => 'profile', 'action' => 'Ouvrir'],
+        ];
     }
 
     private function distributorItems(string $workspace, Actor $actor): array
@@ -467,11 +1089,44 @@ class WorkspaceMvpController extends Controller
             });
         }
 
-        return $query->get()->map(function ($product) use ($workspace) {
+        $warehouseIds = $actor ? $this->warehouseIds($workspace ?? '', $actor) : [];
+
+        return $query->get()->map(function ($product) use ($workspace, $warehouseIds) {
             $variant = $product->allVariants->first();
             $price = data_get($variant, 'price')
                 ?? data_get($variant, 'sale_price')
                 ?? data_get($variant, 'amount');
+            $variants = $product->allVariants->map(function ($variant) use ($warehouseIds) {
+                $stockQuery = StockQuantity::where('variant_id', $variant->id);
+                if (!empty($warehouseIds)) {
+                    $stockQuery->whereIn('emplacement_id', $warehouseIds);
+                }
+                $stockQuantity = (int) $stockQuery->sum('quantity');
+                $group = $variant->variant1_fr
+                    ?: $variant->option1_fr
+                    ?: $variant->package
+                    ?: 'Variants';
+                $detail = $variant->variant2_fr
+                    ?: $variant->option2_fr
+                    ?: $variant->variant1_fr
+                    ?: 'Variant';
+
+                return [
+                    'id' => $variant->id,
+                    'variant1_fr' => $variant->variant1_fr,
+                    'variant2_fr' => $variant->variant2_fr,
+                    'option1_fr' => $variant->option1_fr,
+                    'option2_fr' => $variant->option2_fr,
+                    'package' => $variant->package,
+                    'barcode' => $variant->barcode,
+                    'group_label' => $group,
+                    'detail_label' => $detail,
+                    'stock_quantity' => $stockQuantity,
+                    'stock_label' => $stockQuantity . ' stock',
+                    'price_label' => 'Prix distributeur',
+                ];
+            })->values()->all();
+
             return [
                 'id' => $product->id,
                 'title' => $product->short_description_fr ?: 'Produit sans nom',
@@ -492,6 +1147,7 @@ class WorkspaceMvpController extends Controller
                 'distributor_label' => optional($product->Distributor)->name,
                 'is_active' => Schema::hasColumn('product', 'is_active') ? (bool) $product->is_active : true,
                 'variant_count' => $product->allVariants->count(),
+                'variants' => $variants,
             ];
         })->values()->all();
     }
@@ -536,6 +1192,144 @@ class WorkspaceMvpController extends Controller
         ];
 
         return $items;
+    }
+
+    private function distributorAlertItems(Actor $actor): array
+    {
+        $workspace = WorkspaceResolver::DISTRIBUTEUR;
+        $warehouseIds = $this->warehouseIds($workspace, $actor);
+        $lowStockCount = empty($warehouseIds)
+            ? 0
+            : StockQuantity::whereIn('emplacement_id', $warehouseIds)
+                ->where('quantity', '<=', 10)
+                ->count();
+        $lateOrOpen = $this->purchaseOrdersQuery($workspace, $actor)
+            ->whereIn('state', ['new', 'prepared', 'packed', 'taken', 'in_way'])
+            ->count();
+        $receivable = $this->transactionsQuery($workspace, $actor)->sum('debit') - $this->transactionsQuery($workspace, $actor)->sum('credit');
+
+        return [
+            [
+                'title' => 'Stock faible',
+                'subtitle' => $lowStockCount . ' articles a surveiller dans vos depots',
+                'status' => $lowStockCount > 0 ? 'Attention' : 'OK',
+                'amount' => '',
+                'meta' => 'Depots du distributeur',
+                'action' => 'Voir stock',
+                'kind' => 'workspace_link',
+                'target_section' => 'stock',
+            ],
+            [
+                'title' => 'Livraisons ouvertes',
+                'subtitle' => $lateOrOpen . ' demandes a preparer ou livrer',
+                'status' => $lateOrOpen > 0 ? 'A traiter' : 'OK',
+                'amount' => '',
+                'meta' => 'Commandes terrain',
+                'action' => 'Voir livraisons',
+                'kind' => 'workspace_link',
+                'target_section' => 'deliveries',
+            ],
+            [
+                'title' => 'Creances clients',
+                'subtitle' => 'Solde global a suivre',
+                'status' => $receivable > 0 ? 'A recouvrer' : 'OK',
+                'amount' => $this->money((float) $receivable),
+                'meta' => 'Transactions distributeur',
+                'action' => 'Voir encaissements',
+                'kind' => 'workspace_link',
+                'target_section' => 'payments',
+            ],
+        ];
+    }
+
+    private function promotionItems(string $workspace, Actor $actor): array
+    {
+        if (!Schema::hasTable('promotion')) {
+            return [
+                ['title' => 'Promotions non initialisees', 'subtitle' => 'Table promotion absente', 'status' => 'A faire', 'kind' => 'info', 'action' => 'Actualiser'],
+            ];
+        }
+
+        $query = Promotion::query()->with(['type', 'typePV', 'lines'])->orderByDesc('start_date');
+        if ($workspace !== WorkspaceResolver::SUPERADMIN && $this->actorDistributorId($actor)) {
+            $query->where('distributor_id', $this->actorDistributorId($actor));
+        }
+
+        return $query->limit(20)->get()->map(fn ($promotion) => [
+            'id' => $promotion->id,
+            'title' => $promotion->description ?: 'Promotion',
+            'subtitle' => trim($this->dateLabel($promotion->start_date) . ' - ' . $this->dateLabel($promotion->end_date), ' -'),
+            'status' => now()->between($promotion->start_date, $promotion->end_date) ? 'Active' : 'Planifiee',
+            'amount' => (string) $promotion->lines->count() . ' lignes',
+            'meta' => optional($promotion->typePV)->name ?: optional($promotion->type)->name,
+            'action' => 'Details',
+            'kind' => 'promotion',
+        ])->values()->all();
+    }
+
+    private function couponItems(string $workspace, Actor $actor): array
+    {
+        if (!Schema::hasTable('coupon')) {
+            return [
+                ['title' => 'Coupons non initialises', 'subtitle' => 'Table coupon absente', 'status' => 'A faire', 'kind' => 'info', 'action' => 'Actualiser'],
+            ];
+        }
+
+        $query = Coupon::query()->orderByDesc('start_date');
+        if ($workspace !== WorkspaceResolver::SUPERADMIN && $this->actorDistributorId($actor)) {
+            $query->where('distributor_id', $this->actorDistributorId($actor));
+        }
+
+        return $query->limit(20)->get()->map(fn ($coupon) => [
+            'id' => $coupon->id,
+            'title' => $coupon->code ?: $coupon->description,
+            'subtitle' => $coupon->description ?: 'Coupon distributeur',
+            'status' => now()->between($coupon->start_date, $coupon->end_date) ? 'Actif' : 'Expire',
+            'amount' => $coupon->is_pourcentage ? ((float) $coupon->discount . '%') : $this->money((float) $coupon->discount),
+            'meta' => 'Restant ' . (int) $coupon->count . ' - min ' . $this->money((float) $coupon->min_amount),
+            'action' => 'Details',
+            'kind' => 'coupon',
+        ])->values()->all();
+    }
+
+    private function distributorProfileItems(Actor $actor): array
+    {
+        $distributor = $actor->Distributor;
+        if (!$distributor) {
+            return [
+                ['title' => 'Distributeur non rattache', 'subtitle' => 'Associez ce manager a un distributeur', 'status' => 'A corriger', 'kind' => 'info', 'action' => 'Details'],
+            ];
+        }
+
+        return [
+            [
+                'title' => $distributor->name,
+                'subtitle' => 'Code ' . ($distributor->code ?? $distributor->id),
+                'status' => Schema::hasColumn('distributor', 'is_active') && !$distributor->is_active ? 'Inactif' : 'Actif',
+                'amount' => $distributor->phone ?? '',
+                'meta' => $distributor->email ?? $distributor->contact_name ?? '',
+                'kind' => 'distributor',
+                'action' => 'Details',
+            ],
+            [
+                'title' => 'Equipes',
+                'subtitle' => $this->actorsQuery(WorkspaceResolver::DISTRIBUTEUR, $actor)->count() . ' acteurs - ' . $this->warehousesQuery(WorkspaceResolver::DISTRIBUTEUR, $actor)->count() . ' depots',
+                'status' => 'Operationnel',
+                'kind' => 'workspace_link',
+                'target_section' => 'actors',
+                'action' => 'Ouvrir',
+            ],
+        ];
+    }
+
+    private function distributorConfigurationItems(): array
+    {
+        return [
+            ['title' => 'Notifications terrain', 'subtitle' => 'Stock faible, commandes urgentes et paiement recu', 'status' => 'A configurer', 'kind' => 'setting', 'action' => 'Details'],
+            ['title' => 'Bluetooth printer', 'subtitle' => 'Bons preparation, livraison et recus paiement', 'status' => 'Materiel requis', 'kind' => 'setting', 'action' => 'Details'],
+            ['title' => 'Google Maps', 'subtitle' => 'Trajets commerciaux et livraisons', 'status' => 'Tester', 'kind' => 'setting', 'action' => 'Details'],
+            ['title' => 'Offline mode', 'subtitle' => 'Preparation future pour reseau faible', 'status' => 'A planifier', 'kind' => 'setting', 'action' => 'Details'],
+        ];
     }
 
     private function clientItems(string $workspace, Actor $actor): array
@@ -587,6 +1381,9 @@ class WorkspaceMvpController extends Controller
                 'action' => $this->purchaseOrderAction($workspace, $order->state),
                 'kind' => 'purchase_order',
                 'can_receive' => $canReceive,
+                'warehouse_id' => optional($order->warehouse)->id,
+                'warehouse_name' => optional($order->warehouse)->name,
+                'client_id' => optional($order->client)->id,
             ];
         })->values()->all();
     }
@@ -899,6 +1696,18 @@ class WorkspaceMvpController extends Controller
         return $this->warehousesQuery($workspace, $actor)->pluck('id')->all();
     }
 
+    private function actorsForDistributorCount(string $distributorId): int
+    {
+        return Actor::query()
+            ->where(function ($query) use ($distributorId) {
+                $query->where('distributor_id', $distributorId);
+                if (Schema::hasColumn('actor', 'id_distributor')) {
+                    $query->orWhere('id_distributor', $distributorId);
+                }
+            })
+            ->count();
+    }
+
     private function pointVenteClientIds(Actor $actor): array
     {
         if (!$actor->user_id || !Schema::hasTable('client_user_access')) {
@@ -923,6 +1732,127 @@ class WorkspaceMvpController extends Controller
 
         $id = trim((string) $id);
         return $id === '' ? null : $id;
+    }
+
+    private function currentDistributorActor(): ?Actor
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return null;
+        }
+
+        $actor = Actor::with(['Profile', 'Distributor'])->where('user_id', $user->id)->first();
+        if (!$actor || WorkspaceResolver::type($actor) !== WorkspaceResolver::DISTRIBUTEUR) {
+            return null;
+        }
+
+        return $this->actorDistributorId($actor) ? $actor : null;
+    }
+
+    private function ok(array $data = [], string $message = 'Operation reussie')
+    {
+        return response()->json([
+            'status' => 'SUCCESS',
+            'message' => $message,
+            'data' => $data,
+        ]);
+    }
+
+    private function fail(string $message, int $code = 422)
+    {
+        return response()->json([
+            'status' => 'FAIL',
+            'message' => $message,
+        ], $code);
+    }
+
+    private function makeId(string $prefix, string $source = ''): string
+    {
+        $seed = Str::slug($source) ?: Str::random(6);
+        return Str::upper($prefix . '-' . now()->format('YmdHis') . '-' . substr($seed, 0, 8) . '-' . Str::random(4));
+    }
+
+    private function uniqueCode(string $table, string $column, string $seed, string $prefix): string
+    {
+        $base = Str::upper(Str::slug($seed, '-'));
+        $base = $base ? Str::limit($base, 38, '') : $prefix;
+        $candidate = $base;
+        $index = 1;
+
+        while (
+            Schema::hasTable($table)
+            && Schema::hasColumn($table, $column)
+            && DB::table($table)->where($column, $candidate)->exists()
+        ) {
+            $index++;
+            $candidate = Str::limit($base, 32, '') . '-' . $index;
+        }
+
+        return $candidate;
+    }
+
+    private function profileForWorkspace(string $workspace): ?ActorProfile
+    {
+        return ActorProfile::query()
+            ->where('workspace_type', $workspace)
+            ->orWhere('code', $workspace)
+            ->orWhere('name', $workspace)
+            ->first();
+    }
+
+    private function priceForVariant($variantId, ?string $distributorId): ?float
+    {
+        if (!$distributorId || !Schema::hasTable('pricelist') || !Schema::hasTable('pricelist_item')) {
+            return null;
+        }
+
+        $query = PriceListItem::query()
+            ->where('variant_id', $variantId)
+            ->whereHas('pricelist', function ($priceList) use ($distributorId) {
+                $priceList->where('distributor_id', $distributorId);
+                if (Schema::hasColumn('pricelist', 'active')) {
+                    $priceList->where(function ($q) {
+                        $q->where('active', true)->orWhereNull('active');
+                    });
+                }
+            })
+            ->orderByDesc('updated_at');
+
+        $value = $query->value('price');
+        return $value === null ? null : (float) $value;
+    }
+
+    private function auditDistributorAction(string $action, string $entityType, $entityId = null, $newValues = null, ?string $distributorId = null): void
+    {
+        if (!Schema::hasTable('audit_logs')) {
+            return;
+        }
+
+        try {
+            $user = Auth::user();
+            $actor = $user ? Actor::where('user_id', $user->id)->first() : null;
+            DB::table('audit_logs')->insert([
+                'user_id' => optional($user)->id,
+                'actor_id' => optional($actor)->id,
+                'distributor_id' => $distributorId,
+                'workspace_type' => WorkspaceResolver::DISTRIBUTEUR,
+                'action' => $action,
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+                'old_values' => null,
+                'new_values' => $newValues ? json_encode($newValues) : null,
+                'ip_address' => request()->ip(),
+                'user_agent' => substr((string) request()->userAgent(), 0, 500),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (Throwable $e) {
+            Log::warning('Distributor audit log skipped', [
+                'action' => $action,
+                'entity_type' => $entityType,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function stateLabel(?string $state): string

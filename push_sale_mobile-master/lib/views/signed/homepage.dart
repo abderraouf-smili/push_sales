@@ -311,16 +311,10 @@ class _HomePageState extends State<HomePage> {
             selectedIcon: Icons.home_rounded,
           ),
           _WorkspaceTab(
-            section: "actors",
-            label: "Acteurs",
-            icon: Icons.groups_outlined,
-            selectedIcon: Icons.groups_rounded,
-          ),
-          _WorkspaceTab(
-            section: "warehouses",
-            label: "Depots",
-            icon: Icons.warehouse_outlined,
-            selectedIcon: Icons.warehouse_rounded,
+            section: "orders",
+            label: "Commandes",
+            icon: Icons.shopping_cart_outlined,
+            selectedIcon: Icons.shopping_cart_rounded,
           ),
           _WorkspaceTab(
             section: "products",
@@ -329,10 +323,22 @@ class _HomePageState extends State<HomePage> {
             selectedIcon: Icons.inventory_2_rounded,
           ),
           _WorkspaceTab(
-            section: "profile",
-            label: "Profil",
-            icon: Icons.person_outline_rounded,
-            selectedIcon: Icons.person_rounded,
+            section: "warehouses",
+            label: "Depots",
+            icon: Icons.warehouse_outlined,
+            selectedIcon: Icons.warehouse_rounded,
+          ),
+          _WorkspaceTab(
+            section: "clients",
+            label: "Clients",
+            icon: Icons.storefront_outlined,
+            selectedIcon: Icons.storefront_rounded,
+          ),
+          _WorkspaceTab(
+            section: "more",
+            label: "Plus",
+            icon: Icons.more_horiz_rounded,
+            selectedIcon: Icons.more_rounded,
           ),
         ];
       case "depot":

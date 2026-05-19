@@ -143,3 +143,21 @@ Contexte :
 | APK debug VPN | OK | Build genere |
 | Installation smartphone | OK | `adb install -r` success |
 | Lancement smartphone | OK | App lancee par `monkey` |
+
+## 2026-05-19 - Validation profil Distributeur sur nouveau port ADB
+
+Contexte :
+- Flutter : `APP_ENV=vpn`, `API_BASE_URL=http://192.168.1.20:8000`
+- Device : SM A165F via ADB `10.212.134.2:39423`
+
+| Test | Resultat | Notes |
+| --- | --- | --- |
+| Connexion ADB | OK | `adb connect 10.212.134.2:39423` success |
+| Test TCP port ADB | OK | `TcpTestSucceeded=True` |
+| Installation APK debug VPN | OK | `adb install -r` success |
+| Lancement application | OK | App lancee par `monkey` |
+
+Points a valider visuellement par l'utilisateur :
+- Navigation distributeur : Accueil, Commandes, Produits, Depots, Clients, Plus.
+- Dashboard distributeur : KPIs uniquement dans Accueil.
+- Produits distributeur : catalogue global lisible, aucun bouton panier, variants groupes, actions prix/stock orientees exploitation distributeur.

@@ -34,6 +34,8 @@ class _WorkspacePageState extends State<WorkspacePage> {
   String _searchQuery = '';
   String _statusFilter = 'all';
   String _categoryFilter = 'all';
+  String _deliveryWarehouseFilter = 'all';
+  String _dashboardDistributorFilter = 'all';
 
   @override
   void initState() {
@@ -46,6 +48,8 @@ class _WorkspacePageState extends State<WorkspacePage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.section != widget.section) {
       _deliveryFilter = 'Toutes';
+      _deliveryWarehouseFilter = 'all';
+      _dashboardDistributorFilter = 'all';
       _searchQuery = '';
       _statusFilter = 'all';
       _categoryFilter = 'all';
@@ -54,9 +58,15 @@ class _WorkspacePageState extends State<WorkspacePage> {
   }
 
   Future<ResponseHttpRequest> _load() {
+    final payload = <String, dynamic>{'section': widget.section};
+    if (widget.section == 'dashboard' &&
+        _dashboardDistributorFilter != 'all') {
+      payload['distributor_id'] = _dashboardDistributorFilter;
+    }
+
     return CallApi.RequestHttp(
       AppConfig.isDemoMode ? 'workspace/mvp' : 'workspace/real',
-      data: {'section': widget.section},
+      data: payload,
     ).timeout(
       const Duration(seconds: 18),
       onTimeout: () => ResponseHttpRequest(
@@ -94,9 +104,11 @@ class _WorkspacePageState extends State<WorkspacePage> {
           SystemNavigator.pop();
         }
       },
-      child: ColoredBox(
+      child: Material(
         color: AppColors.canvas,
-        child: FutureBuilder<ResponseHttpRequest>(
+        child: ColoredBox(
+          color: AppColors.canvas,
+          child: FutureBuilder<ResponseHttpRequest>(
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -116,6 +128,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
 
             final data = _asMap(response.data);
             _workspaceType = data['workspace_type']?.toString() ?? '';
+            final dashboardDistributors = _dashboardDistributorOptions(data);
             return RefreshIndicator(
               color: AppColors.primary,
               onRefresh: _refresh,
@@ -181,7 +194,27 @@ class _WorkspacePageState extends State<WorkspacePage> {
                                   height:
                                       compact ? AppSpacing.md : AppSpacing.xl),
                             ],
-                            if (data['section']?.toString() == 'dashboard') ...[
+                            if (data['section']?.toString() ==
+                                'dashboard') ...[
+                              if (dashboardDistributors.length > 1) ...[
+                                _DashboardDistributorFilter(
+                                  value: _safeDashboardDistributorValue(
+                                    dashboardDistributors,
+                                  ),
+                                  options: dashboardDistributors,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _dashboardDistributorFilter =
+                                          value ?? 'all';
+                                      _future = _load();
+                                    });
+                                  },
+                                ),
+                                SizedBox(
+                                    height: compact
+                                        ? AppSpacing.md
+                                        : AppSpacing.lg),
+                              ],
                               _StatsGrid(stats: _asList(data['stats'])),
                               SizedBox(
                                   height:
@@ -203,23 +236,52 @@ class _WorkspacePageState extends State<WorkspacePage> {
                               ),
                             if (widget.section == 'cart')
                               _CartSection(onAction: _handleAction),
-                            ..._sections(data).map(
-                              (section) => Padding(
+                            ..._sections(data).map((section) {
+                              final deliveryWarehouses =
+                                  _deliveryWarehouseOptions(section);
+                              return Padding(
                                 padding: EdgeInsets.only(
                                   bottom:
                                       compact ? AppSpacing.lg : AppSpacing.xl,
                                 ),
-                                child: _ListSection(
-                                  section: section,
-                                  workspaceType: _workspaceType,
-                                  deliveryFilter: _deliveryFilter,
-                                  searchQuery: _searchQuery,
-                                  statusFilter: _statusFilter,
-                                  categoryFilter: _categoryFilter,
-                                  onItemAction: _handleItemAction,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (_isDeliverySection(section) &&
+                                        deliveryWarehouses.length > 1) ...[
+                                      _DeliveryWarehouseFilter(
+                                        value:
+                                            _safeDeliveryWarehouseValue(
+                                          deliveryWarehouses,
+                                        ),
+                                        options: deliveryWarehouses,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _deliveryWarehouseFilter =
+                                                value ?? 'all';
+                                          });
+                                        },
+                                      ),
+                                      SizedBox(
+                                          height: compact
+                                              ? AppSpacing.sm
+                                              : AppSpacing.md),
+                                    ],
+                                    _ListSection(
+                                      section: section,
+                                      workspaceType: _workspaceType,
+                                      deliveryFilter: _deliveryFilter,
+                                      deliveryWarehouseFilter:
+                                          _deliveryWarehouseFilter,
+                                      searchQuery: _searchQuery,
+                                      statusFilter: _statusFilter,
+                                      categoryFilter: _categoryFilter,
+                                      onItemAction: _handleItemAction,
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ),
+                              );
+                            }),
                             if (_workspaceType != 'superadmin' &&
                                 _workspaceType != 'distributeur')
                               _ActionsBar(
@@ -235,6 +297,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
               ),
             );
           },
+          ),
         ),
       ),
     );
@@ -248,6 +311,78 @@ class _WorkspacePageState extends State<WorkspacePage> {
     return sections
         .where((section) => section['title'] != 'Produits disponibles')
         .toList();
+  }
+
+  List<Map<String, String>> _dashboardDistributorOptions(
+    Map<String, dynamic> data,
+  ) {
+    final filters = _asMap(data['dashboard_filters']);
+    final distributors = _asList(filters['distributors']);
+    if (distributors.isEmpty) {
+      return const [];
+    }
+
+    final seen = <String>{};
+    return distributors.map((item) {
+      final id = item['id']?.toString() ?? 'all';
+      final title = item['title']?.toString() ?? 'Distributeur';
+      final subtitle = item['subtitle']?.toString() ?? '';
+      return {'id': id, 'title': title, 'subtitle': subtitle};
+    }).where((item) {
+      final id = item['id'] ?? 'all';
+      return seen.add(id);
+    }).toList();
+  }
+
+  String _safeDashboardDistributorValue(List<Map<String, String>> options) {
+    final hasSelected =
+        options.any((item) => item['id'] == _dashboardDistributorFilter);
+    if (hasSelected) {
+      return _dashboardDistributorFilter;
+    }
+    _dashboardDistributorFilter = 'all';
+    return 'all';
+  }
+
+  bool _isDeliverySection(Map<String, dynamic> section) {
+    return (section['title']?.toString() ?? '') == 'Demandes de livraison';
+  }
+
+  List<Map<String, String>> _deliveryWarehouseOptions(
+    Map<String, dynamic> section,
+  ) {
+    if (!_isDeliverySection(section)) {
+      return const [];
+    }
+
+    final options = <Map<String, String>>[
+      {
+        'id': 'all',
+        'title': 'Tous les depots',
+        'subtitle': 'Demandes tous depots',
+      },
+    ];
+    final seen = <String>{'all'};
+    for (final item in _asList(section['items'])) {
+      final id = item['warehouse_id']?.toString();
+      if (id == null || id.isEmpty || !seen.add(id)) continue;
+      options.add({
+        'id': id,
+        'title': item['warehouse_name']?.toString() ?? 'Depot $id',
+        'subtitle': 'Demandes associees',
+      });
+    }
+    return options;
+  }
+
+  String _safeDeliveryWarehouseValue(List<Map<String, String>> options) {
+    final hasSelected =
+        options.any((item) => item['id'] == _deliveryWarehouseFilter);
+    if (hasSelected) {
+      return _deliveryWarehouseFilter;
+    }
+    _deliveryWarehouseFilter = 'all';
+    return 'all';
   }
 
   List<Map<String, String>> _productCategoryOptions(
@@ -299,6 +434,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
       'reports',
       'promotions',
       'coupons',
+      'more',
     }.contains(widget.section);
   }
 
@@ -337,6 +473,20 @@ class _WorkspacePageState extends State<WorkspacePage> {
       }
     }
 
+    if (kind == 'workspace_link') {
+      final target = item['target_section']?.toString();
+      if (target == null || target.isEmpty) {
+        _showSnack('Navigation', 'Cette section n est pas disponible.');
+        return;
+      }
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => WorkspacePage(section: target),
+        ),
+      );
+      return;
+    }
+
     if (kind == 'filter') {
       setState(() {
         _deliveryFilter = title;
@@ -346,7 +496,11 @@ class _WorkspacePageState extends State<WorkspacePage> {
     }
 
     if (kind == 'product') {
-      if (const {'distributeur', 'depot'}.contains(_workspaceType)) {
+      if (_workspaceType == 'distributeur') {
+        _showDistributorProductSheet(item);
+        return;
+      }
+      if (_workspaceType == 'depot') {
         _showDetailsSheet(item);
         return;
       }
@@ -465,6 +619,45 @@ class _WorkspacePageState extends State<WorkspacePage> {
         'Ouvrez une commande de preparation pour appliquer cette action.',
       );
       return;
+    }
+
+    if (_workspaceType == 'distributeur') {
+      if (kind == 'open_delivery') {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const WorkspacePage(section: 'deliveries'),
+          ),
+        );
+        return;
+      }
+      if (kind == 'distributor_manage_prices') {
+        _showDistributorPriceForm();
+        return;
+      }
+      if (kind == 'distributor_adjust_stock') {
+        _showDistributorStockForm();
+        return;
+      }
+      if (kind == 'distributor_create_actor') {
+        _showDistributorActorForm();
+        return;
+      }
+      if (kind == 'distributor_create_warehouse') {
+        _showDistributorWarehouseForm();
+        return;
+      }
+      if (kind == 'distributor_create_client') {
+        _showDistributorClientForm();
+        return;
+      }
+      if (kind == 'distributor_create_promotion') {
+        _showDistributorPromotionForm();
+        return;
+      }
+      if (kind == 'distributor_create_coupon') {
+        _showDistributorCouponForm();
+        return;
+      }
     }
 
     if (kind == 'missing_real_api') {
@@ -1905,6 +2098,815 @@ class _WorkspacePageState extends State<WorkspacePage> {
     );
   }
 
+  void _showDistributorProductSheet(Map<String, dynamic> item) {
+    final variants = _asList(item['variants']);
+    final title = item['title']?.toString() ?? 'Produit';
+    final subtitle = item['subtitle']?.toString() ?? '';
+    final status = item['status']?.toString() ?? 'Catalogue';
+
+    Get.bottomSheet(
+      SafeArea(
+        top: false,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 720),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppSpacing.radiusLg),
+            ),
+          ),
+          child: DefaultTabController(
+            length: 2,
+            child: Builder(builder: (context) {
+              final sheetHeight = MediaQuery.sizeOf(context).height * 0.58;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.line,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: AppColors.softBlue,
+                        child: Text(
+                          _initial(title),
+                          style: AppTextStyles.title.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.title.copyWith(
+                                color: AppColors.primaryDark,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.caption,
+                            ),
+                          ],
+                        ),
+                      ),
+                      AppStatusChip(label: status),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  const TabBar(
+                    tabs: [
+                      Tab(text: 'Infos'),
+                      Tab(text: 'Variants'),
+                    ],
+                  ),
+                  SizedBox(
+                    height: sheetHeight.clamp(350, 560).toDouble(),
+                    child: TabBarView(
+                      children: [
+                        SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _KeyValueList(values: {
+                                'Reference': item['ssin'] ?? item['id'],
+                                'Categorie':
+                                    item['category_label'] ?? 'Catalogue',
+                                'Perimetre': item['distributor_label'] ??
+                                    'Catalogue global lisible distributeurs',
+                                'Variants': variants.length,
+                                'Role SuperAdmin':
+                                    'Injecte produit et variants globaux',
+                                'Role distributeur':
+                                    'Prix, stock depot, disponibilite, promotions',
+                              }),
+                              const SizedBox(height: AppSpacing.md),
+                              AppCard(
+                                child: Text(
+                                  'Principe metier\n'
+                                  '- SuperAdmin maintient le catalogue maitre\n'
+                                  '- Le distributeur choisit l exploitation commerciale\n'
+                                  '- Les prix et stocks sont geres par depot/distributeur\n'
+                                  '- Aucun bouton panier dans ce workspace',
+                                  style: AppTextStyles.body.copyWith(
+                                    color: AppColors.ink,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _VariantList(
+                                variants: variants,
+                                onEdit: (variant) =>
+                                    _showDistributorVariantSheet(
+                                  product: item,
+                                  variant: variant,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: () =>
+                                          _showDistributorPriceForm(),
+                                      icon: const Icon(
+                                        Icons.price_change_rounded,
+                                      ),
+                                      label: const Text('Prix'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: () =>
+                                          _showDistributorStockForm(),
+                                      icon: const Icon(Icons.inventory_rounded),
+                                      label: const Text('Stock'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  void _showDistributorVariantSheet({
+    required Map<String, dynamic> product,
+    required Map<String, dynamic> variant,
+  }) {
+    final title = _variantDetail(variant);
+    Get.bottomSheet(
+      SafeArea(
+        top: false,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 680),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppSpacing.radiusLg),
+            ),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.title.copyWith(
+                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  product['title']?.toString() ?? 'Produit distributeur',
+                  style: AppTextStyles.caption,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _KeyValueList(values: {
+                  'SKU': _variantSku(variant),
+                  'Groupe': _variantGroup(variant),
+                  'Conditionnement': _variantPackageLabel(variant),
+                  'Stock depots': variant['stock_label'] ??
+                      '${variant['stock_quantity'] ?? 0} unites',
+                  'Prix': variant['price_label'] ?? 'A definir',
+                }),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            _showDistributorPriceForm(variant: variant),
+                        icon: const Icon(Icons.price_change_rounded),
+                        label: const Text('Prix'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () =>
+                            _showDistributorStockForm(variant: variant),
+                        icon: const Icon(Icons.inventory_rounded),
+                        label: const Text('Stock'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  void _showDistributorContextSheet({
+    required String title,
+    required Widget Function(Map<String, dynamic> contextData) builder,
+  }) {
+    Get.bottomSheet(
+      SafeArea(
+        top: false,
+        child: FutureBuilder<ResponseHttpRequest>(
+          future: _superAdminRequest('distributor/context'),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const _FormSheet(
+                title: 'Chargement',
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(AppSpacing.xl),
+                    child: AppLoadingState(message: 'Referentiels...'),
+                  ),
+                ],
+              );
+            }
+
+            final response = snapshot.data;
+            if (response == null || response.status != 'SUCCESS') {
+              return _FormSheet(
+                title: title,
+                children: [
+                  AppErrorState(
+                    title: 'API distributeur indisponible',
+                    message: response?.message?.toString() ??
+                        'Impossible de charger les referentiels.',
+                  ),
+                ],
+              );
+            }
+
+            return builder(_asMap(response.data));
+          },
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  List<DropdownMenuItem<String>> _contextDropdownItems(
+    Map<String, dynamic> contextData,
+    String key,
+  ) {
+    return _dedupeById(_asList(contextData[key]))
+        .map(
+          (item) => DropdownMenuItem<String>(
+            value: _dropdownId(item['id']),
+            child: Text(
+              item['title']?.toString() ??
+                  item['name']?.toString() ??
+                  item['id']?.toString() ??
+                  'Element',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        )
+        .where((item) => item.value != null)
+        .toList();
+  }
+
+  String? _firstDropdownValue(List<DropdownMenuItem<String>> items) {
+    return items.isEmpty ? null : items.first.value;
+  }
+
+  Future<void> _submitDistributorOperation(
+    String route,
+    Map<String, dynamic> payload,
+    String successMessage, {
+    String method = 'POST',
+  }) async {
+    final response =
+        await _superAdminRequest(route, data: payload, method: method);
+    if (response.status == 'SUCCESS') {
+      Get.back();
+      _showSnack('Operation reussie', response.message?.toString() ?? successMessage);
+      _refresh();
+      return;
+    }
+    _showSnack('Action impossible', response.message?.toString() ?? 'Verifiez les champs.');
+  }
+
+  void _showDistributorActorForm() {
+    final first = TextEditingController();
+    final last = TextEditingController();
+    final email = TextEditingController();
+    final phone = TextEditingController();
+    final password = TextEditingController(text: 'Test@123456');
+    var workspace = 'commercial';
+    var emailVerified = true;
+    var active = true;
+
+    _showDistributorContextSheet(
+      title: 'Ajouter acteur',
+      builder: (_) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return _FormSheet(
+            title: 'Ajouter acteur',
+            children: [
+              TextField(
+                controller: first,
+                decoration: _fieldDecoration('Prenom', Icons.person_rounded),
+              ),
+              TextField(
+                controller: last,
+                decoration: _fieldDecoration('Nom', Icons.badge_rounded),
+              ),
+              TextField(
+                controller: email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: _fieldDecoration('Email', Icons.email_outlined),
+              ),
+              TextField(
+                controller: phone,
+                keyboardType: TextInputType.phone,
+                decoration: _fieldDecoration('Telephone', Icons.phone),
+              ),
+              DropdownButtonFormField<String>(
+                value: workspace,
+                decoration: _fieldDecoration('Workspace', Icons.workspaces),
+                items: const [
+                  DropdownMenuItem(value: 'commercial', child: Text('Commercial')),
+                  DropdownMenuItem(value: 'livreur', child: Text('Livreur')),
+                  DropdownMenuItem(value: 'depot', child: Text('Depot')),
+                  DropdownMenuItem(value: 'distributeur', child: Text('Manager')),
+                ],
+                onChanged: (value) =>
+                    setSheetState(() => workspace = value ?? 'commercial'),
+              ),
+              TextField(
+                controller: password,
+                obscureText: true,
+                decoration:
+                    _fieldDecoration('Mot de passe temporaire', Icons.lock),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: emailVerified,
+                title: const Text('Email verifie'),
+                onChanged: (value) =>
+                    setSheetState(() => emailVerified = value),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: active,
+                title: const Text('Acteur actif'),
+                onChanged: (value) => setSheetState(() => active = value),
+              ),
+              _FormSubmitButton(
+                label: 'Creer acteur',
+                onPressed: () => _submitDistributorOperation(
+                  'distributor/actors',
+                  {
+                    'firstname': first.text.trim(),
+                    'lastname': last.text.trim(),
+                    'email': email.text.trim(),
+                    'phone': phone.text.trim(),
+                    'password': password.text,
+                    'workspace_type': workspace,
+                    'email_verified': emailVerified,
+                    'is_active': active,
+                  },
+                  'Acteur cree.',
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showDistributorWarehouseForm() {
+    final name = TextEditingController();
+    final code = TextEditingController();
+    final commune = TextEditingController();
+    final street = TextEditingController();
+
+    Get.bottomSheet(
+      SafeArea(
+        top: false,
+        child: _FormSheet(
+          title: 'Ajouter depot',
+          children: [
+            TextField(
+              controller: name,
+              decoration: _fieldDecoration('Nom depot', Icons.warehouse),
+            ),
+            TextField(
+              controller: code,
+              decoration: _fieldDecoration('Code', Icons.tag_rounded),
+            ),
+            TextField(
+              controller: commune,
+              decoration:
+                  _fieldDecoration('Ville / commune', Icons.location_city),
+            ),
+            TextField(
+              controller: street,
+              decoration: _fieldDecoration('Adresse', Icons.location_on),
+            ),
+            _FormSubmitButton(
+              label: 'Creer depot',
+              onPressed: () => _submitDistributorOperation(
+                'distributor/warehouses',
+                {
+                  'name': name.text.trim(),
+                  'code': code.text.trim(),
+                  'commune': commune.text.trim(),
+                  'street': street.text.trim(),
+                },
+                'Depot cree.',
+              ),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  void _showDistributorClientForm() {
+    final name = TextEditingController();
+    final phone = TextEditingController();
+    final commune = TextEditingController();
+    final street = TextEditingController();
+    String? typePvId;
+
+    _showDistributorContextSheet(
+      title: 'Ajouter client',
+      builder: (contextData) {
+        final typeItems = _contextDropdownItems(contextData, 'type_pv');
+        typePvId = _safeRequiredDropdownValue(
+          typePvId ?? _firstDropdownValue(typeItems) ?? '',
+          typeItems,
+          _firstDropdownValue(typeItems) ?? '',
+        );
+        return StatefulBuilder(
+          builder: (context, setSheetState) => _FormSheet(
+            title: 'Ajouter client',
+            children: [
+              TextField(
+                controller: name,
+                decoration: _fieldDecoration('Nom client', Icons.storefront),
+              ),
+              TextField(
+                controller: phone,
+                keyboardType: TextInputType.phone,
+                decoration: _fieldDecoration('Telephone', Icons.phone),
+              ),
+              DropdownButtonFormField<String>(
+                value: typePvId,
+                decoration:
+                    _fieldDecoration('Type point de vente', Icons.category),
+                items: typeItems,
+                onChanged: (value) => setSheetState(() => typePvId = value),
+              ),
+              TextField(
+                controller: commune,
+                decoration:
+                    _fieldDecoration('Ville / commune', Icons.location_city),
+              ),
+              TextField(
+                controller: street,
+                decoration: _fieldDecoration('Adresse', Icons.location_on),
+              ),
+              _FormSubmitButton(
+                label: 'Creer client',
+                onPressed: () => _submitDistributorOperation(
+                  'distributor/clients',
+                  {
+                    'name': name.text.trim(),
+                    'phone': phone.text.trim(),
+                    'typepv_id': typePvId,
+                    'commune': commune.text.trim(),
+                    'street': street.text.trim(),
+                  },
+                  'Client cree.',
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDistributorCouponForm() {
+    final code = TextEditingController();
+    final description = TextEditingController();
+    final discount = TextEditingController(text: '5');
+    final count = TextEditingController(text: '100');
+    final minAmount = TextEditingController(text: '0');
+
+    Get.bottomSheet(
+      SafeArea(
+        top: false,
+        child: _FormSheet(
+          title: 'Creer coupon',
+          children: [
+            TextField(
+              controller: code,
+              decoration: _fieldDecoration('Code coupon', Icons.confirmation_number),
+            ),
+            TextField(
+              controller: description,
+              decoration: _fieldDecoration('Description', Icons.notes),
+            ),
+            TextField(
+              controller: discount,
+              keyboardType: TextInputType.number,
+              decoration: _fieldDecoration('Remise %', Icons.percent),
+            ),
+            TextField(
+              controller: count,
+              keyboardType: TextInputType.number,
+              decoration: _fieldDecoration('Nombre utilisations', Icons.repeat),
+            ),
+            TextField(
+              controller: minAmount,
+              keyboardType: TextInputType.number,
+              decoration: _fieldDecoration('Montant minimum', Icons.payments),
+            ),
+            _FormSubmitButton(
+              label: 'Creer coupon',
+              onPressed: () => _submitDistributorOperation(
+                'distributor/coupons',
+                {
+                  'code': code.text.trim(),
+                  'description': description.text.trim(),
+                  'discount': double.tryParse(discount.text) ?? 0,
+                  'count': int.tryParse(count.text) ?? 100,
+                  'min_amount': double.tryParse(minAmount.text) ?? 0,
+                  'is_pourcentage': true,
+                },
+                'Coupon cree.',
+              ),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  void _showDistributorPromotionForm() {
+    final description = TextEditingController();
+    String? typePvId;
+
+    _showDistributorContextSheet(
+      title: 'Creer promotion',
+      builder: (contextData) {
+        final typeItems = _contextDropdownItems(contextData, 'type_pv');
+        typePvId = _safeRequiredDropdownValue(
+          typePvId ?? _firstDropdownValue(typeItems) ?? '',
+          typeItems,
+          _firstDropdownValue(typeItems) ?? '',
+        );
+        return StatefulBuilder(
+          builder: (context, setSheetState) => _FormSheet(
+            title: 'Creer promotion',
+            children: [
+              TextField(
+                controller: description,
+                maxLines: 3,
+                decoration: _fieldDecoration('Description', Icons.local_offer),
+              ),
+              DropdownButtonFormField<String>(
+                value: typePvId,
+                decoration:
+                    _fieldDecoration('Type point de vente', Icons.store),
+                items: typeItems,
+                onChanged: (value) => setSheetState(() => typePvId = value),
+              ),
+              _FormSubmitButton(
+                label: 'Creer promotion',
+                onPressed: () => _submitDistributorOperation(
+                  'distributor/promotions',
+                  {
+                    'description': description.text.trim(),
+                    'typepv_id': typePvId,
+                  },
+                  'Promotion creee.',
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDistributorPriceForm({Map<String, dynamic>? variant}) {
+    final price = TextEditingController(
+      text: variant?['price']?.toString() ?? '',
+    );
+    final sku = TextEditingController(text: _variantSku(variant ?? {}));
+    String? variantId = _dropdownId(variant?['id']);
+    String? typePvId;
+
+    _showDistributorContextSheet(
+      title: 'Definir prix',
+      builder: (contextData) {
+        final variantItems = _contextDropdownItems(contextData, 'variants');
+        final typeItems = _contextDropdownItems(contextData, 'type_pv');
+        variantId = _safeRequiredDropdownValue(
+          variantId ?? _firstDropdownValue(variantItems) ?? '',
+          variantItems,
+          _firstDropdownValue(variantItems) ?? '',
+        );
+        typePvId = _safeRequiredDropdownValue(
+          typePvId ?? _firstDropdownValue(typeItems) ?? '',
+          typeItems,
+          _firstDropdownValue(typeItems) ?? '',
+        );
+        return StatefulBuilder(
+          builder: (context, setSheetState) => _FormSheet(
+            title: 'Definir prix variant',
+            children: [
+              DropdownButtonFormField<String>(
+                value: variantId,
+                decoration: _fieldDecoration('Variant', Icons.inventory_2),
+                items: variantItems,
+                onChanged: (value) => setSheetState(() => variantId = value),
+              ),
+              DropdownButtonFormField<String>(
+                value: typePvId,
+                decoration:
+                    _fieldDecoration('Type point de vente', Icons.store),
+                items: typeItems,
+                onChanged: (value) => setSheetState(() => typePvId = value),
+              ),
+              TextField(
+                controller: price,
+                keyboardType: TextInputType.number,
+                decoration: _fieldDecoration('Prix de vente', Icons.price_change),
+              ),
+              TextField(
+                controller: sku,
+                decoration: _fieldDecoration('SKU', Icons.qr_code),
+              ),
+              _FormSubmitButton(
+                label: 'Enregistrer prix',
+                onPressed: () {
+                  final id = variantId;
+                  if (id == null || id.isEmpty) {
+                    _showSnack('Variant requis', 'Selectionnez un variant.');
+                    return;
+                  }
+                  _submitDistributorOperation(
+                    'distributor/variants/$id/price',
+                    {
+                      'typepv_id': typePvId,
+                      'price': double.tryParse(price.text) ?? 0,
+                      'sku': sku.text.trim(),
+                    },
+                    'Prix enregistre.',
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDistributorStockForm({Map<String, dynamic>? variant}) {
+    final quantity = TextEditingController();
+    String? variantId = _dropdownId(variant?['id']);
+    String? warehouseId;
+    var mode = 'set';
+
+    _showDistributorContextSheet(
+      title: 'Ajuster stock',
+      builder: (contextData) {
+        final variantItems = _contextDropdownItems(contextData, 'variants');
+        final warehouseItems = _contextDropdownItems(contextData, 'warehouses');
+        variantId = _safeRequiredDropdownValue(
+          variantId ?? _firstDropdownValue(variantItems) ?? '',
+          variantItems,
+          _firstDropdownValue(variantItems) ?? '',
+        );
+        warehouseId = _safeRequiredDropdownValue(
+          warehouseId ?? _firstDropdownValue(warehouseItems) ?? '',
+          warehouseItems,
+          _firstDropdownValue(warehouseItems) ?? '',
+        );
+        return StatefulBuilder(
+          builder: (context, setSheetState) => _FormSheet(
+            title: 'Ajuster stock depot',
+            children: [
+              DropdownButtonFormField<String>(
+                value: warehouseId,
+                decoration: _fieldDecoration('Depot', Icons.warehouse),
+                items: warehouseItems,
+                onChanged: (value) => setSheetState(() => warehouseId = value),
+              ),
+              DropdownButtonFormField<String>(
+                value: variantId,
+                decoration: _fieldDecoration('Variant', Icons.inventory_2),
+                items: variantItems,
+                onChanged: (value) => setSheetState(() => variantId = value),
+              ),
+              DropdownButtonFormField<String>(
+                value: mode,
+                decoration: _fieldDecoration('Mode', Icons.tune),
+                items: const [
+                  DropdownMenuItem(value: 'set', child: Text('Fixer quantite')),
+                  DropdownMenuItem(value: 'add', child: Text('Ajouter')),
+                  DropdownMenuItem(value: 'sub', child: Text('Retirer')),
+                ],
+                onChanged: (value) => setSheetState(() => mode = value ?? 'set'),
+              ),
+              TextField(
+                controller: quantity,
+                keyboardType: TextInputType.number,
+                decoration: _fieldDecoration('Quantite', Icons.numbers),
+              ),
+              _FormSubmitButton(
+                label: 'Valider stock',
+                onPressed: () {
+                  if (warehouseId == null || variantId == null) {
+                    _showSnack('Stock', 'Depot et variant sont obligatoires.');
+                    return;
+                  }
+                  _submitDistributorOperation(
+                    'distributor/stock/adjust',
+                    {
+                      'warehouse_id': warehouseId,
+                      'variant_id': variantId,
+                      'mode': mode,
+                      'quantity': int.tryParse(quantity.text) ?? 0,
+                    },
+                    'Stock ajuste.',
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _showSuperAdminAuditSheet() {
     Get.bottomSheet(
       _AsyncManagementSheet(
@@ -2657,6 +3659,96 @@ class _Header extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _DashboardDistributorFilter extends StatelessWidget {
+  final String value;
+  final List<Map<String, String>> options;
+  final ValueChanged<String?> onChanged;
+
+  const _DashboardDistributorFilter({
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 430;
+    return SizedBox(
+      height: compact ? 44 : 48,
+      child: DropdownButtonFormField<String>(
+        value: value,
+        isExpanded: true,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.filter_alt_outlined, size: 18),
+          prefixIconConstraints: const BoxConstraints(minWidth: 38),
+          labelText: 'Vue dashboard',
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: compact ? AppSpacing.sm : AppSpacing.md,
+            vertical: 0,
+          ),
+        ),
+        items: options
+            .map(
+              (item) => DropdownMenuItem<String>(
+                value: item['id'],
+                child: Text(
+                  item['title'] ?? 'Distributeur',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+class _DeliveryWarehouseFilter extends StatelessWidget {
+  final String value;
+  final List<Map<String, String>> options;
+  final ValueChanged<String?> onChanged;
+
+  const _DeliveryWarehouseFilter({
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 430;
+    return SizedBox(
+      height: compact ? 44 : 48,
+      child: DropdownButtonFormField<String>(
+        value: value,
+        isExpanded: true,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.warehouse_outlined, size: 18),
+          prefixIconConstraints: const BoxConstraints(minWidth: 38),
+          labelText: 'Depot',
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: compact ? AppSpacing.sm : AppSpacing.md,
+            vertical: 0,
+          ),
+        ),
+        items: options
+            .map(
+              (item) => DropdownMenuItem<String>(
+                value: item['id'],
+                child: Text(
+                  item['title'] ?? 'Depot',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: onChanged,
+      ),
     );
   }
 }
@@ -3528,6 +4620,7 @@ class _ListSection extends StatelessWidget {
   final Map<String, dynamic> section;
   final String workspaceType;
   final String deliveryFilter;
+  final String deliveryWarehouseFilter;
   final String searchQuery;
   final String statusFilter;
   final String categoryFilter;
@@ -3537,6 +4630,7 @@ class _ListSection extends StatelessWidget {
     required this.section,
     required this.workspaceType,
     required this.deliveryFilter,
+    required this.deliveryWarehouseFilter,
     required this.searchQuery,
     required this.statusFilter,
     required this.categoryFilter,
@@ -3600,11 +4694,20 @@ class _ListSection extends StatelessWidget {
     String title,
     List<Map<String, dynamic>> items,
   ) {
-    if (title != 'Demandes de livraison' || deliveryFilter == 'Toutes') {
-      return _applyCommonFilters(items, title);
+    var scopedItems = items;
+    if (title == 'Demandes de livraison' &&
+        deliveryWarehouseFilter != 'all') {
+      scopedItems = scopedItems
+          .where((item) =>
+              item['warehouse_id']?.toString() == deliveryWarehouseFilter)
+          .toList();
     }
 
-    final filtered = items.where((item) {
+    if (title != 'Demandes de livraison' || deliveryFilter == 'Toutes') {
+      return _applyCommonFilters(scopedItems, title);
+    }
+
+    final filtered = scopedItems.where((item) {
       final status = item['status']?.toString().toLowerCase() ?? '';
       return switch (deliveryFilter) {
         'Preparees' => status.contains('nouveau') ||
@@ -4263,6 +5366,14 @@ IconData _actionIcon(String? kind) {
     'create_category' => Icons.category_rounded,
     'create_product' => Icons.add_box_rounded,
     'view_audit_logs' => Icons.history_rounded,
+    'distributor_create_actor' => Icons.person_add_alt_1_rounded,
+    'distributor_create_warehouse' => Icons.warehouse_rounded,
+    'distributor_adjust_stock' => Icons.inventory_rounded,
+    'distributor_manage_prices' => Icons.price_change_rounded,
+    'distributor_create_client' => Icons.storefront_rounded,
+    'distributor_create_promotion' => Icons.local_offer_rounded,
+    'distributor_create_coupon' => Icons.confirmation_number_rounded,
+    'open_delivery' => Icons.local_shipping_rounded,
     _ => Icons.touch_app_rounded,
   };
 }

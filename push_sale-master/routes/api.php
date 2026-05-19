@@ -152,6 +152,18 @@ Route::middleware('auth:api')->group(function () {
     Route::post("workspace/mvp", [WorkspaceMvpController::class, "index"]);
     Route::post("workspace/real", [WorkspaceMvpController::class, "index"]);
 
+    // Distributor workspace real operations
+    Route::prefix("distributor")->group(function () {
+        Route::post("context", [WorkspaceMvpController::class, "distributorContext"]);
+        Route::post("actors", [WorkspaceMvpController::class, "createDistributorActor"]);
+        Route::post("warehouses", [WorkspaceMvpController::class, "createDistributorWarehouse"]);
+        Route::post("clients", [WorkspaceMvpController::class, "createDistributorClient"]);
+        Route::post("coupons", [WorkspaceMvpController::class, "createDistributorCoupon"]);
+        Route::post("promotions", [WorkspaceMvpController::class, "createDistributorPromotion"]);
+        Route::post("stock/adjust", [WorkspaceMvpController::class, "adjustDistributorStock"]);
+        Route::post("variants/{id}/price", [WorkspaceMvpController::class, "saveDistributorVariantPrice"]);
+    });
+
     // SuperAdmin workspace operations
     Route::prefix("superadmin")->group(function () {
         Route::match(["get", "post"], "dashboard", [SuperAdminController::class, "dashboard"]);

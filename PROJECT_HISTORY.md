@@ -36,6 +36,19 @@
 - Tests a faire : test manuel smartphone des boutons workspace en mode `APP_ENV=vpn`, puis implementation de l'API reelle de commande Point de Vente.
 - Prochaine etape : brancher la validation panier Point de Vente sur une API metier reelle `order_source=point_vente`.
 
+## 2026-05-19 - Profil Distributeur oriente operations metier reelles
+
+- Zone modifiee : workspace Flutter Distributeur, API workspace Laravel, navigation mobile par role.
+- Objectif : transformer le profil distributeur en espace operationnel coherent : pilotage, commandes, produits exploitables, depots, clients et menu Plus, sans revenir au mode demo.
+- Resume : la navigation distributeur devient `Accueil`, `Commandes`, `Produits`, `Depots`, `Clients`, `Plus`; le dashboard conserve les statistiques et alertes, tandis que les autres onglets n'affichent plus les KPIs globaux. Les produits restent issus du catalogue maitre cree par SuperAdmin, et le distributeur dispose d'une vue detail produit/variants orientee prix, stock depot, disponibilite et promotions.
+- Backend : enrichissement des produits workspace avec variants, groupes, libelles, stock par depots du distributeur et actions operationnelles. Les sections `promotions`, `coupons`, `deliveries` et `more` sont routees dans le workspace reel.
+- UI : detail produit distributeur en bottom sheet moderne avec onglets `Infos` / `Variants`, variants groupes, cartes cliquables, aucun bouton panier pour distributeur, et actions `Prix` / `Stock` expliquees selon les endpoints existants.
+- Risque : moyen-faible; les changements clarifient les responsabilites sans changer les calculs metier ni supprimer de donnees.
+- Impact logique metier : logique existante conservee; SuperAdmin gere le catalogue global, Distributeur gere exploitation commerciale, prix, stock et operations terrain.
+- Tests effectues : `php -l WorkspaceMvpController.php` OK, `php -l WorkspaceResolver.php` OK, `route:list --path=api/workspace` OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK sans erreur bloquante, `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` OK.
+- Blocage device : ADB `10.212.134.2:39423` non joignable (ping/TCP/adb KO); APK genere pret a installer des que le smartphone est reconnecte.
+- Prochaine etape : validation tactile du profil distributeur sur smartphone et transformation progressive des actions prix/stock en formulaires complets si les endpoints legacy sont confirmes role par role.
+
 ## 2026-05-18 - Workspace SuperAdmin exploitable CRUD et audit
 
 - Zone modifiee : backend Laravel SuperAdmin, routes API, migration non destructive, workspace Flutter SuperAdmin, documentation de validation.
