@@ -1,5 +1,27 @@
 # REAL_MODE_AUDIT
 
+## 2026-05-19 - Actions Distributeur reelles
+
+Pages/actions migrees ou verifiees en mode reel :
+
+| Page / action | API reelle | Statut |
+| --- | --- | --- |
+| Dashboard distributeur filtre tous/un distributeur | `POST /api/workspace/real` avec `distributor_id` optionnel | OK code |
+| Depots - creer depot | `POST /api/distributor/warehouses` | OK route |
+| Clients - creer client | `POST /api/distributor/clients` | OK route |
+| Coupons - creer coupon | `POST /api/distributor/coupons` | OK route |
+| Promotions - creer promotion | `POST /api/distributor/promotions` | OK route + formulaire enrichi |
+| Stock - ajuster variant/depot | `POST /api/distributor/stock/adjust` | OK route; bloque si aucun depot |
+| Produits - prix variant distributeur | `POST /api/distributor/variants/{id}/price` | OK route |
+| Livraisons - filtre par depot | `POST /api/workspace/real` section `deliveries` puis filtre `warehouse_id` | OK code |
+
+Garde-fous :
+
+- Aucun appel a `/api/workspace/mvp` n'a ete ajoute pour `APP_ENV=vpn`.
+- Les formulaires Distributeur postent vers les routes Laravel reelles.
+- L'ajustement stock ne peut pas etre lance sans depot disponible.
+- Les erreurs dependantes de materiel/cle doivent rester des messages clairs, sans action demo.
+
 ## 2026-05-19 - Produits SuperAdmin en mode reel
 
 - L'onglet Produits SuperAdmin utilise les donnees reelles `/api/workspace/real` et les actions `/api/superadmin/products`, `/api/superadmin/categories`, `/api/superadmin/products/{id}/variants`.

@@ -1,5 +1,17 @@
 # PROJECT_HISTORY
 
+## 2026-05-19 - Stabilisation actions reelles Distributeur et UI Plus
+
+- Zone modifiee : workspace Flutter Distributeur, formulaires promotions/stock, enveloppes Material des sheets workspace, documentation de validation.
+- Objectif : remplacer les messages informatifs par des actions API reelles sur les operations visibles du manager distributeur et corriger les erreurs UI observees dans Promotions, Livraisons et Creances.
+- Resume : le formulaire promotion est maintenant un vrai formulaire metier avec type point de vente, type promotion, portee catalogue/categorie/produit/variant, remise, unite et minimum; l'ajustement stock est bloque proprement tant qu'aucun depot n'existe et guide vers la creation depot; les pages/sheets workspace sont protegees par `Material` pour eviter `No Material widget found`.
+- Backend : routes reelles `/api/distributor/warehouses`, `/clients`, `/coupons`, `/promotions`, `/stock/adjust` et `/variants/{id}/price` verifiees dans `route:list`.
+- Risque : moyen-faible, car les changements restent centres sur le branchement UI vers les APIs existantes sans modifier les calculs metier.
+- Impact logique metier : logique existante conservee; le Distributeur gere ses operations reelles, tandis que SuperAdmin reste responsable du catalogue maitre.
+- Tests effectues : syntaxe PHP controller workspace OK, `route:list` distributeur/superadmin OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN OK.
+- Test smartphone : ADB `10.212.134.2:43903` connecte, APK installe, application lancee, logcat de demarrage sans `FATAL EXCEPTION`, `FlutterError`, `No Material widget found`, assertion ou overflow detecte.
+- Tests a faire : validation tactile longue sur SM A165F des formulaires depot/client/promotion/coupon/livraisons/creances.
+
 ## 2026-05-19 - Produits SuperAdmin categories et edition pre-remplie
 
 - Zone modifiee : onglet Produits SuperAdmin Flutter, payload produits workspace reel, action categorie Laravel.

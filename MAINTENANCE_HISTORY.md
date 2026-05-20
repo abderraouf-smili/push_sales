@@ -1,5 +1,35 @@
 # MAINTENANCE_HISTORY
 
+## 2026-05-19 - Actions Distributeur reelles et corrections Material
+
+Objectif :
+- Stabiliser les pages operationnelles Distributeur en mode reel, corriger les erreurs `No Material widget found` et remplacer les messages informatifs par des formulaires connectes aux APIs.
+
+Resume technique :
+- Ajout d'un formulaire promotion riche et valide avant appel `/api/distributor/promotions`.
+- Protection de l'ajustement stock : si aucun depot n'est charge, l'action affiche un etat vide utile et propose la creation depot.
+- Conservation du filtre dashboard par distributeur et du filtre livraisons par depot.
+- Normalisation du wrapper `Material` autour des pages/sheets workspace.
+- Verification des routes distributeur reelles : depots, clients, coupons, promotions, stock adjust et prix variant.
+
+Commandes executees :
+- `dart format lib/views/signed/workspace/workspace_page.dart`
+- `php -l app/Http/Controllers/WorkspaceMvpController.php`
+- `php artisan route:list --path=api/distributor`
+- `php artisan route:list --path=api/superadmin`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb devices`
+- `adb connect` sur les ports fournis recents
+
+Resultats :
+- APK debug VPN genere.
+- ADB `10.212.134.2:43903` connecte.
+- APK installe avec succes sur le smartphone.
+- Application lancee avec `monkey`.
+- Logcat de demarrage sans crash Flutter/Android cible (`FATAL EXCEPTION`, `FlutterError`, `No Material widget found`, assertion, overflow).
+- Les warnings Flutter stricts restent historiques et non bloquants.
+
 ## 2026-05-19 - Filtre categorie et edition produit SuperAdmin
 
 Objectif :

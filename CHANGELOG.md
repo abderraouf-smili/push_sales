@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-05-19 - Actions Distributeur reelles et UI Plus
+
+- Flutter : formulaire promotions Distributeur enrichi et connecte a `/api/distributor/promotions`.
+- Flutter : ajustement stock bloque proprement tant qu'aucun depot n'existe, avec raccourci vers creation depot.
+- Flutter : pages/sheets workspace protegees par `Material` pour corriger les erreurs `No Material widget found` observees dans Plus/Livraisons/Creances.
+- Flutter : dashboard distributeur garde le filtre tous/distributeur et livraisons garde le filtre depot/statut.
+- QA : routes Distributeur et SuperAdmin verifiees, analyse Flutter no-fatal OK, APK debug VPN genere, installe et lance sur ADB `10.212.134.2:43903`.
+
 ## 2026-05-18 - SuperAdmin smartphone UX fixes
 
 - Flutter : SuperAdmin gagne une ergonomie compacte pour smartphone avec recherche/filtres reduits, actions rapides visibles et fermeture du clavier Android avant sortie.

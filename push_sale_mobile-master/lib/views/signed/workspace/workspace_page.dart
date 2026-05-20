@@ -59,8 +59,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
 
   Future<ResponseHttpRequest> _load() {
     final payload = <String, dynamic>{'section': widget.section};
-    if (widget.section == 'dashboard' &&
-        _dashboardDistributorFilter != 'all') {
+    if (widget.section == 'dashboard' && _dashboardDistributorFilter != 'all') {
       payload['distributor_id'] = _dashboardDistributorFilter;
     }
 
@@ -109,194 +108,196 @@ class _WorkspacePageState extends State<WorkspacePage> {
         child: ColoredBox(
           color: AppColors.canvas,
           child: FutureBuilder<ResponseHttpRequest>(
-          future: _future,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const AppLoadingState(
-                  message: 'Chargement des donnees...');
-            }
+            future: _future,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const AppLoadingState(
+                    message: 'Chargement des donnees...');
+              }
 
-            final response = snapshot.data;
-            if (response == null || response.status != 'SUCCESS') {
-              return AppErrorState(
-                title: 'Impossible de charger cette page',
-                message: response?.message?.toString() ??
-                    'Verifiez la connexion API puis reessayez.',
-                onRetry: _refresh,
-              );
-            }
+              final response = snapshot.data;
+              if (response == null || response.status != 'SUCCESS') {
+                return AppErrorState(
+                  title: 'Impossible de charger cette page',
+                  message: response?.message?.toString() ??
+                      'Verifiez la connexion API puis reessayez.',
+                  onRetry: _refresh,
+                );
+              }
 
-            final data = _asMap(response.data);
-            _workspaceType = data['workspace_type']?.toString() ?? '';
-            final dashboardDistributors = _dashboardDistributorOptions(data);
-            return RefreshIndicator(
-              color: AppColors.primary,
-              onRefresh: _refresh,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 430;
-                  return SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(
-                      _horizontalPadding(constraints.maxWidth),
-                      compact ? AppSpacing.md : AppSpacing.xl,
-                      _horizontalPadding(constraints.maxWidth),
-                      compact ? 86 : 104,
-                    ),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1040),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _Header(
-                              data: data,
-                              onNotifications: () => _showServiceInfo(
-                                'Notifications',
-                                'Notifications connectees au workspace ${_workspaceType.isEmpty ? 'actuel' : _workspaceType}.',
-                                Icons.notifications_active_outlined,
-                              ),
-                              onMessages: () => _showServiceInfo(
-                                'Messages',
-                                'Messagerie workspace prete cote UI. Branchez le support/chat API pour les conversations reelles.',
-                                Icons.chat_bubble_outline_rounded,
-                              ),
-                            ),
-                            SizedBox(
-                                height:
-                                    compact ? AppSpacing.md : AppSpacing.xl),
-                            if (_usesCompactToolbar()) ...[
-                              _SuperAdminToolbar(
-                                section: widget.section,
-                                searchQuery: _searchQuery,
-                                statusFilter: _statusFilter,
-                                categoryFilter: _categoryFilter,
-                                categoryOptions: widget.section == 'products'
-                                    ? _productCategoryOptions(_sections(data))
-                                    : const <Map<String, String>>[],
-                                onSearchChanged: (value) {
-                                  setState(() {
-                                    _searchQuery = value;
-                                  });
-                                },
-                                onCategoryChanged: (value) {
-                                  setState(() {
-                                    _categoryFilter = value;
-                                  });
-                                },
-                                onStatusChanged: (value) {
-                                  setState(() {
-                                    _statusFilter = value;
-                                  });
-                                },
+              final data = _asMap(response.data);
+              _workspaceType = data['workspace_type']?.toString() ?? '';
+              final dashboardDistributors = _dashboardDistributorOptions(data);
+              return RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: _refresh,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 430;
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        _horizontalPadding(constraints.maxWidth),
+                        compact ? AppSpacing.md : AppSpacing.xl,
+                        _horizontalPadding(constraints.maxWidth),
+                        compact ? 86 : 104,
+                      ),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1040),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _Header(
+                                data: data,
+                                onNotifications: () => _showServiceInfo(
+                                  'Notifications',
+                                  'Notifications connectees au workspace ${_workspaceType.isEmpty ? 'actuel' : _workspaceType}.',
+                                  Icons.notifications_active_outlined,
+                                ),
+                                onMessages: () => _showServiceInfo(
+                                  'Messages',
+                                  'Messagerie workspace prete cote UI. Branchez le support/chat API pour les conversations reelles.',
+                                  Icons.chat_bubble_outline_rounded,
+                                ),
                               ),
                               SizedBox(
                                   height:
                                       compact ? AppSpacing.md : AppSpacing.xl),
-                            ],
-                            if (data['section']?.toString() ==
-                                'dashboard') ...[
-                              if (dashboardDistributors.length > 1) ...[
-                                _DashboardDistributorFilter(
-                                  value: _safeDashboardDistributorValue(
-                                    dashboardDistributors,
-                                  ),
-                                  options: dashboardDistributors,
-                                  onChanged: (value) {
+                              if (_usesCompactToolbar()) ...[
+                                _SuperAdminToolbar(
+                                  section: widget.section,
+                                  searchQuery: _searchQuery,
+                                  statusFilter: _statusFilter,
+                                  categoryFilter: _categoryFilter,
+                                  categoryOptions: widget.section == 'products'
+                                      ? _productCategoryOptions(_sections(data))
+                                      : const <Map<String, String>>[],
+                                  onSearchChanged: (value) {
                                     setState(() {
-                                      _dashboardDistributorFilter =
-                                          value ?? 'all';
-                                      _future = _load();
+                                      _searchQuery = value;
+                                    });
+                                  },
+                                  onCategoryChanged: (value) {
+                                    setState(() {
+                                      _categoryFilter = value;
+                                    });
+                                  },
+                                  onStatusChanged: (value) {
+                                    setState(() {
+                                      _statusFilter = value;
                                     });
                                   },
                                 ),
                                 SizedBox(
                                     height: compact
                                         ? AppSpacing.md
-                                        : AppSpacing.lg),
+                                        : AppSpacing.xl),
                               ],
-                              _StatsGrid(stats: _asList(data['stats'])),
-                              SizedBox(
-                                  height:
-                                      compact ? AppSpacing.lg : AppSpacing.xl),
-                            ],
-                            if (_workspaceType == 'superadmin' ||
-                                _workspaceType == 'distributeur')
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  bottom:
-                                      compact ? AppSpacing.lg : AppSpacing.xl,
-                                ),
-                                child: _QuickActionsBar(
-                                  actions: _primaryActions(
-                                    _asList(data['actions']),
+                              if (data['section']?.toString() ==
+                                  'dashboard') ...[
+                                if (dashboardDistributors.length > 1) ...[
+                                  _DashboardDistributorFilter(
+                                    value: _safeDashboardDistributorValue(
+                                      dashboardDistributors,
+                                    ),
+                                    options: dashboardDistributors,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _dashboardDistributorFilter =
+                                            value ?? 'all';
+                                        _future = _load();
+                                      });
+                                    },
                                   ),
+                                  SizedBox(
+                                      height: compact
+                                          ? AppSpacing.md
+                                          : AppSpacing.lg),
+                                ],
+                                _StatsGrid(stats: _asList(data['stats'])),
+                                SizedBox(
+                                    height: compact
+                                        ? AppSpacing.lg
+                                        : AppSpacing.xl),
+                              ],
+                              if (_workspaceType == 'superadmin' ||
+                                  _workspaceType == 'distributeur')
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom:
+                                        compact ? AppSpacing.lg : AppSpacing.xl,
+                                  ),
+                                  child: _QuickActionsBar(
+                                    actions: _primaryActions(
+                                      _asList(data['actions']),
+                                    ),
+                                    onAction: _handleAction,
+                                  ),
+                                ),
+                              if (widget.section == 'cart')
+                                _CartSection(onAction: _handleAction),
+                              ..._sections(data).map((section) {
+                                final deliveryWarehouses =
+                                    _deliveryWarehouseOptions(section);
+                                return Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom:
+                                        compact ? AppSpacing.lg : AppSpacing.xl,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (_isDeliverySection(section) &&
+                                          deliveryWarehouses.length > 1) ...[
+                                        _DeliveryWarehouseFilter(
+                                          value: _safeDeliveryWarehouseValue(
+                                            deliveryWarehouses,
+                                          ),
+                                          options: deliveryWarehouses,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _deliveryWarehouseFilter =
+                                                  value ?? 'all';
+                                            });
+                                          },
+                                        ),
+                                        SizedBox(
+                                            height: compact
+                                                ? AppSpacing.sm
+                                                : AppSpacing.md),
+                                      ],
+                                      _ListSection(
+                                        section: section,
+                                        workspaceType: _workspaceType,
+                                        deliveryFilter: _deliveryFilter,
+                                        deliveryWarehouseFilter:
+                                            _deliveryWarehouseFilter,
+                                        searchQuery: _searchQuery,
+                                        statusFilter: _statusFilter,
+                                        categoryFilter: _categoryFilter,
+                                        onItemAction: _handleItemAction,
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                              if (_workspaceType != 'superadmin' &&
+                                  _workspaceType != 'distributeur')
+                                _ActionsBar(
+                                  actions: _asList(data['actions']),
                                   onAction: _handleAction,
                                 ),
-                              ),
-                            if (widget.section == 'cart')
-                              _CartSection(onAction: _handleAction),
-                            ..._sections(data).map((section) {
-                              final deliveryWarehouses =
-                                  _deliveryWarehouseOptions(section);
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  bottom:
-                                      compact ? AppSpacing.lg : AppSpacing.xl,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (_isDeliverySection(section) &&
-                                        deliveryWarehouses.length > 1) ...[
-                                      _DeliveryWarehouseFilter(
-                                        value:
-                                            _safeDeliveryWarehouseValue(
-                                          deliveryWarehouses,
-                                        ),
-                                        options: deliveryWarehouses,
-                                        onChanged: (value) {
-                                          setState(() {
-                                            _deliveryWarehouseFilter =
-                                                value ?? 'all';
-                                          });
-                                        },
-                                      ),
-                                      SizedBox(
-                                          height: compact
-                                              ? AppSpacing.sm
-                                              : AppSpacing.md),
-                                    ],
-                                    _ListSection(
-                                      section: section,
-                                      workspaceType: _workspaceType,
-                                      deliveryFilter: _deliveryFilter,
-                                      deliveryWarehouseFilter:
-                                          _deliveryWarehouseFilter,
-                                      searchQuery: _searchQuery,
-                                      statusFilter: _statusFilter,
-                                      categoryFilter: _categoryFilter,
-                                      onItemAction: _handleItemAction,
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }),
-                            if (_workspaceType != 'superadmin' &&
-                                _workspaceType != 'distributeur')
-                              _ActionsBar(
-                                actions: _asList(data['actions']),
-                                onAction: _handleAction,
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            );
-          },
+                    );
+                  },
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -541,6 +542,15 @@ class _WorkspacePageState extends State<WorkspacePage> {
   void _handleAction(Map<String, dynamic> action) {
     final kind = action['kind']?.toString() ?? '';
     final label = action['label']?.toString() ?? 'Action';
+
+    if (action['enabled'] == false) {
+      _showSnack(
+        label,
+        action['subtitle']?.toString() ??
+            'Cette action est indisponible dans cet etat.',
+      );
+      return;
+    }
 
     if (kind == 'refresh') {
       _refresh();
@@ -2107,166 +2117,170 @@ class _WorkspacePageState extends State<WorkspacePage> {
     Get.bottomSheet(
       SafeArea(
         top: false,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 720),
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.lg,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppSpacing.radiusLg),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 720),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.lg,
             ),
-          ),
-          child: DefaultTabController(
-            length: 2,
-            child: Builder(builder: (context) {
-              final sheetHeight = MediaQuery.sizeOf(context).height * 0.58;
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.line,
-                        borderRadius: BorderRadius.circular(20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(AppSpacing.radiusLg),
+              ),
+            ),
+            child: DefaultTabController(
+              length: 2,
+              child: Builder(builder: (context) {
+                final sheetHeight = MediaQuery.sizeOf(context).height * 0.58;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.line,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: AppColors.softBlue,
-                        child: Text(
-                          _initial(title),
-                          style: AppTextStyles.title.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.title.copyWith(
-                                color: AppColors.primaryDark,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            Text(
-                              subtitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.caption,
-                            ),
-                          ],
-                        ),
-                      ),
-                      AppStatusChip(label: status),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const TabBar(
-                    tabs: [
-                      Tab(text: 'Infos'),
-                      Tab(text: 'Variants'),
-                    ],
-                  ),
-                  SizedBox(
-                    height: sheetHeight.clamp(350, 560).toDouble(),
-                    child: TabBarView(
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
                       children: [
-                        SingleChildScrollView(
+                        CircleAvatar(
+                          radius: 28,
+                          backgroundColor: AppColors.softBlue,
+                          child: Text(
+                            _initial(title),
+                            style: AppTextStyles.title.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _KeyValueList(values: {
-                                'Reference': item['ssin'] ?? item['id'],
-                                'Categorie':
-                                    item['category_label'] ?? 'Catalogue',
-                                'Perimetre': item['distributor_label'] ??
-                                    'Catalogue global lisible distributeurs',
-                                'Variants': variants.length,
-                                'Role SuperAdmin':
-                                    'Injecte produit et variants globaux',
-                                'Role distributeur':
-                                    'Prix, stock depot, disponibilite, promotions',
-                              }),
-                              const SizedBox(height: AppSpacing.md),
-                              AppCard(
-                                child: Text(
-                                  'Principe metier\n'
-                                  '- SuperAdmin maintient le catalogue maitre\n'
-                                  '- Le distributeur choisit l exploitation commerciale\n'
-                                  '- Les prix et stocks sont geres par depot/distributeur\n'
-                                  '- Aucun bouton panier dans ce workspace',
-                                  style: AppTextStyles.body.copyWith(
-                                    color: AppColors.ink,
-                                  ),
+                              Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.title.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w900,
                                 ),
+                              ),
+                              Text(
+                                subtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.caption,
                               ),
                             ],
                           ),
                         ),
-                        SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _VariantList(
-                                variants: variants,
-                                onEdit: (variant) =>
-                                    _showDistributorVariantSheet(
-                                  product: item,
-                                  variant: variant,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.md),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: () =>
-                                          _showDistributorPriceForm(),
-                                      icon: const Icon(
-                                        Icons.price_change_rounded,
-                                      ),
-                                      label: const Text('Prix'),
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      onPressed: () =>
-                                          _showDistributorStockForm(),
-                                      icon: const Icon(Icons.inventory_rounded),
-                                      label: const Text('Stock'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                        AppStatusChip(label: status),
                       ],
                     ),
-                  ),
-                ],
-              );
-            }),
+                    const SizedBox(height: AppSpacing.md),
+                    const TabBar(
+                      tabs: [
+                        Tab(text: 'Infos'),
+                        Tab(text: 'Variants'),
+                      ],
+                    ),
+                    SizedBox(
+                      height: sheetHeight.clamp(350, 560).toDouble(),
+                      child: TabBarView(
+                        children: [
+                          SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _KeyValueList(values: {
+                                  'Reference': item['ssin'] ?? item['id'],
+                                  'Categorie':
+                                      item['category_label'] ?? 'Catalogue',
+                                  'Perimetre': item['distributor_label'] ??
+                                      'Catalogue global lisible distributeurs',
+                                  'Variants': variants.length,
+                                  'Role SuperAdmin':
+                                      'Injecte produit et variants globaux',
+                                  'Role distributeur':
+                                      'Prix, stock depot, disponibilite, promotions',
+                                }),
+                                const SizedBox(height: AppSpacing.md),
+                                AppCard(
+                                  child: Text(
+                                    'Principe metier\n'
+                                    '- SuperAdmin maintient le catalogue maitre\n'
+                                    '- Le distributeur choisit l exploitation commerciale\n'
+                                    '- Les prix et stocks sont geres par depot/distributeur\n'
+                                    '- Aucun bouton panier dans ce workspace',
+                                    style: AppTextStyles.body.copyWith(
+                                      color: AppColors.ink,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _VariantList(
+                                  variants: variants,
+                                  onEdit: (variant) =>
+                                      _showDistributorVariantSheet(
+                                    product: item,
+                                    variant: variant,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () =>
+                                            _showDistributorPriceForm(),
+                                        icon: const Icon(
+                                          Icons.price_change_rounded,
+                                        ),
+                                        label: const Text('Prix'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () =>
+                                            _showDistributorStockForm(),
+                                        icon:
+                                            const Icon(Icons.inventory_rounded),
+                                        label: const Text('Stock'),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
           ),
         ),
       ),
@@ -2435,11 +2449,13 @@ class _WorkspacePageState extends State<WorkspacePage> {
         await _superAdminRequest(route, data: payload, method: method);
     if (response.status == 'SUCCESS') {
       Get.back();
-      _showSnack('Operation reussie', response.message?.toString() ?? successMessage);
+      _showSnack(
+          'Operation reussie', response.message?.toString() ?? successMessage);
       _refresh();
       return;
     }
-    _showSnack('Action impossible', response.message?.toString() ?? 'Verifiez les champs.');
+    _showSnack('Action impossible',
+        response.message?.toString() ?? 'Verifiez les champs.');
   }
 
   void _showDistributorActorForm() {
@@ -2481,10 +2497,12 @@ class _WorkspacePageState extends State<WorkspacePage> {
                 value: workspace,
                 decoration: _fieldDecoration('Workspace', Icons.workspaces),
                 items: const [
-                  DropdownMenuItem(value: 'commercial', child: Text('Commercial')),
+                  DropdownMenuItem(
+                      value: 'commercial', child: Text('Commercial')),
                   DropdownMenuItem(value: 'livreur', child: Text('Livreur')),
                   DropdownMenuItem(value: 'depot', child: Text('Depot')),
-                  DropdownMenuItem(value: 'distributeur', child: Text('Manager')),
+                  DropdownMenuItem(
+                      value: 'distributeur', child: Text('Manager')),
                 ],
                 onChanged: (value) =>
                     setSheetState(() => workspace = value ?? 'commercial'),
@@ -2663,7 +2681,8 @@ class _WorkspacePageState extends State<WorkspacePage> {
           children: [
             TextField(
               controller: code,
-              decoration: _fieldDecoration('Code coupon', Icons.confirmation_number),
+              decoration:
+                  _fieldDecoration('Code coupon', Icons.confirmation_number),
             ),
             TextField(
               controller: description,
@@ -2709,20 +2728,54 @@ class _WorkspacePageState extends State<WorkspacePage> {
 
   void _showDistributorPromotionForm() {
     final description = TextEditingController();
+    final discount = TextEditingController(text: '10');
+    final minimum = TextEditingController(text: '1');
     String? typePvId;
+    String? promotionTypeId;
+    String? categoryId;
+    String? productId;
+    String? variantId;
+    var scope = 'all';
+    var unite = '%';
 
     _showDistributorContextSheet(
       title: 'Creer promotion',
       builder: (contextData) {
         final typeItems = _contextDropdownItems(contextData, 'type_pv');
+        final promotionTypeItems =
+            _contextDropdownItems(contextData, 'promotion_types');
+        final categoryItems = _contextDropdownItems(contextData, 'categories');
+        final productItems = _contextDropdownItems(contextData, 'products');
+        final variantItems = _contextDropdownItems(contextData, 'variants');
+        if (typeItems.isEmpty || promotionTypeItems.isEmpty) {
+          return const _FormSheet(
+            title: 'Creer promotion',
+            children: [
+              AppEmptyState(
+                icon: Icons.local_offer_outlined,
+                title: 'Configuration incomplete',
+                message:
+                    'Ajoutez au moins un type point de vente et un type promotion avant de creer une promotion.',
+              ),
+            ],
+          );
+        }
         typePvId = _safeRequiredDropdownValue(
           typePvId ?? _firstDropdownValue(typeItems) ?? '',
           typeItems,
           _firstDropdownValue(typeItems) ?? '',
         );
+        promotionTypeId = _safeRequiredDropdownValue(
+          promotionTypeId ?? _firstDropdownValue(promotionTypeItems) ?? '',
+          promotionTypeItems,
+          _firstDropdownValue(promotionTypeItems) ?? '',
+        );
+        categoryId = _safeDropdownValue(categoryId, categoryItems);
+        productId = _safeDropdownValue(productId, productItems);
+        variantId = _safeDropdownValue(variantId, variantItems);
         return StatefulBuilder(
           builder: (context, setSheetState) => _FormSheet(
-            title: 'Creer promotion',
+            title: 'Creer promotion reelle',
             children: [
               TextField(
                 controller: description,
@@ -2736,16 +2789,154 @@ class _WorkspacePageState extends State<WorkspacePage> {
                 items: typeItems,
                 onChanged: (value) => setSheetState(() => typePvId = value),
               ),
+              DropdownButtonFormField<String>(
+                value: promotionTypeId,
+                decoration: _fieldDecoration('Type promotion', Icons.discount),
+                items: promotionTypeItems,
+                onChanged: (value) =>
+                    setSheetState(() => promotionTypeId = value),
+              ),
+              DropdownButtonFormField<String>(
+                value: scope,
+                decoration: _fieldDecoration('Portee', Icons.rule_rounded),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'all',
+                    child: Text('Tout le catalogue'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'category',
+                    child: Text('Categorie precise'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'product',
+                    child: Text('Produit precis'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'variant',
+                    child: Text('Variant precis'),
+                  ),
+                ],
+                onChanged: (value) => setSheetState(() {
+                  scope = value ?? 'all';
+                  categoryId = _safeDropdownValue(categoryId, categoryItems);
+                  productId = _safeDropdownValue(productId, productItems);
+                  variantId = _safeDropdownValue(variantId, variantItems);
+                }),
+              ),
+              if (scope == 'category')
+                DropdownButtonFormField<String>(
+                  value: categoryId,
+                  decoration: _fieldDecoration('Categorie', Icons.category),
+                  items: categoryItems,
+                  onChanged: categoryItems.isEmpty
+                      ? null
+                      : (value) => setSheetState(() => categoryId = value),
+                ),
+              if (scope == 'product')
+                DropdownButtonFormField<String>(
+                  value: productId,
+                  decoration:
+                      _fieldDecoration('Produit', Icons.inventory_2_outlined),
+                  items: productItems,
+                  onChanged: productItems.isEmpty
+                      ? null
+                      : (value) => setSheetState(() => productId = value),
+                ),
+              if (scope == 'variant')
+                DropdownButtonFormField<String>(
+                  value: variantId,
+                  decoration:
+                      _fieldDecoration('Variant', Icons.view_in_ar_rounded),
+                  items: variantItems,
+                  onChanged: variantItems.isEmpty
+                      ? null
+                      : (value) => setSheetState(() => variantId = value),
+                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: discount,
+                      keyboardType: TextInputType.number,
+                      decoration:
+                          _fieldDecoration('Remise', Icons.percent_rounded),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  SizedBox(
+                    width: 104,
+                    child: DropdownButtonFormField<String>(
+                      value: unite,
+                      decoration: _fieldDecoration('Unite', Icons.tune),
+                      items: const [
+                        DropdownMenuItem(value: '%', child: Text('%')),
+                        DropdownMenuItem(value: 'DA', child: Text('DA')),
+                      ],
+                      onChanged: (value) =>
+                          setSheetState(() => unite = value ?? '%'),
+                    ),
+                  ),
+                ],
+              ),
+              TextField(
+                controller: minimum,
+                keyboardType: TextInputType.number,
+                decoration: _fieldDecoration(
+                  'Quantite minimum',
+                  Icons.format_list_numbered_rounded,
+                ),
+              ),
               _FormSubmitButton(
                 label: 'Creer promotion',
-                onPressed: () => _submitDistributorOperation(
-                  'distributor/promotions',
-                  {
-                    'description': description.text.trim(),
-                    'typepv_id': typePvId,
-                  },
-                  'Promotion creee.',
-                ),
+                onPressed: () {
+                  final value =
+                      double.tryParse(discount.text.replaceAll(',', '.')) ?? 0;
+                  if (description.text.trim().isEmpty) {
+                    _showSnack(
+                      'Champ requis',
+                      'La description de la promotion est obligatoire.',
+                    );
+                    return;
+                  }
+                  if (value <= 0) {
+                    _showSnack(
+                      'Remise invalide',
+                      'La remise doit etre superieure a 0.',
+                    );
+                    return;
+                  }
+                  if (scope == 'category' && categoryId == null) {
+                    _showSnack('Categorie requise',
+                        'Selectionnez une categorie pour cette promotion.');
+                    return;
+                  }
+                  if (scope == 'product' && productId == null) {
+                    _showSnack('Produit requis',
+                        'Selectionnez un produit pour cette promotion.');
+                    return;
+                  }
+                  if (scope == 'variant' && variantId == null) {
+                    _showSnack('Variant requis',
+                        'Selectionnez un variant pour cette promotion.');
+                    return;
+                  }
+                  _submitDistributorOperation(
+                    'distributor/promotions',
+                    {
+                      'description': description.text.trim(),
+                      'typepv_id': typePvId,
+                      'type_promotion_id': promotionTypeId,
+                      'discount': value,
+                      'minimum': int.tryParse(minimum.text) ?? 1,
+                      'unite': unite,
+                      if (scope == 'category') 'category_id': categoryId,
+                      if (scope == 'product') 'product_id': productId,
+                      if (scope == 'variant') 'variant_id': variantId,
+                    },
+                    'Promotion creee.',
+                  );
+                },
               ),
             ],
           ),
@@ -2797,7 +2988,8 @@ class _WorkspacePageState extends State<WorkspacePage> {
               TextField(
                 controller: price,
                 keyboardType: TextInputType.number,
-                decoration: _fieldDecoration('Prix de vente', Icons.price_change),
+                decoration:
+                    _fieldDecoration('Prix de vente', Icons.price_change),
               ),
               TextField(
                 controller: sku,
@@ -2840,6 +3032,40 @@ class _WorkspacePageState extends State<WorkspacePage> {
       builder: (contextData) {
         final variantItems = _contextDropdownItems(contextData, 'variants');
         final warehouseItems = _contextDropdownItems(contextData, 'warehouses');
+        if (warehouseItems.isEmpty) {
+          return _FormSheet(
+            title: 'Ajuster stock depot',
+            children: [
+              AppEmptyState(
+                icon: Icons.warehouse_outlined,
+                title: 'Aucun depot',
+                message:
+                    'Creez au moins un depot avant de pouvoir ajuster le stock.',
+                action: ElevatedButton.icon(
+                  onPressed: () {
+                    Get.back();
+                    _showDistributorWarehouseForm();
+                  },
+                  icon: const Icon(Icons.add_business_rounded),
+                  label: const Text('Creer depot'),
+                ),
+              ),
+            ],
+          );
+        }
+        if (variantItems.isEmpty) {
+          return const _FormSheet(
+            title: 'Ajuster stock depot',
+            children: [
+              AppEmptyState(
+                icon: Icons.inventory_2_outlined,
+                title: 'Aucun variant',
+                message:
+                    'Ajoutez des variants produits avant de pouvoir alimenter le stock.',
+              ),
+            ],
+          );
+        }
         variantId = _safeRequiredDropdownValue(
           variantId ?? _firstDropdownValue(variantItems) ?? '',
           variantItems,
@@ -2874,7 +3100,8 @@ class _WorkspacePageState extends State<WorkspacePage> {
                   DropdownMenuItem(value: 'add', child: Text('Ajouter')),
                   DropdownMenuItem(value: 'sub', child: Text('Retirer')),
                 ],
-                onChanged: (value) => setSheetState(() => mode = value ?? 'set'),
+                onChanged: (value) =>
+                    setSheetState(() => mode = value ?? 'set'),
               ),
               TextField(
                 controller: quantity,
@@ -3509,7 +3736,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
 
   static String? _safeDropdownValue(
     String? selected,
-    List<DropdownMenuItem<String?>> items,
+    List<DropdownMenuItem> items,
   ) {
     if (selected == null) return null;
     return items.where((item) => item.value == selected).length == 1
@@ -3894,63 +4121,66 @@ class _FormSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(
-        maxWidth: 720,
-        maxHeight: MediaQuery.sizeOf(context).height * 0.88,
-      ),
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.lg,
-        AppSpacing.lg,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: 720,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.88,
         ),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.line,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: AppTextStyles.title.copyWith(
-                      color: AppColors.primaryDark,
-                    ),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.lg,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppSpacing.radiusLg),
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.line,
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                IconButton(
-                  onPressed: () => Get.back(),
-                  icon: const Icon(Icons.close_rounded),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            ...children.expand(
-              (child) => [
-                child,
-                const SizedBox(height: AppSpacing.md),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: AppTextStyles.title.copyWith(
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              ...children.expand(
+                (child) => [
+                  child,
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -4036,58 +4266,61 @@ class _StaticManagementSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: 820,
-          maxHeight: MediaQuery.sizeOf(context).height * 0.88,
-        ),
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.md,
-          AppSpacing.lg,
-          AppSpacing.lg,
-        ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppSpacing.radiusLg),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: 820,
+            maxHeight: MediaQuery.sizeOf(context).height * 0.88,
           ),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.line,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: AppTextStyles.title.copyWith(
-                        color: AppColors.primaryDark,
-                      ),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppSpacing.radiusLg),
+            ),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.line,
+                      borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              child,
-            ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: AppTextStyles.title.copyWith(
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Get.back(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                child,
+              ],
+            ),
           ),
         ),
       ),
@@ -4695,8 +4928,7 @@ class _ListSection extends StatelessWidget {
     List<Map<String, dynamic>> items,
   ) {
     var scopedItems = items;
-    if (title == 'Demandes de livraison' &&
-        deliveryWarehouseFilter != 'all') {
+    if (title == 'Demandes de livraison' && deliveryWarehouseFilter != 'all') {
       scopedItems = scopedItems
           .where((item) =>
               item['warehouse_id']?.toString() == deliveryWarehouseFilter)
@@ -5157,7 +5389,8 @@ class _QuickActionsBar extends StatelessWidget {
         final kind = action['kind']?.toString() ?? '';
         final primary = kind.startsWith('create_');
         final label = action['label']?.toString() ?? 'Action';
-        return primary
+        final enabled = action['enabled'] != false;
+        final button = primary
             ? ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
@@ -5167,7 +5400,7 @@ class _QuickActionsBar extends StatelessWidget {
                     vertical: AppSpacing.sm,
                   ),
                 ),
-                onPressed: () => onAction(action),
+                onPressed: enabled ? () => onAction(action) : null,
                 icon: Icon(_actionIcon(action['kind']?.toString()), size: 17),
                 label: Text(
                   compact ? label.replaceAll('Ajouter ', '+ ') : label,
@@ -5183,13 +5416,14 @@ class _QuickActionsBar extends StatelessWidget {
                     vertical: AppSpacing.sm,
                   ),
                 ),
-                onPressed: () => onAction(action),
+                onPressed: enabled ? () => onAction(action) : null,
                 icon: Icon(_actionIcon(action['kind']?.toString()), size: 17),
                 label: Text(
                   compact ? label.replaceAll('Voir ', '') : label,
                   style: TextStyle(fontSize: compact ? 12 : 14),
                 ),
               );
+        return Opacity(opacity: enabled ? 1 : 0.52, child: button);
       }).toList(),
     );
   }

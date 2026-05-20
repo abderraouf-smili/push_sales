@@ -1,5 +1,34 @@
 # TEST_REAL_RESULTS
 
+## 2026-05-19 - Validation actions reelles Distributeur / UI Plus
+
+Contexte :
+- Flutter build : `APP_ENV=vpn`, `API_BASE_URL=http://192.168.1.20:8000`
+- Protection donnees : aucun `migrate:fresh`, aucun `db:wipe`, aucun `DemoDataSeeder`.
+- Device : SM A165F joignable ensuite via ADB `10.212.134.2:43903`.
+
+| Test | Resultat | Notes |
+| --- | --- | --- |
+| `php -l app/Http/Controllers/WorkspaceMvpController.php` | OK | Syntaxe backend OK |
+| `php artisan route:list --path=api/distributor` | OK | Routes actions distributeur visibles |
+| `php artisan route:list --path=api/superadmin` | OK | Routes SuperAdmin toujours visibles |
+| Formulaire promotion distributeur | OK code | POST reel `/api/distributor/promotions`, portee catalogue/categorie/produit/variant |
+| Ajustement stock sans depot | OK code | Action bloquee avec etat vide et raccourci creation depot |
+| Dashboard distributeur filtre | OK code | Envoie `distributor_id` a `/api/workspace/real` si filtre choisi |
+| Livraisons filtre depot | OK code | Filtre local par `warehouse_id` sur la section `deliveries` |
+| Flutter analyse no-fatal | OK | 774 issues historiques non bloquantes |
+| APK debug VPN | OK | APK genere |
+| ADB smartphone | OK | `adb connect 10.212.134.2:43903` |
+| Installation smartphone | OK | `adb install -r` success |
+| Lancement smartphone | OK | `monkey` launcher success |
+| Logcat demarrage cible | OK | Aucun `FATAL EXCEPTION`, `FlutterError`, `No Material widget found`, assertion ou overflow detecte dans l'echantillon |
+
+APK genere :
+
+```text
+push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk
+```
+
 ## 2026-05-18 - Validation mode reel sans reseed demo
 
 Contexte :

@@ -4,6 +4,17 @@ Date : 2026-05-17
 
 Objectif : inventaire des ecrans Flutter principaux, etat UX, risques connus et priorites de modernisation. Ce fichier ne contient aucun secret.
 
+## Addendum Distributeur 2026-05-19
+
+Objectif : stabiliser les pages Plus/operations du manager distributeur en mode reel.
+
+- Les pages workspace et bottom sheets operationnels sont enveloppes dans `Material` pour eviter l'erreur Flutter `No Material widget found`.
+- Le formulaire promotion distributeur est enrichi : type point de vente, type promotion, portee catalogue/categorie/produit/variant, remise, unite, minimum et validations.
+- L'ajustement stock affiche un etat vide utile si aucun depot n'existe et propose de creer un depot avant d'activer l'action.
+- Le dashboard distributeur conserve le filtre global/tous ou distributeur choisi.
+- Les livraisons conservent le filtre par depot avec affichage par demande/statut depuis les donnees workspace reelles.
+- Aucune action demo n'est introduite en `APP_ENV=vpn`.
+
 ## Inventaire des pages inspectees
 
 | Module | Fichiers principaux | Role | Etat actuel |

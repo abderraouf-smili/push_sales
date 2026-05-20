@@ -4,6 +4,19 @@ Date : 2026-05-18
 
 Objectif : verifier que les boutons visibles des workspaces ont une action claire et ne restent pas morts.
 
+## Addendum Distributeur operations reelles 2026-05-19
+
+| Page | Bouton | Action | Statut |
+| --- | --- | --- | --- |
+| Dashboard Distributeur | Filtre distributeur | Recharge `/api/workspace/real` avec `distributor_id` si un distributeur est choisi | OK |
+| Depots Distributeur | Ajouter depot | Ouvre formulaire puis `POST /api/distributor/warehouses` | OK route/code |
+| Clients Distributeur | Ajouter client | Ouvre formulaire puis `POST /api/distributor/clients` | OK route/code |
+| Produits Distributeur | Prix variant | Ouvre formulaire puis `POST /api/distributor/variants/{id}/price` | OK route/code |
+| Stock Distributeur | Ajuster stock | Grise/bloque si aucun depot; sinon `POST /api/distributor/stock/adjust` | OK |
+| Promotions Distributeur | Ajouter promotion | Formulaire metier enrichi puis `POST /api/distributor/promotions` | OK route/code |
+| Coupons Distributeur | Ajouter coupon | Formulaire puis `POST /api/distributor/coupons` | OK route/code |
+| Livraisons Distributeur | Filtre depot | Bascule la liste des demandes par depot et statut depuis section `deliveries` | OK code |
+
 ## Resultat
 
 | Page | Bouton | Action | Statut |
