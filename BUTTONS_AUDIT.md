@@ -112,3 +112,18 @@ Objectif : verifier que les boutons visibles des workspaces ont une action clair
 | Profil | Google Maps | Bottom sheet + ouverture Maps externe de test | OK |
 | Profil | Bluetooth printer | Bottom sheet permissions/materiel requis/test | OK |
 | Profil | Google/Facebook Login | Bottom sheet configuration requise | OK |
+
+## Addendum variants options 2026-05-20
+
+| Page | Bouton / geste | Action | Statut |
+| --- | --- | --- | --- |
+| SuperAdmin Produits | Carte produit | Ouvre le detail produit avec onglets Infos / Variants | OK |
+| Detail produit > Variants | `+ Variant` | Ouvre formulaire options:value et appelle `POST /api/superadmin/products/{id}/variants` | OK |
+| Formulaire variant | `Ajouter option` | Ajoute une ligne option facultative sans forcer toutes les options | OK |
+| Formulaire variant | Dropdown option | Charge `Couleur`, `Marque`, `Format`, `Taille`, `Type` depuis API | OK |
+| Formulaire variant | Dropdown valeur | Charge les valeurs existantes de l'option selectionnee | OK |
+| Formulaire variant | `+ Nouvelle valeur` | Envoie/prepare une valeur dans le payload reel du variant | OK |
+| Formulaire variant | `Creer/Enregistrer` | Valide unicite option, envoie l'API, affiche erreur si doublon | OK |
+| Liste variants | Tap variant | Ouvre modification du variant | OK |
+| Liste variants | Swipe droite | Edition rapide du variant | OK |
+| Liste variants | Swipe gauche | Confirmation puis suppression defensive via API | OK |

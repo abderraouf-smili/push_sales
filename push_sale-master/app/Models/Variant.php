@@ -25,6 +25,7 @@ class Variant extends Model
         "variant2_ar",
         "variant2_fr",
         "product_id",
+        "option_signature",
     ];
 
 
@@ -44,5 +45,10 @@ class Variant extends Model
     public function promotion()
     {
         return $this->hasMany(PromotionItem::class);
+    }
+
+    public function optionAssignments()
+    {
+        return $this->hasMany(VariantOptionAssignment::class, 'variant_id');
     }
 }

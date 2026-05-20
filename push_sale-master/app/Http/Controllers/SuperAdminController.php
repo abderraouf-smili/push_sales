@@ -12,6 +12,9 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Variant;
+use App\Models\VariantOption;
+use App\Models\VariantOptionAssignment;
+use App\Models\VariantOptionValue;
 use App\Models\Warehouse;
 use App\Support\WorkspaceResolver;
 use Illuminate\Http\Request;
@@ -573,7 +576,12 @@ class SuperAdminController extends Controller
             return $guard;
         }
 
-        $query = Product::with(['category', 'Distributor', 'allVariants'])->orderBy('short_description_fr');
+        $query = Product::with([
+            'category',
+            'Distributor',
+            'allVariants.optionAssignments.option',
+            'allVariants.optionAssignments.value',
+        ])->orderBy('short_description_fr');
         $this->applySearch($query, $request, ['ssin', 'short_description_fr', 'long_description_fr']);
         $this->applyStatus($query, $request, 'product');
         if ($request->filled('category_id')) {
@@ -607,13 +615,25 @@ class SuperAdminController extends Controller
         $product = Product::create($payload);
         $this->audit('create_product', 'product', $product->id, null, $this->safeAudit($product), $product->distributor_id ?? null);
 
-        return $this->success($this->productPayload($product->fresh(['category', 'Distributor', 'allVariants'])), 'Produit cree.');
+        return $this->success($this->productPayload($product->fresh([
+            'category',
+            'Distributor',
+            'allVariants.optionAssignments.option',
+            'allVariants.optionAssignments.value',
+        ])), 'Produit cree.');
     }
 
     public function productDetail($id)
     {
         return $this->guardedList(function () use ($id) {
-            $product = Product::with(['category', 'Distributor', 'allVariants.pricing', 'allVariants.promotion'])->find($id);
+            $product = Product::with([
+                'category',
+                'Distributor',
+                'allVariants.pricing',
+                'allVariants.promotion',
+                'allVariants.optionAssignments.option',
+                'allVariants.optionAssignments.value',
+            ])->find($id);
             if (!$product) {
                 return null;
             }
@@ -653,18 +673,34 @@ class SuperAdminController extends Controller
         $product->update($this->productWritePayload($request, $data, false));
         $this->audit('update_product', 'product', $product->id, $old, $this->safeAudit($product->fresh()), $product->distributor_id ?? null);
 
-        return $this->success($this->productPayload($product->fresh(['category', 'Distributor', 'allVariants'])), 'Produit modifie.');
+        return $this->success($this->productPayload($product->fresh([
+            'category',
+            'Distributor',
+            'allVariants.optionAssignments.option',
+            'allVariants.optionAssignments.value',
+        ])), 'Produit modifie.');
     }
 
     public function productVariants($id)
     {
-        return $this->guardedList(fn () => Variant::with(['pricing', 'promotion'])
-            ->where('product_id', $id)
-            ->orderBy('variant1_fr')
-            ->orderBy('variant2_fr')
-            ->get()
-            ->map(fn ($variant) => $this->variantPayload($variant))
-            ->values());
+        return $this->guardedList(function () use ($id) {
+            $query = Variant::with([
+                'pricing',
+                'promotion',
+                'optionAssignments.option',
+                'optionAssignments.value',
+            ])
+                ->where('product_id', $id);
+            if (Schema::hasColumn('variant', 'option_signature')) {
+                $query->orderBy('option_signature');
+            }
+
+            return $query->orderBy('variant1_fr')
+                ->orderBy('variant2_fr')
+                ->get()
+                ->map(fn ($variant) => $this->variantPayload($variant))
+                ->values();
+        });
     }
 
     public function createVariant(Request $request, $id)
@@ -678,23 +714,27 @@ class SuperAdminController extends Controller
             return $this->fail('Produit introuvable.', 404);
         }
 
-        $variant = Variant::create([
-            'barcode' => $request->input('barcode', $this->nextCode('BAR')),
-            'image' => $request->input('image', 'demo.png'),
-            'package' => (int) $request->input('package', 1),
-            'option1_fr' => $request->input('option1_fr', 'Type'),
-            'variant1_fr' => $request->input('variant1_fr', $request->input('name', 'Unite')),
-            'option2_fr' => $request->input('option2_fr', 'Detail'),
-            'variant2_fr' => $request->input('variant2_fr'),
-            'option1_ar' => $request->input('option1_ar'),
-            'variant1_ar' => $request->input('variant1_ar'),
-            'option2_ar' => $request->input('option2_ar'),
-            'variant2_ar' => $request->input('variant2_ar'),
-            'product_id' => $id,
-        ]);
-        $this->audit('create_variant', 'variant', $variant->id, null, $this->safeAudit($variant));
+        $preparedOptions = $this->prepareVariantOptions($request);
+        if (isset($preparedOptions['error'])) {
+            return $this->fail($preparedOptions['error'], 422);
+        }
+        $duplicate = $this->findDuplicateVariantSignature($id, $preparedOptions['signature']);
+        if ($duplicate) {
+            return $this->fail('Cette combinaison option/valeur existe deja pour ce produit.', 422);
+        }
 
-        return $this->success($this->variantPayload($variant->fresh(['pricing', 'promotion'])), 'Variant cree.');
+        return DB::transaction(function () use ($request, $id, $preparedOptions) {
+            $variant = Variant::create($this->variantWritePayload($request, $id, $preparedOptions));
+            $this->syncVariantOptionAssignments($variant, $preparedOptions['assignments']);
+            $this->audit('create_variant', 'variant', $variant->id, null, $this->safeAudit($variant));
+
+            return $this->success($this->variantPayload($variant->fresh([
+                'pricing',
+                'promotion',
+                'optionAssignments.option',
+                'optionAssignments.value',
+            ])), 'Variant cree.');
+        });
     }
 
     public function updateVariant(Request $request, $id)
@@ -708,23 +748,30 @@ class SuperAdminController extends Controller
         if (!$variant) {
             return $this->fail('Variant introuvable.', 404);
         }
-        $old = $this->safeAudit($variant);
-        $variant->update($request->only([
-            'barcode',
-            'image',
-            'package',
-            'option1_ar',
-            'option1_fr',
-            'variant1_ar',
-            'variant1_fr',
-            'option2_ar',
-            'option2_fr',
-            'variant2_ar',
-            'variant2_fr',
-        ]));
-        $this->audit('update_variant', 'variant', $variant->id, $old, $this->safeAudit($variant));
+        $preparedOptions = $this->prepareVariantOptions($request, $variant);
+        if (isset($preparedOptions['error'])) {
+            return $this->fail($preparedOptions['error'], 422);
+        }
+        $duplicate = $this->findDuplicateVariantSignature($variant->product_id, $preparedOptions['signature'], $variant->id);
+        if ($duplicate) {
+            return $this->fail('Cette combinaison option/valeur existe deja pour ce produit.', 422);
+        }
 
-        return $this->success($this->variantPayload($variant->fresh(['pricing', 'promotion'])), 'Variant modifie.');
+        return DB::transaction(function () use ($request, $variant, $preparedOptions) {
+            $old = $this->safeAudit($variant);
+            $variant->update($this->variantWritePayload($request, $variant->product_id, $preparedOptions, false));
+            if ($preparedOptions['should_sync']) {
+                $this->syncVariantOptionAssignments($variant->fresh(), $preparedOptions['assignments']);
+            }
+            $this->audit('update_variant', 'variant', $variant->id, $old, $this->safeAudit($variant->fresh()));
+
+            return $this->success($this->variantPayload($variant->fresh([
+                'pricing',
+                'promotion',
+                'optionAssignments.option',
+                'optionAssignments.value',
+            ])), 'Variant modifie.');
+        });
     }
 
     public function deleteVariant($id)
@@ -748,10 +795,75 @@ class SuperAdminController extends Controller
         }
 
         $old = $this->safeAudit($variant);
+        if (Schema::hasTable('variant_option_assignments')) {
+            VariantOptionAssignment::where('variant_id', $variant->id)->delete();
+        }
         $variant->delete();
         $this->audit('delete_variant', 'variant', $id, $old, null);
 
         return $this->success(['id' => $id], 'Variant supprime.');
+    }
+
+    public function variantOptions()
+    {
+        return $this->guardedList(fn () => VariantOption::with(['values' => function ($query) {
+            $query->where('is_active', true)->orderBy('value');
+        }])
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->get()
+            ->map(fn ($option) => $this->variantOptionPayload($option))
+            ->values());
+    }
+
+    public function variantOptionValues($id)
+    {
+        return $this->guardedList(function () use ($id) {
+            $option = VariantOption::where('id', $id)
+                ->orWhere('key', $id)
+                ->first();
+            if (!$option) {
+                return null;
+            }
+
+            return $option->values()
+                ->where('is_active', true)
+                ->orderBy('value')
+                ->get()
+                ->map(fn ($value) => $this->variantOptionValuePayload($value))
+                ->values();
+        }, 'Option variant introuvable.');
+    }
+
+    public function createVariantOptionValue(Request $request)
+    {
+        $guard = $this->guard();
+        if ($guard) {
+            return $guard;
+        }
+
+        $data = $request->validate([
+            'option_id' => 'nullable|integer',
+            'option_key' => 'nullable|string|max:80',
+            'value' => 'required|string|max:160',
+        ]);
+        if (empty($data['option_id']) && empty($data['option_key'])) {
+            return $this->fail('Selectionnez une option pour cette valeur.', 422);
+        }
+
+        $option = VariantOption::query()
+            ->when(!empty($data['option_id']), fn ($query) => $query->where('id', $data['option_id']))
+            ->when(empty($data['option_id']) && !empty($data['option_key']), fn ($query) => $query->where('key', $this->normalizeVariantOptionKey($data['option_key'])))
+            ->first();
+        if (!$option) {
+            return $this->fail('Option variant introuvable.', 404);
+        }
+
+        $value = $this->findOrCreateVariantOptionValue($option, $data['value']);
+        $this->audit('create_variant_option_value', 'variant_option_value', $value->id, null, $this->safeAudit($value));
+
+        return $this->success($this->variantOptionValuePayload($value), 'Valeur variant enregistree.');
     }
 
     public function categories()
@@ -931,6 +1043,12 @@ class SuperAdminController extends Controller
     private function productPayload(Product $product): array
     {
         $variant = $product->allVariants->first();
+        $variantGroups = $product->allVariants
+            ->map(fn ($item) => $this->variantGroupLabel($item))
+            ->filter()
+            ->unique()
+            ->values();
+
         return [
             'id' => $product->id,
             'name' => $product->short_description_fr,
@@ -946,6 +1064,7 @@ class SuperAdminController extends Controller
             'status' => (Schema::hasColumn('product', 'is_active') ? $product->is_active : true) ? 'Actif' : 'Inactif',
             'variant_count' => $product->allVariants->count(),
             'sample_variant' => optional($variant)->variant1_fr,
+            'variant_groups' => $variantGroups,
             'image' => $product->image,
         ];
     }
@@ -960,8 +1079,14 @@ class SuperAdminController extends Controller
             $stockTotal = $stockQuery->exists() ? (int) $stockQuery->sum('quantity') : null;
         }
 
-        $groupLabel = trim((string) ($variant->variant1_fr ?: $variant->option1_fr ?: 'Autres variants'));
-        $detailLabel = trim((string) ($variant->variant2_fr ?: $variant->variant1_fr ?: 'Variant'));
+        $options = $this->variantOptionsForPayload($variant);
+        $groupLabel = $this->variantGroupLabel($variant, $options);
+        $detailLabel = trim((string) (
+            $variant->variant2_fr
+            ?: $variant->variant1_fr
+            ?: collect($options)->pluck('value')->implode(' ')
+            ?: 'Variant'
+        ));
         $sku = optional($firstPrice)->sku ?: $variant->barcode;
         $price = optional($firstPrice)->price;
 
@@ -979,6 +1104,8 @@ class SuperAdminController extends Controller
             'group_label' => $groupLabel,
             'detail_label' => $detailLabel,
             'name' => trim($groupLabel . ' ' . ($detailLabel !== $groupLabel ? $detailLabel : '')),
+            'options' => $options,
+            'option_signature' => $variant->option_signature ?? null,
             'price' => $price,
             'amount' => $price,
             'stock_total' => $stockTotal,
@@ -987,6 +1114,254 @@ class SuperAdminController extends Controller
             'pricing' => $pricing,
             'promotion' => $variant->relationLoaded('promotion') ? $variant->promotion : null,
         ];
+    }
+
+    private function variantOptionPayload(VariantOption $option): array
+    {
+        return [
+            'id' => $option->id,
+            'key' => $option->key,
+            'label' => $option->label,
+            'sort_order' => $option->sort_order,
+            'is_active' => (bool) $option->is_active,
+            'values' => $option->relationLoaded('values')
+                ? $option->values->map(fn ($value) => $this->variantOptionValuePayload($value))->values()
+                : [],
+        ];
+    }
+
+    private function variantOptionValuePayload(VariantOptionValue $value): array
+    {
+        return [
+            'id' => $value->id,
+            'option_id' => $value->option_id,
+            'value' => $value->value,
+            'normalized_value' => $value->normalized_value,
+            'is_active' => (bool) $value->is_active,
+        ];
+    }
+
+    private function variantOptionsForPayload(Variant $variant): array
+    {
+        $assignments = $variant->relationLoaded('optionAssignments')
+            ? $variant->optionAssignments
+            : (Schema::hasTable('variant_option_assignments')
+                ? $variant->optionAssignments()->with(['option', 'value'])->get()
+                : collect());
+
+        return $assignments
+            ->sortBy(fn ($assignment) => optional($assignment->option)->key)
+            ->map(function ($assignment) {
+                return [
+                    'option_id' => $assignment->option_id,
+                    'option_key' => optional($assignment->option)->key,
+                    'option_label' => optional($assignment->option)->label,
+                    'value_id' => $assignment->option_value_id,
+                    'value' => optional($assignment->value)->value,
+                    'normalized_value' => optional($assignment->value)->normalized_value,
+                    'label' => trim((optional($assignment->option)->label ?: 'Option') . ': ' . (optional($assignment->value)->value ?: '')),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function variantGroupLabel(Variant $variant, ?array $options = null): string
+    {
+        $options = $options ?? $this->variantOptionsForPayload($variant);
+        foreach (['type', 'marque', 'format', 'couleur', 'taille'] as $key) {
+            $match = collect($options)->first(fn ($option) => ($option['option_key'] ?? null) === $key);
+            if ($match && !empty($match['value'])) {
+                return $match['value'];
+            }
+        }
+
+        $fallback = trim((string) ($variant->variant1_fr ?: $variant->option1_fr ?: 'Autres variants'));
+        return $fallback ?: 'Autres variants';
+    }
+
+    private function prepareVariantOptions(Request $request, ?Variant $variant = null): array
+    {
+        if (!$request->has('options')) {
+            return [
+                'signature' => $variant->option_signature ?? null,
+                'assignments' => [],
+                'options' => [],
+                'should_sync' => false,
+            ];
+        }
+
+        if (!Schema::hasTable('variant_options') || !Schema::hasTable('variant_option_values')) {
+            return ['error' => 'Les tables options de variants ne sont pas initialisees. Lancez les migrations.'];
+        }
+
+        $items = $request->input('options', []);
+        if (!is_array($items) || empty($items)) {
+            return ['error' => 'Ajoutez au moins une option au variant.'];
+        }
+
+        $seen = [];
+        $signatureParts = [];
+        $assignments = [];
+        $options = [];
+
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                return ['error' => 'Format option variant invalide.'];
+            }
+
+            $key = $this->normalizeVariantOptionKey($item['option_key'] ?? $item['key'] ?? '');
+            $value = trim((string) ($item['value'] ?? ''));
+            if ($key === '' || $value === '') {
+                return ['error' => 'Chaque option doit avoir un type et une valeur.'];
+            }
+            if (isset($seen[$key])) {
+                return ['error' => 'La meme option ne peut pas etre choisie deux fois dans un variant.'];
+            }
+            $seen[$key] = true;
+
+            $option = VariantOption::where('key', $key)->where('is_active', true)->first();
+            if (!$option) {
+                return ['error' => "Option variant non autorisee: {$key}."];
+            }
+
+            $optionValue = $this->findOrCreateVariantOptionValue($option, $value);
+            $normalizedValue = $this->normalizeVariantValue($value);
+            $signatureParts[$key] = $key . '=' . $normalizedValue;
+            $assignments[] = [
+                'option_id' => $option->id,
+                'option_value_id' => $optionValue->id,
+            ];
+            $options[] = [
+                'option_key' => $option->key,
+                'option_label' => $option->label,
+                'value' => $optionValue->value,
+                'normalized_value' => $optionValue->normalized_value,
+            ];
+        }
+
+        ksort($signatureParts);
+        usort($options, fn ($a, $b) => strcmp($a['option_key'], $b['option_key']));
+
+        return [
+            'signature' => implode('|', $signatureParts),
+            'assignments' => $assignments,
+            'options' => $options,
+            'should_sync' => true,
+        ];
+    }
+
+    private function variantWritePayload(Request $request, $productId, array $preparedOptions, bool $creating = true): array
+    {
+        $options = $preparedOptions['options'] ?? [];
+        $first = $options[0] ?? null;
+        $second = $options[1] ?? null;
+
+        $payload = [];
+        if ($creating || $request->has('barcode') || $request->has('sku')) {
+            $payload['barcode'] = $request->input('sku', $request->input('barcode', $this->nextCode('BAR')));
+        }
+        if ($creating || $request->has('image')) {
+            $payload['image'] = $request->input('image', 'demo.png');
+        }
+        if ($creating || $request->has('package')) {
+            $payload['package'] = (int) $request->input('package', 1);
+        }
+
+        if ($request->has('options')) {
+            $payload['option1_fr'] = $first['option_label'] ?? null;
+            $payload['variant1_fr'] = $first['value'] ?? $request->input('name', 'Variant');
+            $payload['option2_fr'] = $second['option_label'] ?? null;
+            $payload['variant2_fr'] = $second['value'] ?? null;
+        } else {
+            foreach (['option1_ar', 'option1_fr', 'variant1_ar', 'variant1_fr', 'option2_ar', 'option2_fr', 'variant2_ar', 'variant2_fr'] as $field) {
+                if ($creating || $request->has($field)) {
+                    $payload[$field] = $request->input($field);
+                }
+            }
+            if (($creating || $request->has('name')) && empty($payload['variant1_fr'])) {
+                $payload['variant1_fr'] = $request->input('name', 'Unite');
+            }
+            if (($creating || $request->has('option1_fr')) && empty($payload['option1_fr'])) {
+                $payload['option1_fr'] = $request->input('option1_fr', 'Type');
+            }
+        }
+
+        if (Schema::hasColumn('variant', 'option_signature')) {
+            $payload['option_signature'] = $preparedOptions['signature'] ?? null;
+        }
+        if ($creating) {
+            $payload['product_id'] = $productId;
+        }
+
+        return $payload;
+    }
+
+    private function syncVariantOptionAssignments(Variant $variant, array $assignments): void
+    {
+        if (!Schema::hasTable('variant_option_assignments')) {
+            return;
+        }
+
+        VariantOptionAssignment::where('variant_id', $variant->id)->delete();
+        foreach ($assignments as $assignment) {
+            VariantOptionAssignment::create([
+                'variant_id' => $variant->id,
+                'option_id' => $assignment['option_id'],
+                'option_value_id' => $assignment['option_value_id'],
+            ]);
+        }
+    }
+
+    private function findDuplicateVariantSignature($productId, ?string $signature, $exceptId = null): ?Variant
+    {
+        if (!$signature || !Schema::hasColumn('variant', 'option_signature')) {
+            return null;
+        }
+
+        $query = Variant::where('product_id', $productId)->where('option_signature', $signature);
+        if ($exceptId) {
+            $query->where('id', '<>', $exceptId);
+        }
+
+        return $query->first();
+    }
+
+    private function findOrCreateVariantOptionValue(VariantOption $option, string $value): VariantOptionValue
+    {
+        $normalizedValue = $this->normalizeVariantValue($value);
+
+        return VariantOptionValue::updateOrCreate(
+            [
+                'option_id' => $option->id,
+                'normalized_value' => $normalizedValue,
+            ],
+            [
+                'value' => trim(preg_replace('/\s+/', ' ', $value)),
+                'is_active' => true,
+            ]
+        );
+    }
+
+    private function normalizeVariantOptionKey(string $key): string
+    {
+        $normalized = Str::lower(Str::ascii(trim($key)));
+        $normalized = preg_replace('/[^a-z0-9_ -]/', '', $normalized) ?? '';
+        $normalized = str_replace(' ', '_', preg_replace('/\s+/', ' ', $normalized) ?? '');
+        $aliases = [
+            'color' => 'couleur',
+            'brand' => 'marque',
+            'size' => 'taille',
+            'type' => 'type',
+            'format' => 'format',
+        ];
+
+        return $aliases[$normalized] ?? $normalized;
+    }
+
+    private function normalizeVariantValue(string $value): string
+    {
+        return Str::lower(trim(preg_replace('/\s+/', ' ', $value)));
     }
 
     private function variantUsageCount(Variant $variant): int

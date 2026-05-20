@@ -190,3 +190,31 @@ Points a valider visuellement par l'utilisateur :
 - Navigation distributeur : Accueil, Commandes, Produits, Depots, Clients, Plus.
 - Dashboard distributeur : KPIs uniquement dans Accueil.
 - Produits distributeur : catalogue global lisible, aucun bouton panier, variants groupes, actions prix/stock orientees exploitation distributeur.
+
+## 2026-05-20 - Validation variants par options
+
+Contexte :
+- Backend : Laravel local `http://127.0.0.1:8010/api` pour test HTTP cible.
+- Flutter : `APP_ENV=vpn`, `API_BASE_URL=http://192.168.1.20:8000`.
+- Device : SM A165F via ADB `10.212.134.2:43903`.
+- Protection donnees : aucun `migrate:fresh`, aucun `db:wipe`, aucun `DemoDataSeeder`; le variant temporaire cree par le test API a ete supprime via l'API SuperAdmin.
+
+| Test | Resultat | Notes |
+| --- | --- | --- |
+| `php artisan migrate --force` | OK | Rien a migrer apres premiere execution |
+| `php artisan db:seed --class=VariantOptionsSeeder --force` | OK | Options fixes presentes |
+| `GET /api/superadmin/variant-options` | OK | 5 options actives |
+| `POST /api/superadmin/products/{id}/variants` avec `options[]` | OK | Signature generee et assignments crees |
+| Rejouer la meme combinaison option/valeur | OK | Doublon refuse |
+| `GET /api/superadmin/products/{id}/variants` | OK | Variant visible avec options |
+| Nettoyage variant temporaire | OK | Suppression defensive via route SuperAdmin |
+| `flutter analyze --no-fatal-infos --no-fatal-warnings` | OK | 776 warnings/infos historiques no-fatal |
+| `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000` | OK | APK genere |
+| `adb install -r` | OK | Installation smartphone reussie |
+| Lancement + logcat cible | OK | Pas de `FlutterError`, `No Material widget found`, `DropdownButton` ou crash fatal observe |
+
+APK genere :
+
+```text
+push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk
+```

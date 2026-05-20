@@ -196,6 +196,10 @@ Route::middleware('auth:api')->group(function () {
         Route::match(["get", "post"], "workspaces", [SuperAdminController::class, "workspaces"]);
         Route::match(["get", "post"], "actor-profiles", [SuperAdminController::class, "actorProfiles"]);
 
+        Route::match(["get", "post"], "variant-options", [SuperAdminController::class, "variantOptions"]);
+        Route::match(["get", "post"], "variant-options/{id}/values", [SuperAdminController::class, "variantOptionValues"]);
+        Route::post("variant-option-values", [SuperAdminController::class, "createVariantOptionValue"]);
+
         Route::get("products", [SuperAdminController::class, "products"]);
         Route::post("products/query", [SuperAdminController::class, "products"]);
         Route::post("products", [SuperAdminController::class, "createProduct"]);

@@ -1347,91 +1347,238 @@ class _WorkspacePageState extends State<WorkspacePage> {
     VoidCallback? onSaved,
   }) {
     final editing = item != null;
-    final family = TextEditingController(
-      text: item?['variant1_fr']?.toString() ??
-          item?['group_label']?.toString() ??
-          '',
-    );
-    final detail = TextEditingController(
-      text: item?['variant2_fr']?.toString() ??
-          item?['detail_label']?.toString() ??
-          '',
+    final name = TextEditingController(
+      text: item?['name']?.toString() ?? _variantDetail(item ?? const {}),
     );
     final package = TextEditingController(
       text: item?['package']?.toString() ?? '1',
     );
-    final barcode = TextEditingController(
-      text: item?['barcode']?.toString() ?? '',
+    final sku = TextEditingController(
+      text: _variantSku(item ?? const {}),
     );
+    final optionRows = _variantOptionRowsFromItem(item);
 
     Get.bottomSheet(
       SafeArea(
         top: false,
-        child: _FormSheet(
-          title: editing ? 'Modifier variant' : 'Ajouter variant',
-          children: [
-            TextField(
-              controller: family,
-              decoration: _fieldDecoration(
-                'Famille / type',
-                Icons.category_outlined,
-              ),
-            ),
-            TextField(
-              controller: detail,
-              decoration: _fieldDecoration(
-                'Detail / taille',
-                Icons.tune_rounded,
-              ),
-            ),
-            TextField(
-              controller: package,
-              keyboardType: TextInputType.number,
-              decoration: _fieldDecoration(
-                'Conditionnement / stock colis',
-                Icons.inventory_2_outlined,
-              ),
-            ),
-            TextField(
-              controller: barcode,
-              decoration: _fieldDecoration('Code barre / SKU', Icons.qr_code),
-            ),
-            _FormSubmitButton(
-              label: editing ? 'Enregistrer variant' : 'Creer variant',
-              onPressed: () async {
-                if (family.text.trim().isEmpty) {
-                  _showSnack(
-                    'Champ requis',
-                    'La famille du variant est requise.',
-                  );
-                  return;
-                }
-                final payload = {
-                  'option1_fr': 'Type',
-                  'variant1_fr': family.text.trim(),
-                  'name': family.text.trim(),
-                  'option2_fr': 'Detail',
-                  if (detail.text.trim().isNotEmpty)
-                    'variant2_fr': detail.text.trim(),
-                  'package': int.tryParse(package.text.trim()) ?? 1,
-                  if (barcode.text.trim().isNotEmpty)
-                    'barcode': barcode.text.trim(),
-                };
-                final route = editing
-                    ? 'superadmin/variants/${item['id']}/update'
-                    : 'superadmin/products/$productId/variants';
-                final response = await _superAdminRequest(route, data: payload);
-                if (response.status == 'SUCCESS') {
-                  Get.back();
-                  _showSnack('Variant enregistre', response.message.toString());
-                  onSaved?.call();
-                  _refresh();
-                } else {
-                  _showSnack('Erreur', response.message.toString());
-                }
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: _superAdminList(
+            'superadmin/variant-options',
+            method: 'GET',
+          ),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const _FormSheet(
+                title: 'Variants',
+                children: [AppLoadingState(message: 'Chargement options...')],
+              );
+            }
+
+            final catalog = _dedupeById(
+              snapshot.data ?? const [],
+              primary: 'key',
+              secondary: 'id',
+            );
+            if (catalog.isEmpty) {
+              return _FormSheet(
+                title: 'Options indisponibles',
+                children: [
+                  const AppErrorState(
+                    title: 'Options variants absentes',
+                    message:
+                        'Lancez les migrations et le seeder VariantOptionsSeeder.',
+                  ),
+                  _FormSubmitButton(
+                    label: 'Fermer',
+                    onPressed: () => Get.back(),
+                  ),
+                ],
+              );
+            }
+            if (optionRows.isEmpty) {
+              optionRows.add({
+                'option_key': 'type',
+                'value': '',
+                'custom': true,
+              });
+            }
+
+            return StatefulBuilder(
+              builder: (context, setSheetState) {
+                final signature = _variantSignaturePreview(optionRows, catalog);
+                return _FormSheet(
+                  title: editing ? 'Modifier variant' : 'Ajouter variant',
+                  children: [
+                    TextField(
+                      controller: name,
+                      decoration:
+                          _fieldDecoration('Nom variant', Icons.tune_rounded),
+                    ),
+                    TextField(
+                      controller: sku,
+                      decoration:
+                          _fieldDecoration('SKU / code barre', Icons.qr_code),
+                    ),
+                    TextField(
+                      controller: package,
+                      keyboardType: TextInputType.number,
+                      decoration: _fieldDecoration(
+                        'Conditionnement indicatif',
+                        Icons.inventory_2_outlined,
+                      ),
+                    ),
+                    Text(
+                      'Options du variant',
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    ...optionRows.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final row = entry.value;
+                      return _VariantOptionRowEditor(
+                        row: row,
+                        catalog: catalog,
+                        rows: optionRows,
+                        index: index,
+                        onChanged: () => setSheetState(() {}),
+                        onRemove: optionRows.length <= 1
+                            ? null
+                            : () => setSheetState(() {
+                                  optionRows.removeAt(index);
+                                }),
+                      );
+                    }),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: optionRows.length >= catalog.length
+                            ? null
+                            : () => setSheetState(() {
+                                  final used = optionRows
+                                      .map((row) =>
+                                          row['option_key']?.toString())
+                                      .whereType<String>()
+                                      .toSet();
+                                  final next = catalog.firstWhere(
+                                    (option) => !used.contains(
+                                      option['key']?.toString(),
+                                    ),
+                                    orElse: () => catalog.first,
+                                  );
+                                  optionRows.add({
+                                    'option_key': next['key']?.toString(),
+                                    'value': '',
+                                    'custom': true,
+                                  });
+                                }),
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Ajouter option'),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.softBlue,
+                        borderRadius:
+                            BorderRadius.circular(AppSpacing.radiusMd),
+                        border: Border.all(color: AppColors.line),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.fingerprint_rounded,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              signature.isEmpty
+                                  ? 'Choisissez uniquement les options necessaires.'
+                                  : 'Apercu: $signature',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.primaryDark,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _FormSubmitButton(
+                      label: editing ? 'Enregistrer variant' : 'Creer variant',
+                      onPressed: () async {
+                        final payloadOptions = optionRows
+                            .map((row) => {
+                                  'option_key':
+                                      row['option_key']?.toString().trim(),
+                                  'value': row['value']?.toString().trim(),
+                                })
+                            .where((row) =>
+                                (row['option_key'] ?? '').isNotEmpty &&
+                                (row['value'] ?? '').isNotEmpty)
+                            .toList();
+                        if (name.text.trim().isEmpty) {
+                          _showSnack(
+                            'Champ requis',
+                            'Le nom du variant est requis.',
+                          );
+                          return;
+                        }
+                        if (payloadOptions.isEmpty) {
+                          _showSnack(
+                            'Options requises',
+                            'Ajoutez au moins une option avec une valeur.',
+                          );
+                          return;
+                        }
+                        final keys = payloadOptions
+                            .map((row) => row['option_key'])
+                            .toSet();
+                        if (keys.length != payloadOptions.length) {
+                          _showSnack(
+                            'Option dupliquee',
+                            'Une option ne peut apparaitre qu une seule fois.',
+                          );
+                          return;
+                        }
+
+                        final payload = {
+                          'name': name.text.trim(),
+                          'sku': sku.text.trim(),
+                          'barcode': sku.text.trim(),
+                          'package': int.tryParse(package.text.trim()) ?? 1,
+                          'options': payloadOptions,
+                        };
+                        final route = editing
+                            ? 'superadmin/variants/${item['id']}/update'
+                            : 'superadmin/products/$productId/variants';
+                        final response =
+                            await _superAdminRequest(route, data: payload);
+                        if (response.status == 'SUCCESS') {
+                          Get.back();
+                          _showSnack(
+                            'Variant enregistre',
+                            response.message.toString(),
+                          );
+                          onSaved?.call();
+                          _refresh();
+                        } else {
+                          _showSnack('Erreur', response.message.toString());
+                        }
+                      },
+                    ),
+                  ],
+                );
               },
-            ),
-          ],
+            );
+          },
         ),
       ),
       isScrollControlled: true,
@@ -3701,6 +3848,70 @@ class _WorkspacePageState extends State<WorkspacePage> {
     };
   }
 
+  static List<Map<String, dynamic>> _variantOptionRowsFromItem(
+    Map<String, dynamic>? item,
+  ) {
+    final options = _asList(item?['options']);
+    if (options.isNotEmpty) {
+      return options
+          .map(
+            (option) => {
+              'option_key': _dropdownId(option['option_key']) ??
+                  _dropdownId(option['key']),
+              'value': _textValue(option, ['value']),
+              'custom': false,
+            },
+          )
+          .where((row) =>
+              (row['option_key']?.toString().isNotEmpty ?? false) &&
+              (row['value']?.toString().isNotEmpty ?? false))
+          .toList();
+    }
+
+    final rows = <Map<String, dynamic>>[];
+    final option1 = _variantOptionKeyFromLabel(item?['option1_fr']);
+    final value1 = _textValue(item, ['variant1_fr']);
+    if (option1 != null && value1.isNotEmpty) {
+      rows.add({'option_key': option1, 'value': value1, 'custom': true});
+    }
+    final option2 = _variantOptionKeyFromLabel(item?['option2_fr']);
+    final value2 = _textValue(item, ['variant2_fr']);
+    if (option2 != null && value2.isNotEmpty && option2 != option1) {
+      rows.add({'option_key': option2, 'value': value2, 'custom': true});
+    }
+    return rows;
+  }
+
+  static String? _variantOptionKeyFromLabel(dynamic label) {
+    final text = label?.toString().trim().toLowerCase();
+    if (text == null || text.isEmpty) return null;
+    if (text.contains('couleur') || text.contains('color')) return 'couleur';
+    if (text.contains('marque') || text.contains('brand')) return 'marque';
+    if (text.contains('format')) return 'format';
+    if (text.contains('taille') || text.contains('size')) return 'taille';
+    if (text.contains('type') || text.contains('famille')) return 'type';
+    return null;
+  }
+
+  static String _variantSignaturePreview(
+    List<Map<String, dynamic>> rows,
+    List<Map<String, dynamic>> catalog,
+  ) {
+    final labelsByKey = {
+      for (final option in catalog)
+        option['key']?.toString(): option['label']?.toString()
+    };
+    return rows
+        .where((row) =>
+            (row['option_key']?.toString().trim().isNotEmpty ?? false) &&
+            (row['value']?.toString().trim().isNotEmpty ?? false))
+        .map((row) {
+      final key = row['option_key']?.toString();
+      final label = labelsByKey[key] ?? key ?? 'Option';
+      return '$label: ${row['value']}';
+    }).join(' | ');
+  }
+
   static String? _dropdownId(dynamic value) {
     final text = value?.toString().trim();
     if (text == null ||
@@ -4507,6 +4718,166 @@ class _MiniList extends StatelessWidget {
   }
 }
 
+class _VariantOptionRowEditor extends StatelessWidget {
+  final Map<String, dynamic> row;
+  final List<Map<String, dynamic>> catalog;
+  final List<Map<String, dynamic>> rows;
+  final int index;
+  final VoidCallback onChanged;
+  final VoidCallback? onRemove;
+
+  const _VariantOptionRowEditor({
+    required this.row,
+    required this.catalog,
+    required this.rows,
+    required this.index,
+    required this.onChanged,
+    this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final currentKey = row['option_key']?.toString();
+    final used = rows
+        .asMap()
+        .entries
+        .where((entry) => entry.key != index)
+        .map((entry) => entry.value['option_key']?.toString())
+        .whereType<String>()
+        .toSet();
+    final available = catalog.where((option) {
+      final key = option['key']?.toString();
+      return key == currentKey || !used.contains(key);
+    }).toList();
+    final selectedKey = available.any((option) => option['key'] == currentKey)
+        ? currentKey
+        : null;
+    final selectedOption = available.firstWhere(
+      (option) => option['key'] == selectedKey,
+      orElse: () =>
+          available.isNotEmpty ? available.first : <String, dynamic>{},
+    );
+    final valueItems = _WorkspacePageState._asList(selectedOption['values'])
+        .map((item) => item['value']?.toString().trim() ?? '')
+        .where((value) => value.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    final currentValue = row['value']?.toString().trim() ?? '';
+    final knownValue =
+        currentValue.isNotEmpty && valueItems.contains(currentValue);
+    final showCustomValue =
+        row['custom'] == true || valueItems.isEmpty || !knownValue;
+    final dropdownValue = knownValue
+        ? currentValue
+        : showCustomValue && currentValue.isNotEmpty
+            ? '__new__'
+            : null;
+
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: selectedKey,
+                  decoration: const InputDecoration(
+                    labelText: 'Option',
+                    prefixIcon: Icon(Icons.tune_rounded),
+                    isDense: true,
+                  ),
+                  items: available
+                      .map(
+                        (option) => DropdownMenuItem<String>(
+                          value: option['key']?.toString(),
+                          child: Text(option['label']?.toString() ??
+                              option['key']?.toString() ??
+                              'Option'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    row['option_key'] = value;
+                    row['value'] = '';
+                    row['custom'] = true;
+                    onChanged();
+                  },
+                ),
+              ),
+              if (onRemove != null) ...[
+                const SizedBox(width: AppSpacing.xs),
+                IconButton(
+                  tooltip: 'Retirer option',
+                  onPressed: onRemove,
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.danger,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (valueItems.isNotEmpty)
+            DropdownButtonFormField<String>(
+              value: dropdownValue,
+              decoration: const InputDecoration(
+                labelText: 'Valeur',
+                prefixIcon: Icon(Icons.sell_outlined),
+                isDense: true,
+              ),
+              items: [
+                ...valueItems.map(
+                  (value) => DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  ),
+                ),
+                const DropdownMenuItem<String>(
+                  value: '__new__',
+                  child: Text('+ Nouvelle valeur'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value == '__new__') {
+                  row['value'] = '';
+                  row['custom'] = true;
+                } else {
+                  row['value'] = value ?? '';
+                  row['custom'] = false;
+                }
+                onChanged();
+              },
+            ),
+          if (showCustomValue) ...[
+            if (valueItems.isNotEmpty) const SizedBox(height: AppSpacing.sm),
+            TextFormField(
+              key: ValueKey(
+                'variant-option-value-$index-${row['option_key']}-${row['custom']}',
+              ),
+              initialValue: currentValue,
+              decoration: const InputDecoration(
+                labelText: 'Nouvelle valeur',
+                prefixIcon: Icon(Icons.add_circle_outline_rounded),
+                isDense: true,
+              ),
+              onChanged: (value) {
+                row['value'] = value;
+                row['custom'] = true;
+                onChanged();
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _VariantList extends StatelessWidget {
   final List<Map<String, dynamic>> variants;
   final ValueChanged<Map<String, dynamic>> onEdit;
@@ -4626,57 +4997,98 @@ class _VariantTile extends StatelessWidget {
     final detail = _variantDetail(variant);
     final sku = _variantSku(variant);
     final packageLabel = _variantPackageLabel(variant);
+    final options = _variantOptionList(variant);
+    final status = variant['status']?.toString() ??
+        (variant['is_active'] == false ? 'Inactif' : 'Actif');
 
     final tile = AppCard(
       padding: const EdgeInsets.all(AppSpacing.sm),
       margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       onTap: onTap,
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: AppColors.softGreen,
-            child: Text(
-              _initial(detail),
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.secondary,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  detail,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.primaryDark,
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.softGreen,
+                child: Text(
+                  _initial(detail),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.secondary,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                Text(
-                  [
-                    if (sku.isNotEmpty) 'SKU $sku',
-                    if (packageLabel.isNotEmpty)
-                      'Conditionnement $packageLabel',
-                    'prix/stock distributeur',
-                  ].join(' - '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.caption,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      detail,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      [
+                        if (sku.isNotEmpty) 'SKU $sku',
+                        if (packageLabel.isNotEmpty)
+                          'Conditionnement $packageLabel',
+                        'prix/stock distributeur',
+                      ].join(' - '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
                 ),
-              ],
+              ),
+              AppStatusChip(
+                label: status,
+                color: _statusColor(status),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.primaryDark,
+                size: 20,
+              ),
+            ],
+          ),
+          if (options.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: options.map((option) {
+                final label = option['label']?.toString() ??
+                    '${option['option_label']}: ${option['value']}';
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.softBlue,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    label,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
-          ),
-          const Icon(
-            Icons.edit_note_rounded,
-            color: AppColors.primary,
-            size: 20,
-          ),
+          ],
         ],
       ),
     );
@@ -4686,12 +5098,26 @@ class _VariantTile extends StatelessWidget {
     final id = variant['id']?.toString() ?? detail;
     return Dismissible(
       key: ValueKey('variant-$id'),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (_) async {
+      direction: DismissDirection.horizontal,
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          onTap();
+          return false;
+        }
         await onDelete?.call();
         return false;
       },
       background: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        ),
+        child: const Icon(Icons.edit_outlined, color: AppColors.primary),
+      ),
+      secondaryBackground: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.xs),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -5485,6 +5911,15 @@ String _initial(String? value) {
 }
 
 String _variantGroup(Map<String, dynamic> variant) {
+  final options = _variantOptionList(variant);
+  for (final key in ['type', 'marque', 'format', 'couleur', 'taille']) {
+    final match = options.firstWhere(
+      (option) => option['option_key']?.toString() == key,
+      orElse: () => const <String, dynamic>{},
+    );
+    final value = match['value']?.toString().trim();
+    if (value != null && value.isNotEmpty) return value;
+  }
   final label = variant['group_label'] ??
       variant['variant1_fr'] ??
       variant['option1_fr'] ??
@@ -5494,6 +5929,20 @@ String _variantGroup(Map<String, dynamic> variant) {
 }
 
 String _variantDetail(Map<String, dynamic> variant) {
+  final explicitName = variant['name']?.toString().trim();
+  if (explicitName != null &&
+      explicitName.isNotEmpty &&
+      explicitName.toLowerCase() != 'variant') {
+    return explicitName;
+  }
+  final options = _variantOptionList(variant);
+  if (options.isNotEmpty) {
+    final values = options
+        .map((option) => option['value']?.toString().trim() ?? '')
+        .where((value) => value.isNotEmpty)
+        .join(' ');
+    if (values.isNotEmpty) return values;
+  }
   final label = variant['detail_label'] ??
       variant['variant2_fr'] ??
       variant['variant1_fr'] ??
@@ -5513,6 +5962,10 @@ String _variantSku(Map<String, dynamic> variant) {
       variant['barcode'] ??
       (firstPrice is Map ? firstPrice['sku'] : null);
   return value?.toString().trim() ?? '';
+}
+
+List<Map<String, dynamic>> _variantOptionList(Map<String, dynamic> variant) {
+  return _WorkspacePageState._asList(variant['options']);
 }
 
 String _variantPackageLabel(Map<String, dynamic> variant) {

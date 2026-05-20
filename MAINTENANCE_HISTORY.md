@@ -1022,5 +1022,42 @@ Validation supplementaire 2026-05-19 :
 - APK debug VPN reinstalle avec succes sur SM A165F.
 - Application relancee par `adb shell monkey`.
 
+# 2026-05-20 - Variants options:value catalogue SuperAdmin
+
+Fichiers modifies/ajoutes :
+- `push_sale-master/database/migrations/2026_05_20_000001_add_variant_options_tables.php`
+- `push_sale-master/app/Models/VariantOption.php`
+- `push_sale-master/app/Models/VariantOptionValue.php`
+- `push_sale-master/app/Models/VariantOptionAssignment.php`
+- `push_sale-master/database/seeders/VariantOptionsSeeder.php`
+- `push_sale-master/app/Models/Variant.php`
+- `push_sale-master/app/Http/Controllers/SuperAdminController.php`
+- `push_sale-master/routes/api.php`
+- `push_sale_mobile-master/lib/views/signed/workspace/workspace_page.dart`
+
+Commandes executees :
+- `php -l` sur les nouveaux fichiers backend et `SuperAdminController.php`
+- `composer dump-autoload`
+- `php artisan route:list --path=api/superadmin`
+- `php artisan migrate --force`
+- `php artisan db:seed --class=VariantOptionsSeeder --force`
+- Test API SuperAdmin : options, creation variant options, rejet doublon, liste variants, nettoyage variant temporaire
+- `flutter clean`
+- `flutter pub get`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb install -r build/app/outputs/flutter-apk/app-debug.apk`
+- `adb shell monkey -p com.softstarter.pushsale 1`
+- `adb logcat` cible erreurs Flutter/Android
+
+Resultats :
+- Variants par options predifinies operationnels cote API et UI.
+- Doublons de combinaison option/valeur refuses par backend.
+- Ancien modele variant conserve en compatibilite.
+- APK installe et lance sur SM A165F.
+
+Risque :
+- Faible a moyen; schema additif et validations backend. Les variants existants peuvent etre progressivement enrichis avec options sans migration destructive.
+
 Risque :
 - Faible; corrections de mapping, scope et UI defensive sans operation destructive ni changement de workflow metier.

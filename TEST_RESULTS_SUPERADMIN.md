@@ -132,3 +132,34 @@ push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk
 - Les details acteur/distributeur/produit ne montrent plus `meta`, `kind`, `id` ou JSON brut.
 - La fiche produit SuperAdmin affiche les variants et permet ajout/modification.
 - Les services externes affichent des bottom sheets utiles sans loading infini.
+
+## 2026-05-20 - Tests SuperAdmin variants options:value
+
+### Backend/API
+
+| Test | Resultat |
+| --- | --- |
+| Migration `variant_options` / `variant_option_values` / `variant_option_assignments` | OK |
+| Champ `variant.option_signature` | OK |
+| Seeder `VariantOptionsSeeder` | OK |
+| `GET /api/superadmin/variant-options` | OK, 5 options |
+| `GET /api/superadmin/variant-options/{id}/values` | OK |
+| Creation variant avec options `type + taille` | OK |
+| Re-creation meme combinaison | OK, refusee |
+| Liste variants avec `options` et `option_signature` | OK |
+| Audit log create/update/delete variant | OK code/API |
+
+### Flutter/build/device
+
+| Test | Resultat |
+| --- | --- |
+| Formulaire variant options facultatives | OK build |
+| Dropdown options sans ID manuel | OK build |
+| Valeurs existantes / nouvelle valeur | OK build |
+| Groupage Type, Marque, Format, Couleur, Taille, Autres | OK build |
+| Tap variant = edition | OK code |
+| Swipe gauche = suppression defensive | OK code |
+| `flutter analyze --no-fatal-infos --no-fatal-warnings` | OK |
+| APK debug VPN | OK |
+| Installation SM A165F `10.212.134.2:43903` | OK |
+| Lancement + logcat cible | OK, pas de crash observe |

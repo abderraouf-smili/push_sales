@@ -342,3 +342,15 @@
 - Risque : moyen, car la correction touche la chaine de build Android et les dependances Flutter, sans modifier les routes API ni la logique metier.
 - Tests a faire : refaire un lancement sur smartphone Android ADB wireless quand le device est reconnecte, puis verifier login, cartes, commandes, stock, impression Bluetooth et notifications.
 - Prochaine etape : traiter progressivement les warnings `flutter analyze`, puis externaliser les cles Google/API et la configuration d'environnements.
+
+## 2026-05-20 - Variants par options predifinies et valeurs
+
+- Zone modifiee : backend Laravel catalogue SuperAdmin, migrations non destructives variants, seeder options, UI Flutter detail produit/variants, documentation de validation.
+- Objectif : remplacer la simple logique famille/detail par une identite variant basee sur des combinaisons `option:value` facultatives, lisibles et uniques par produit.
+- Resume : ajout des tables `variant_options`, `variant_option_values`, `variant_option_assignments`, du champ `variant.option_signature`, du seeder `VariantOptionsSeeder`, et des APIs `/api/superadmin/variant-options`, `/values`, `/variant-option-values`. La creation/modification variant accepte maintenant `options: [{option_key, value}]`, genere une signature normalisee et refuse les doublons pour un meme produit.
+- UI : le formulaire variant SuperAdmin charge les options fixes `Couleur`, `Marque`, `Format`, `Taille`, `Type`, permet d'ajouter uniquement les options utiles, affiche un apercu de signature, interdit deux fois la meme option et montre les valeurs existantes avec creation de nouvelle valeur. L'onglet Variants groupe selon la priorite Type, Marque, Format, Couleur, Taille, puis Autres; tap = edition, swipe = suppression/desactivation avec confirmation.
+- Risque : moyen-faible, car la migration est additive et les variants legacy restent compatibles quand aucune option n'est encore assignee.
+- Impact logique metier : SuperAdmin structure le catalogue maitre; distributeur conserve la responsabilite prix, stock, disponibilite, promotions et exploitation terrain.
+- Tests effectues : `php -l` nouveaux fichiers OK, `composer dump-autoload` OK, `php artisan route:list --path=api/superadmin` OK, `php artisan migrate --force` OK, `php artisan db:seed --class=VariantOptionsSeeder --force` OK, API login SuperAdmin OK, options variants OK, creation variant avec options OK, doublon refuse OK, nettoyage du variant temporaire OK, `flutter clean`, `flutter pub get`, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN OK, installation/lancement sur SM A165F `10.212.134.2:43903` OK, logcat sans crash cible.
+- Tests a faire : validation tactile longue de l'edition/swipe variants sur plusieurs produits reels et migration progressive des variants legacy vers options structurees si souhaite metier.
+- Prochaine etape : appliquer la meme finesse aux ecrans distributeur prix/stock par depot en lisant ces variants structures.

@@ -140,3 +140,13 @@
 - Firebase : permission notification demandee et configuration non bloquante en dev.
 - Android : permission `POST_NOTIFICATIONS` ajoutee.
 - Documentation : ajout `REAL_DATA_TESTING.md` et `PRODUCTION_CHECKLIST.md`.
+
+## 2026-05-20 - Variants catalogue options:value
+
+- Backend : ajout non destructif de `variant_options`, `variant_option_values`, `variant_option_assignments` et `variant.option_signature`.
+- Backend : seeder `VariantOptionsSeeder` pour `Couleur`, `Marque`, `Format`, `Taille`, `Type`.
+- API : nouvelles routes SuperAdmin pour lister options/valeurs et creer des valeurs.
+- API : creation/modification variant accepte `options[]`, genere une signature normalisee et refuse les doublons par produit.
+- Flutter : formulaire variant moderne avec options facultatives, valeurs existantes, nouvelle valeur et apercu signature.
+- Flutter : affichage variants groupe par Type, Marque, Format, Couleur, Taille puis Autres; tap pour edition et swipe pour suppression defensive.
+- Validation : migration/seed/routes/API variants OK, analyse Flutter no-fatal OK, APK debug VPN OK, installation/lancement SM A165F OK.

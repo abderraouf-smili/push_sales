@@ -169,3 +169,23 @@ Corrections UI :
 Regle metier affichee :
 - SuperAdmin organise categories, produits et variants du catalogue maitre.
 - Les prix, stocks et mouvements restent dans le perimetre distributeur/depot.
+
+## Variants options:value 2026-05-20
+
+Objectif : afficher et modifier les variants comme des combinaisons metier lisibles au lieu d'une liste plate.
+
+Corrections UI :
+- Formulaire variant avec nom, SKU, conditionnement indicatif et section `Options du variant`.
+- Options disponibles en dropdown fixe : Couleur, Marque, Format, Taille, Type.
+- Un variant peut contenir 1 a 5 options, sans obligation de tout renseigner.
+- Apercu de signature lisible, par exemple `Type: Normale | Taille: x09`.
+- Chips `Option: Valeur` visibles sur chaque carte variant.
+- Groupage intelligent par Type, sinon Marque, sinon Format, sinon Couleur, sinon Taille, sinon Autres.
+- Tap variant = edition, swipe gauche = suppression/desactivation, swipe droite = modification rapide.
+- Aucun bouton `Modifier` repete sur chaque ligne.
+
+Validation :
+- Analyse Flutter no-fatal OK.
+- APK debug VPN OK.
+- Installation et lancement SM A165F OK.
+- Logcat cible sans `No Material widget found`, `DropdownButton` ou crash fatal.

@@ -144,3 +144,26 @@ Comportement :
 Principe metier :
 - SuperAdmin gere le catalogue maitre.
 - Distributeur gere prix, stock, promotions et disponibilite operationnelle.
+
+## 2026-05-20 - Variants options:value en mode reel
+
+Pages migrees/verifiees en reel :
+- SuperAdmin > Produits > Detail produit > Variants > Ajouter/Modifier variant.
+
+APIs utilisees :
+- `GET /api/superadmin/variant-options`
+- `GET /api/superadmin/variant-options/{id}/values`
+- `POST /api/superadmin/variant-option-values`
+- `GET /api/superadmin/products/{id}/variants`
+- `POST /api/superadmin/products/{id}/variants`
+- `PATCH /api/superadmin/variants/{id}`
+- `POST /api/superadmin/variants/{id}/delete`
+
+Comportement en `APP_ENV=vpn/real/production` :
+- aucune action demo;
+- options fixes chargees depuis Laravel;
+- valeurs existantes chargees depuis Laravel;
+- nouvelle valeur option ajoutee via vraie API;
+- duplication de combinaison refusee cote backend;
+- groupage UI selon Type, Marque, Format, Couleur, Taille;
+- SuperAdmin ne gere toujours pas prix/stock operationnels dans cette interface.

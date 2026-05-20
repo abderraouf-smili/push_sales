@@ -185,6 +185,41 @@ Regles : un acteur non SuperAdmin doit etre rattache a un distributeur; un reset
 
 Creation/modification produit supporte `name`, `description`, `ssin`, `category_id`, `distributor_id`, `is_active`.
 
+### Variants par options predifinies
+
+Les variants SuperAdmin peuvent maintenant etre identifies par une combinaison facultative d'options/valeurs. Un variant peut contenir une seule option ou plusieurs options; il n'est jamais obligatoire de renseigner `Couleur`, `Marque`, `Format`, `Taille` et `Type` en meme temps.
+
+| Methode | Endpoint | Usage |
+| --- | --- | --- |
+| GET | `/api/superadmin/variant-options` | Options fixes actives : couleur, marque, format, taille, type |
+| GET | `/api/superadmin/variant-options/{id}/values` | Valeurs connues pour une option, par id ou key |
+| POST | `/api/superadmin/variant-option-values` | Ajout d'une valeur d'option autorisee |
+| GET | `/api/superadmin/products/{id}/variants` | Variants avec `options` et `option_signature` |
+| POST | `/api/superadmin/products/{id}/variants` | Creation variant avec options |
+| PATCH | `/api/superadmin/variants/{id}` | Modification variant et synchronisation options |
+| POST | `/api/superadmin/variants/{id}/delete` | Suppression defensive si le variant n'est pas utilise |
+
+Payload creation/modification variant :
+
+```json
+{
+  "name": "Normale x09",
+  "sku": "HF0234",
+  "options": [
+    { "option_key": "type", "value": "Normale" },
+    { "option_key": "taille", "value": "x09" }
+  ]
+}
+```
+
+Regles backend :
+- les options sont validees contre `variant_options`;
+- les valeurs sont normalisees et creees si absentes;
+- la signature est triee par key, par exemple `taille=x09|type=normale`;
+- deux variants d'un meme produit ne peuvent pas avoir la meme `option_signature`;
+- les actions create/update/delete ecrivent dans `audit_logs`;
+- les anciens variants sans options restent lisibles via les champs legacy.
+
 ### Notes SuperAdmin smartphone UX 2026-05-18
 
 - `POST /api/superadmin/actors` accepte `email_verified=true|false`; par defaut les comptes crees par SuperAdmin sont verifies pour permettre le test reel immediat.
