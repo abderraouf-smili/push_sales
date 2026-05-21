@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -92,8 +93,8 @@ class WorkspaceMvpController extends Controller
 
         $workspace = WorkspaceResolver::DISTRIBUTEUR;
         $productsQuery = Product::with(['allVariants', 'category', 'Distributor'])->limit(100);
+        $distributorId = $this->actorDistributorId($actor);
         if ($this->actorDistributorId($actor) && Schema::hasColumn('product', 'distributor_id')) {
-            $distributorId = $this->actorDistributorId($actor);
             $productsQuery->where(function ($query) use ($distributorId) {
                 $query->whereNull('distributor_id')
                     ->orWhere('distributor_id', $distributorId);
@@ -101,12 +102,13 @@ class WorkspaceMvpController extends Controller
         }
         $products = $productsQuery->get();
         $warehouseIds = $this->warehouseIds($workspace, $actor);
+        $selectedVariantIds = $this->selectedAssortmentVariantIds($distributorId);
 
         return response()->json([
             'status' => 'SUCCESS',
             'message' => 'Referentiels distributeur charges.',
             'data' => [
-                'distributor_id' => $this->actorDistributorId($actor),
+                'distributor_id' => $distributorId,
                 'warehouses_count' => count($warehouseIds),
                 'warehouses' => $this->warehousesQuery($workspace, $actor)
                     ->limit(100)
@@ -124,8 +126,13 @@ class WorkspaceMvpController extends Controller
                     'category_id' => $product->category_id,
                     'category_name' => optional($product->category)->short_description_fr,
                 ])->values(),
-                'variants' => $products->flatMap(function ($product) use ($warehouseIds, $actor) {
-                    return $product->allVariants->map(function ($variant) use ($product, $warehouseIds, $actor) {
+                'variants' => $products->flatMap(function ($product) use ($warehouseIds, $actor, $selectedVariantIds) {
+                    $variants = $product->allVariants;
+                    if (is_array($selectedVariantIds)) {
+                        $variants = $variants->filter(fn ($variant) => in_array((int) $variant->id, $selectedVariantIds, true));
+                    }
+
+                    return $variants->map(function ($variant) use ($product, $warehouseIds, $actor) {
                         $stock = StockQuantity::where('variant_id', $variant->id)
                             ->whereIn('emplacement_id', $warehouseIds)
                             ->sum('quantity');
@@ -183,6 +190,171 @@ class WorkspaceMvpController extends Controller
                     ->values(),
             ],
         ]);
+    }
+
+    public function distributorProductAssortment()
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+
+        $distributorId = $this->actorDistributorId($actor);
+        $products = $this->allowedDistributorProductsQuery($distributorId)
+            ->with([
+                'category',
+                'allVariants.optionAssignments.option',
+                'allVariants.optionAssignments.value',
+            ])
+            ->orderBy('short_description_fr')
+            ->limit(250)
+            ->get();
+
+        $selectedVariantIds = $this->activeAssortmentVariantIds($distributorId);
+        $configured = $this->assortmentConfigured($distributorId);
+
+        return $this->ok([
+            'distributor_id' => $distributorId,
+            'configured' => $configured,
+            'selected_variant_ids' => $selectedVariantIds,
+            'products' => $products->map(function ($product) use ($selectedVariantIds) {
+                $variants = $product->allVariants->map(function ($variant) use ($selectedVariantIds) {
+                    $options = $this->variantOptionPayloads($variant);
+                    return [
+                        'id' => $variant->id,
+                        'title' => $this->variantDetailLabel($variant, $options),
+                        'subtitle' => trim(collect([
+                            $this->variantGroupLabel($variant, $options),
+                            $variant->barcode ? 'SKU ' . $variant->barcode : null,
+                        ])->filter()->join(' - ')),
+                        'sku' => $variant->barcode,
+                        'group_label' => $this->variantGroupLabel($variant, $options),
+                        'detail_label' => $this->variantDetailLabel($variant, $options),
+                        'options' => $options,
+                        'selected' => in_array((int) $variant->id, $selectedVariantIds, true),
+                    ];
+                })->values();
+
+                $selectedCount = $variants->where('selected', true)->count();
+
+                return [
+                    'id' => $product->id,
+                    'title' => $product->short_description_fr ?: $product->name ?: ('Produit ' . $product->id),
+                    'subtitle' => optional($product->category)->short_description_fr ?: ($product->ssin ?: 'Catalogue'),
+                    'category_id' => $product->category_id,
+                    'category_label' => optional($product->category)->short_description_fr,
+                    'variant_count' => $variants->count(),
+                    'selected_count' => $selectedCount,
+                    'selected' => $variants->isNotEmpty() && $selectedCount === $variants->count(),
+                    'partial_selected' => $selectedCount > 0 && $selectedCount < $variants->count(),
+                    'variants' => $variants,
+                ];
+            })->values(),
+        ], 'Assortiment distributeur charge.');
+    }
+
+    public function saveDistributorProductAssortment(Request $request)
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+
+        $distributorId = $this->actorDistributorId($actor);
+        $variantIds = collect($request->input('variant_ids', []))
+            ->map(fn ($value) => (int) $value)
+            ->filter(fn ($value) => $value > 0)
+            ->unique()
+            ->values();
+
+        if ($variantIds->isEmpty()) {
+            return $this->fail('Selectionnez au moins un variant ou un produit.');
+        }
+
+        $allowedProductIds = $this->allowedDistributorProductsQuery($distributorId)->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $variants = Variant::query()
+            ->whereIn('id', $variantIds)
+            ->whereIn('product_id', $allowedProductIds)
+            ->get(['id', 'product_id']);
+
+        if ($variants->count() !== $variantIds->count()) {
+            return $this->fail('Certains variants ne sont pas disponibles pour ce distributeur.');
+        }
+
+        DB::transaction(function () use ($distributorId, $variants) {
+            DB::table('distributor_product_assortments')
+                ->where('distributor_id', $distributorId)
+                ->update(['is_active' => false, 'updated_at' => now()]);
+
+            foreach ($variants as $variant) {
+                DB::table('distributor_product_assortments')->updateOrInsert(
+                    [
+                        'distributor_id' => $distributorId,
+                        'variant_id' => $variant->id,
+                    ],
+                    [
+                        'product_id' => $variant->product_id,
+                        'is_active' => true,
+                        'updated_at' => now(),
+                        'created_at' => now(),
+                    ]
+                );
+            }
+        });
+
+        $this->auditDistributorAction('update_product_assortment', 'distributor_product_assortments', $distributorId, [
+            'variant_ids' => $variants->pluck('id')->values()->all(),
+            'product_ids' => $variants->pluck('product_id')->unique()->values()->all(),
+        ], $distributorId);
+
+        return $this->ok([
+            'selected_variant_ids' => $variants->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
+            'selected_products' => $variants->pluck('product_id')->unique()->count(),
+            'selected_variants' => $variants->count(),
+        ], 'Assortiment distributeur enregistre.');
+    }
+
+    public function distributorPriceContext()
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+
+        return $this->ok([
+            'distributor_id' => $this->actorDistributorId($actor),
+            'type_pv' => TypePV::query()
+                ->limit(100)
+                ->get()
+                ->map(fn ($type) => [
+                    'id' => $type->id,
+                    'title' => $type->name,
+                ])
+            ->values(),
+        ], 'Referentiel prix charge.');
+    }
+
+    public function distributorStockContext()
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+
+        $workspace = WorkspaceResolver::DISTRIBUTEUR;
+
+        return $this->ok([
+            'distributor_id' => $this->actorDistributorId($actor),
+            'warehouses' => $this->warehousesQuery($workspace, $actor)
+                ->limit(100)
+                ->get()
+                ->map(fn ($warehouse) => [
+                    'id' => $warehouse->id,
+                    'title' => $warehouse->name ?: ('Depot ' . $warehouse->id),
+                    'subtitle' => optional($warehouse->address)->commune,
+                ])
+                ->values(),
+        ], 'Referentiel stock charge.');
     }
 
     public function createDistributorActor(Request $request)
@@ -453,17 +625,20 @@ class WorkspaceMvpController extends Controller
 
         $quantity = (int) $request->input('quantity', 0);
         $mode = (string) $request->input('mode', 'set');
+        $defaults = [
+            'quantity' => 0,
+            'previsionnel' => 0,
+            'stock_price' => (float) $request->input('stock_price', 0),
+        ];
+        if (Schema::hasColumn('stock_quantity', 'lastpurchaseprice')) {
+            $defaults['lastpurchaseprice'] = (float) $request->input('lastpurchaseprice', 0);
+        }
+
         $stock = StockQuantity::firstOrCreate([
             'emplacement_id' => $warehouseId,
             'is_mobile' => false,
             'variant_id' => $variantId,
-        ], [
-            'id' => $this->makeId('STK', $warehouseId . $variantId),
-            'quantity' => 0,
-            'previsionnel' => 0,
-            'lastpurchaseprice' => (float) $request->input('lastpurchaseprice', 0),
-            'stock_price' => (float) $request->input('stock_price', 0),
-        ]);
+        ], $defaults);
 
         $old = (int) $stock->quantity;
         $new = match ($mode) {
@@ -473,14 +648,72 @@ class WorkspaceMvpController extends Controller
         };
         $stock->quantity = $new;
         $stock->previsionnel = $new;
-        if ($request->has('lastpurchaseprice')) {
+        if ($request->has('lastpurchaseprice') && Schema::hasColumn('stock_quantity', 'lastpurchaseprice')) {
             $stock->lastpurchaseprice = (float) $request->input('lastpurchaseprice', 0);
+        }
+        if ($request->has('stock_price')) {
+            $stock->stock_price = (float) $request->input('stock_price', 0);
         }
         $stock->save();
 
+        $warehouseIds = $this->warehouseIds(WorkspaceResolver::DISTRIBUTEUR, $actor);
+
         $this->auditDistributorAction('adjust_stock', 'stock_quantity', $stock->id, ['old_quantity' => $old, 'new_quantity' => $new, 'variant_id' => $variantId, 'warehouse_id' => $warehouseId], $this->actorDistributorId($actor));
 
-        return $this->ok(['stock' => $stock], 'Stock ajuste.');
+        return $this->ok([
+            'stock' => $stock,
+            'old_quantity' => $old,
+            'new_quantity' => $new,
+            'stock_by_warehouse' => $this->variantWarehouseStock($variantId, $warehouseIds),
+            'stock_quantity' => (int) StockQuantity::where('variant_id', $variantId)
+                ->whereIn('emplacement_id', $warehouseIds)
+                ->where(function ($query) {
+                    $query->where('is_mobile', false)->orWhereNull('is_mobile');
+                })
+                ->sum('quantity'),
+        ], 'Stock ajuste.');
+    }
+
+    public function deleteDistributorStock(Request $request, $id)
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+
+        $warehouseIds = $this->warehouseIds(WorkspaceResolver::DISTRIBUTEUR, $actor);
+        $stock = StockQuantity::where('id', $id)->first();
+        if (!$stock) {
+            return $this->fail('Ligne stock introuvable.');
+        }
+
+        if (!in_array((string) $stock->emplacement_id, array_map('strval', $warehouseIds), true)) {
+            return $this->fail('Depot non autorise pour ce distributeur.', 403);
+        }
+
+        $variantId = (string) $stock->variant_id;
+        $old = $stock->toArray();
+        $stock->delete();
+
+        $this->auditDistributorAction(
+            'delete_stock_row',
+            'stock_quantity',
+            $id,
+            ['old_values' => $old, 'variant_id' => $variantId, 'warehouse_id' => $old['emplacement_id'] ?? null],
+            $this->actorDistributorId($actor)
+        );
+
+        return $this->ok([
+            'deleted_stock_id' => $id,
+            'variant_id' => $variantId,
+            'stock_by_warehouse' => $this->variantWarehouseStock($variantId, $warehouseIds),
+            'stock_quantity' => (int) StockQuantity::where('variant_id', $variantId)
+                ->whereIn('emplacement_id', $warehouseIds)
+                ->where(function ($query) {
+                    $query->where('is_mobile', false)->orWhereNull('is_mobile');
+                })
+                ->sum('quantity'),
+        ], 'Ligne stock supprimee.');
     }
 
     public function saveDistributorVariantPrice(Request $request, $id)
@@ -489,7 +722,8 @@ class WorkspaceMvpController extends Controller
         if (!$actor) {
             return $this->fail('Workspace distributeur requis.');
         }
-        if (!Variant::where('id', $id)->exists()) {
+        $variant = Variant::with('product')->where('id', $id)->first();
+        if (!$variant) {
             return $this->fail('Variant introuvable.');
         }
 
@@ -498,26 +732,105 @@ class WorkspaceMvpController extends Controller
             return $this->fail('Prix de vente obligatoire.');
         }
 
+        $distributorId = $this->actorDistributorId($actor);
         $typePvId = $request->input('typepv_id') ?: optional(TypePV::query()->first())->id;
-        $priceList = PriceList::firstOrCreate([
-            'distributor_id' => $this->actorDistributorId($actor),
-            'typepv_id' => $typePvId,
-        ], [
-            'id' => $this->makeId('PL', $this->actorDistributorId($actor) . $typePvId),
-            'code' => 'DEFAULT-' . $this->actorDistributorId($actor),
-            'name' => 'Liste prix distributeur',
-            'description' => 'Liste prix creee depuis workspace distributeur',
-            'start_date' => now(),
-            'end_date' => now()->addYear(),
-            'active' => true,
-        ]);
+        if ($typePvId && !TypePV::where('id', $typePvId)->exists()) {
+            return $this->fail('Type point de vente invalide.');
+        }
+
+        try {
+            $startDate = $request->filled('start_date')
+                ? Carbon::parse($request->input('start_date'))->startOfDay()
+                : now()->startOfDay();
+            $endDate = $request->filled('end_date')
+                ? Carbon::parse($request->input('end_date'))->endOfDay()
+                : null;
+        } catch (Throwable) {
+            return $this->fail('Dates de prix invalides.');
+        }
+
+        if ($endDate && $endDate->lt($startDate)) {
+            return $this->fail('La date fin doit etre apres la date debut.');
+        }
+
+        $overlap = DB::table('pricelist_item as item')
+            ->join('pricelist as list', 'list.id', '=', 'item.pricelist_id')
+            ->where('item.variant_id', $id)
+            ->where('list.distributor_id', $distributorId)
+            ->when(
+                Schema::hasColumn('pricelist_item', 'deleted_at'),
+                fn ($query) => $query->whereNull('item.deleted_at')
+            )
+            ->when(
+                $typePvId,
+                fn ($query) => $query->where('list.typepv_id', $typePvId),
+                fn ($query) => $query->whereNull('list.typepv_id')
+            )
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query
+                    ->where(function ($subQuery) use ($endDate) {
+                        if ($endDate) {
+                            $subQuery
+                                ->whereNull('list.start_date')
+                                ->orWhereDate('list.start_date', '<=', $endDate->toDateString());
+                            return;
+                        }
+                        $subQuery->whereRaw('1 = 1');
+                    })
+                    ->where(function ($subQuery) use ($startDate) {
+                        $subQuery
+                            ->whereNull('list.end_date')
+                            ->orWhereDate('list.end_date', '>=', $startDate->toDateString());
+                    });
+            })
+            ->select('item.id', 'item.price', 'list.name', 'list.start_date', 'list.end_date')
+            ->orderByDesc('item.updated_at')
+            ->first();
+
+        if ($overlap) {
+            $period = trim(
+                $this->dateOnlyLabel($overlap->start_date) . ' -> ' . $this->dateOnlyLabel($overlap->end_date),
+                ' ->'
+            );
+
+            return $this->fail(
+                'Periode prix chevauchee avec ' .
+                ($overlap->name ?: 'un prix existant') .
+                ' (' . ($period ?: 'periode ouverte') . ').'
+            );
+        }
+
+        $priceList = null;
+        $priceListId = trim((string) $request->input('pricelist_id', ''));
+        if ($priceListId !== '') {
+            $priceList = PriceList::where('id', $priceListId)
+                ->where('distributor_id', $distributorId)
+                ->first();
+        }
+
+        if (!$priceList) {
+            $priceList = new PriceList();
+            if (Schema::hasColumn('pricelist', 'code')) {
+                $priceList->code = $this->uniqueCode('pricelist', 'code', 'PRICE-' . $distributorId . '-' . $id, 'PRICE');
+            }
+            $priceList->distributor_id = $distributorId;
+        }
+
+        $priceList->typepv_id = $typePvId;
+        $priceList->name = trim((string) $request->input('name'))
+            ?: 'Tarif ' . ($variant->product->name ?? $variant->id);
+        $priceList->description = trim((string) $request->input('description'))
+            ?: 'Prix variant cree depuis workspace distributeur';
+        $priceList->start_date = $startDate;
+        $priceList->end_date = $endDate;
+        $priceList->active = true;
+        $priceList->save();
 
         $item = PriceListItem::where('pricelist_id', $priceList->id)
             ->where('variant_id', $id)
             ->first();
         if (!$item) {
             $item = new PriceListItem([
-                'id' => $this->makeId('PLI', $priceList->id . $id),
                 'pricelist_id' => $priceList->id,
                 'variant_id' => $id,
             ]);
@@ -526,9 +839,75 @@ class WorkspaceMvpController extends Controller
         $item->price = $price;
         $item->save();
 
-        $this->auditDistributorAction('save_variant_price', 'pricelist_item', $item->id, $item->toArray(), $this->actorDistributorId($actor));
+        $history = $this->variantPriceHistory($id, $distributorId);
 
-        return $this->ok(['price' => $item], 'Prix variant enregistre.');
+        $this->auditDistributorAction('save_variant_price', 'pricelist_item', $item->id, [
+            'price' => $price,
+            'variant_id' => $id,
+            'pricelist_id' => $priceList->id,
+            'typepv_id' => $typePvId,
+            'start_date' => optional($startDate)->toDateString(),
+            'end_date' => optional($endDate)->toDateString(),
+        ], $distributorId);
+
+        return $this->ok([
+            'price' => $item,
+            'pricelist' => $priceList,
+            'price_history' => $history,
+            'price_label' => $this->money($price),
+        ], 'Prix variant enregistre.');
+    }
+
+    public function deleteDistributorVariantPrice(Request $request, $id)
+    {
+        $actor = $this->currentDistributorActor();
+        if (!$actor) {
+            return $this->fail('Workspace distributeur requis.');
+        }
+
+        $distributorId = $this->actorDistributorId($actor);
+        $row = DB::table('pricelist_item as item')
+            ->join('pricelist as list', 'list.id', '=', 'item.pricelist_id')
+            ->where('item.id', $id)
+            ->where('list.distributor_id', $distributorId)
+            ->when(
+                Schema::hasColumn('pricelist_item', 'deleted_at'),
+                fn ($query) => $query->whereNull('item.deleted_at')
+            )
+            ->select('item.*', 'list.name as pricelist_name')
+            ->first();
+
+        if (!$row) {
+            return $this->fail('Prix introuvable ou deja retire.');
+        }
+
+        if (Schema::hasColumn('pricelist_item', 'deleted_at')) {
+            DB::table('pricelist_item')
+                ->where('id', $row->id)
+                ->update([
+                    'deleted_at' => now(),
+                    'updated_at' => now(),
+                ]);
+        } else {
+            PriceListItem::where('id', $row->id)->delete();
+        }
+
+        $history = $this->variantPriceHistory($row->variant_id, $distributorId);
+        $latest = $history[0]['price'] ?? null;
+
+        $this->auditDistributorAction('delete_variant_price', 'pricelist_item', $row->id, [
+            'variant_id' => $row->variant_id,
+            'pricelist_id' => $row->pricelist_id,
+            'price' => $row->price,
+            'name' => $row->pricelist_name,
+        ], $distributorId);
+
+        return $this->ok([
+            'variant_id' => $row->variant_id,
+            'price_history' => $history,
+            'price' => $latest,
+            'price_label' => $latest !== null ? $this->money((float) $latest) : 'Prix a definir',
+        ], 'Prix retire de l historique.');
     }
 
     private function title(string $workspace, string $section): string
@@ -1027,15 +1406,71 @@ class WorkspaceMvpController extends Controller
 
     private function warehouseItems(string $workspace, Actor $actor): array
     {
-        return $this->warehousesQuery($workspace, $actor)->limit(20)->get()->map(function ($warehouse) {
+        $distributorId = $this->actorDistributorId($actor);
+        $useAssortmentHealth = $workspace === WorkspaceResolver::DISTRIBUTEUR && $distributorId;
+        $variantIds = $useAssortmentHealth
+            ? $this->distributorOperationalVariantIds($distributorId)
+            : [];
+        $warehouseIds = $this->warehouseIds($workspace, $actor);
+        $stockMap = $useAssortmentHealth
+            ? $this->variantWarehouseStockMap($variantIds, $warehouseIds)
+            : [];
+        $priceHistoryMap = $useAssortmentHealth
+            ? $this->variantPriceHistoryMap($variantIds, $distributorId)
+            : [];
+        $variantLabels = $useAssortmentHealth
+            ? $this->variantDisplayLabels($variantIds)
+            : [];
+
+        return $this->warehousesQuery($workspace, $actor)->limit(20)->get()->map(function ($warehouse) use ($useAssortmentHealth, $variantIds, $stockMap, $priceHistoryMap, $variantLabels) {
             $stock = StockQuantity::where('emplacement_id', $warehouse->id)->where('is_mobile', false);
+
+            if (!$useAssortmentHealth) {
+                return [
+                    'title' => $warehouse->name,
+                    'subtitle' => trim(optional($warehouse->address)->commune . ' - ' . optional(optional($warehouse->address)->City)->name, ' -') ?: 'Adresse non renseignee',
+                    'status' => (clone $stock)->where('quantity', '<=', 10)->exists() ? 'Attention' : 'En bonne sante',
+                    'amount' => $this->money((float) (clone $stock)->sum('stock_price')),
+                    'meta' => (string) (clone $stock)->count() . ' articles',
+                    'action' => 'Voir stock',
+                    'kind' => 'warehouse',
+                ];
+            }
+
+            $alertReasons = [];
+            $stockValue = 0.0;
+            foreach ($variantIds as $variantId) {
+                $rows = $stockMap[(int) $variantId] ?? [];
+                $row = collect($rows)->firstWhere('warehouse_id', $warehouse->id) ?? [
+                    'title' => $warehouse->name ?: ('Depot ' . $warehouse->id),
+                    'quantity' => 0,
+                    'previsionnel' => 0,
+                    'stock_price' => 0,
+                ];
+                $stockValue += (float) ($row['stock_price'] ?? 0);
+                $activePrice = $this->activePriceFromHistory($priceHistoryMap[(int) $variantId] ?? []);
+                $health = $this->variantOperationalHealth($activePrice, [$row]);
+                if (($health['status'] ?? 'OK') === 'Alerte') {
+                    $label = $variantLabels[(int) $variantId] ?? ('Variant ' . $variantId);
+                    foreach (($health['reasons'] ?? []) as $reason) {
+                        $alertReasons[] = $label . ' : ' . $reason;
+                    }
+                }
+            }
+
+            $alertCount = count(array_unique($alertReasons));
+            $trackedLabel = 'variants selectionnes';
 
             return [
                 'title' => $warehouse->name,
                 'subtitle' => trim(optional($warehouse->address)->commune . ' - ' . optional(optional($warehouse->address)->City)->name, ' -') ?: 'Adresse non renseignee',
-                'status' => (clone $stock)->where('quantity', '<=', 10)->exists() ? 'Attention' : 'En bonne sante',
-                'amount' => $this->money((float) (clone $stock)->sum('stock_price')),
-                'meta' => (string) (clone $stock)->count() . ' articles',
+                'status' => $alertCount > 0 ? 'Alerte' : 'OK',
+                'amount' => $this->money($stockValue),
+                'meta' => count($variantIds) . ' ' . $trackedLabel . ($alertCount > 0 ? ' - ' . $alertCount . ' alerte' . ($alertCount > 1 ? 's' : '') : ''),
+                'health_status' => $alertCount > 0 ? 'Alerte' : 'OK',
+                'health_label' => $alertCount > 0 ? $alertCount . ' alerte' . ($alertCount > 1 ? 's' : '') : 'OK',
+                'health_alert_count' => $alertCount,
+                'health_reasons' => array_values(array_unique($alertReasons)),
                 'action' => 'Voir stock',
                 'kind' => 'warehouse',
             ];
@@ -1075,66 +1510,109 @@ class WorkspaceMvpController extends Controller
 
     private function productItems(?string $workspace = null, ?Actor $actor = null): array
     {
-        $query = Product::with(['category', 'Distributor', 'allVariants'])->limit(30);
-        if (
-            $workspace !== WorkspaceResolver::SUPERADMIN
-            && $actor
-            && $this->actorDistributorId($actor)
-            && Schema::hasColumn('product', 'distributor_id')
-        ) {
-            $distributorId = $this->actorDistributorId($actor);
-            $query->where(function ($q) use ($distributorId) {
-                $q->whereNull('distributor_id')
-                    ->orWhere('distributor_id', $distributorId);
-            });
-        }
+        $distributorId = $actor ? $this->actorDistributorId($actor) : null;
+        $query = $this->allowedDistributorProductsQuery(
+            $workspace === WorkspaceResolver::SUPERADMIN ? null : $distributorId
+        )->with([
+            'category',
+            'Distributor',
+            'allVariants.optionAssignments.option',
+            'allVariants.optionAssignments.value',
+        ])->limit(30);
 
         $warehouseIds = $actor ? $this->warehouseIds($workspace ?? '', $actor) : [];
+        $selectedVariantIds = $workspace === WorkspaceResolver::DISTRIBUTEUR
+            ? $this->selectedAssortmentVariantIds($distributorId)
+            : null;
 
-        return $query->get()->map(function ($product) use ($workspace, $warehouseIds) {
-            $variant = $product->allVariants->first();
-            $price = data_get($variant, 'price')
-                ?? data_get($variant, 'sale_price')
-                ?? data_get($variant, 'amount');
-            $variants = $product->allVariants->map(function ($variant) use ($warehouseIds) {
-                $stockQuery = StockQuantity::where('variant_id', $variant->id);
-                if (!empty($warehouseIds)) {
-                    $stockQuery->whereIn('emplacement_id', $warehouseIds);
-                }
-                $stockQuantity = (int) $stockQuery->sum('quantity');
-                $group = $variant->variant1_fr
-                    ?: $variant->option1_fr
-                    ?: $variant->package
-                    ?: 'Variants';
-                $detail = $variant->variant2_fr
-                    ?: $variant->option2_fr
-                    ?: $variant->variant1_fr
-                    ?: 'Variant';
+        $products = $query->get();
+        $visibleVariantIds = $products->flatMap(function ($product) use ($selectedVariantIds) {
+            $variants = $product->allVariants;
+            if (is_array($selectedVariantIds)) {
+                $variants = $variants->filter(fn ($variant) => in_array((int) $variant->id, $selectedVariantIds, true));
+            }
+
+            return $variants->pluck('id');
+        })->map(fn ($id) => (int) $id)->unique()->values()->all();
+        $stockTotals = $this->variantStockTotals($visibleVariantIds, $warehouseIds);
+        $warehouseStockMap = $this->variantWarehouseStockMap($visibleVariantIds, $warehouseIds);
+        $priceHistoryMap = $this->variantPriceHistoryMap($visibleVariantIds, $distributorId);
+
+        return $products->map(function ($product) use ($workspace, $distributorId, $selectedVariantIds, $stockTotals, $warehouseStockMap, $priceHistoryMap) {
+            $productVariants = $product->allVariants;
+            $totalVariantCount = $productVariants->count();
+            if (is_array($selectedVariantIds)) {
+                $productVariants = $productVariants
+                    ->filter(fn ($variant) => in_array((int) $variant->id, $selectedVariantIds, true))
+                    ->values();
+            }
+            if ($productVariants->isEmpty()) {
+                return null;
+            }
+
+            $variant = $productVariants->first();
+            $firstVariantHistory = $variant ? ($priceHistoryMap[(int) $variant->id] ?? []) : [];
+            $price = $variant && $distributorId
+                ? $this->activePriceFromHistory($firstVariantHistory)
+                : (data_get($variant, 'price')
+                    ?? data_get($variant, 'sale_price')
+                    ?? data_get($variant, 'amount'));
+            $variants = $productVariants->map(function ($variant) use ($stockTotals, $warehouseStockMap, $priceHistoryMap) {
+                $variantId = (int) $variant->id;
+                $stockQuantity = (int) ($stockTotals[$variantId] ?? 0);
+                $options = $this->variantOptionPayloads($variant);
+                $group = $this->variantGroupLabel($variant, $options);
+                $detail = $this->variantDetailLabel($variant, $options);
+                $priceHistory = $priceHistoryMap[$variantId] ?? [];
+                $currentPrice = $this->activePriceFromHistory($priceHistory);
+                $warehouseStocks = $warehouseStockMap[$variantId] ?? [];
+                $health = $this->variantOperationalHealth($currentPrice, $warehouseStocks);
 
                 return [
                     'id' => $variant->id,
+                    'name' => $detail,
                     'variant1_fr' => $variant->variant1_fr,
                     'variant2_fr' => $variant->variant2_fr,
                     'option1_fr' => $variant->option1_fr,
                     'option2_fr' => $variant->option2_fr,
                     'package' => $variant->package,
                     'barcode' => $variant->barcode,
+                    'sku' => $variant->barcode,
+                    'options' => $options,
+                    'option_signature' => $variant->option_signature ?? null,
                     'group_label' => $group,
                     'detail_label' => $detail,
+                    'status' => 'Actif',
+                    'is_active' => true,
                     'stock_quantity' => $stockQuantity,
                     'stock_label' => $stockQuantity . ' stock',
-                    'price_label' => 'Prix distributeur',
+                    'stock_by_warehouse' => $warehouseStocks,
+                    'price' => $currentPrice,
+                    'price_history' => $priceHistory,
+                    'price_label' => $currentPrice !== null ? $this->money((float) $currentPrice) : 'Prix a definir',
+                    'health_status' => $health['status'],
+                    'health_label' => $health['label'],
+                    'health_alert_count' => $health['alert_count'],
+                    'health_reasons' => $health['reasons'],
                 ];
             })->values()->all();
+            $variantAlertCount = collect($variants)
+                ->filter(fn ($variant) => ($variant['health_status'] ?? 'OK') === 'Alerte')
+                ->count();
+            $productHealthStatus = $variantAlertCount > 0 ? 'Alerte' : 'OK';
 
             return [
                 'id' => $product->id,
                 'title' => $product->short_description_fr ?: 'Produit sans nom',
                 'subtitle' => optional($variant)->variant1_fr ?: optional($product->category)->short_description_fr ?: 'Catalogue',
-                'status' => Schema::hasColumn('product', 'is_active') && !$product->is_active
-                    ? 'Inactif'
-                    : ($price ? 'En stock' : 'Prix a verifier'),
-                'amount' => $price ? $this->money((float) $price) : '',
+                'status' => $workspace === WorkspaceResolver::DISTRIBUTEUR
+                    ? $productHealthStatus
+                    : (Schema::hasColumn('product', 'is_active') && !$product->is_active
+                        ? 'Inactif'
+                        : ($price ? 'En stock' : 'Prix a verifier')),
+                'amount' => $workspace === WorkspaceResolver::DISTRIBUTEUR
+                    ? ''
+                    : ($price ? $this->money((float) $price) : ''),
                 'meta' => 'Ref. ' . ($product->ssin ?? $product->id),
                 'action' => in_array($workspace, [WorkspaceResolver::COMMERCIAL, WorkspaceResolver::POINT_VENTE], true)
                     ? 'Ajouter'
@@ -1146,8 +1624,487 @@ class WorkspaceMvpController extends Controller
                 'distributor_id' => $product->distributor_id ?? null,
                 'distributor_label' => optional($product->Distributor)->name,
                 'is_active' => Schema::hasColumn('product', 'is_active') ? (bool) $product->is_active : true,
-                'variant_count' => $product->allVariants->count(),
+                'variant_count' => count($variants),
+                'total_variant_count' => $totalVariantCount,
+                'assortment_configured' => is_array($selectedVariantIds),
+                'health_status' => $productHealthStatus,
+                'health_alert_count' => $variantAlertCount,
+                'health_label' => $variantAlertCount > 0
+                    ? $variantAlertCount . ' variant' . ($variantAlertCount > 1 ? 's' : '') . ' en alerte'
+                    : 'Catalogue OK',
                 'variants' => $variants,
+            ];
+        })->filter()->values()->all();
+    }
+
+    private function allowedDistributorProductsQuery(?string $distributorId): Builder
+    {
+        $query = Product::query();
+
+        if ($distributorId && Schema::hasColumn('product', 'distributor_id')) {
+            $query->where(function ($q) use ($distributorId) {
+                $q->whereNull('distributor_id')
+                    ->orWhere('distributor_id', $distributorId);
+            });
+        }
+
+        return $query;
+    }
+
+    private function distributorOperationalVariantIds(?string $distributorId): array
+    {
+        if (!$distributorId) {
+            return [];
+        }
+
+        return array_values(array_unique(array_map('intval', $this->activeAssortmentVariantIds($distributorId))));
+    }
+
+    private function variantDisplayLabels(array $variantIds): array
+    {
+        if (empty($variantIds)) {
+            return [];
+        }
+
+        return Variant::with(['product', 'optionAssignments.option', 'optionAssignments.value'])
+            ->whereIn('id', $variantIds)
+            ->get()
+            ->mapWithKeys(function (Variant $variant) {
+                $options = $this->variantOptionPayloads($variant);
+                $productName = optional($variant->product)->short_description_fr ?: 'Produit';
+                return [
+                    (int) $variant->id => trim($productName . ' - ' . $this->variantDetailLabel($variant, $options), ' -'),
+                ];
+            })
+            ->all();
+    }
+
+    private function assortmentConfigured(?string $distributorId): bool
+    {
+        return $distributorId
+            && Schema::hasTable('distributor_product_assortments')
+            && DB::table('distributor_product_assortments')
+                ->where('distributor_id', $distributorId)
+                ->exists();
+    }
+
+    private function activeAssortmentVariantIds(?string $distributorId): array
+    {
+        if (!$distributorId || !Schema::hasTable('distributor_product_assortments')) {
+            return [];
+        }
+
+        return DB::table('distributor_product_assortments')
+            ->where('distributor_id', $distributorId)
+            ->where('is_active', true)
+            ->pluck('variant_id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
+    private function selectedAssortmentVariantIds(?string $distributorId): ?array
+    {
+        if (!$this->assortmentConfigured($distributorId)) {
+            return null;
+        }
+
+        return $this->activeAssortmentVariantIds($distributorId);
+    }
+
+    private function variantOptionPayloads(Variant $variant): array
+    {
+        if (!Schema::hasTable('variant_option_assignments')) {
+            return [];
+        }
+
+        $assignments = $variant->relationLoaded('optionAssignments')
+            ? $variant->optionAssignments
+            : $variant->optionAssignments()->with(['option', 'value'])->get();
+
+        return $assignments
+            ->filter(fn ($assignment) => $assignment->option && $assignment->value)
+            ->sortBy(fn ($assignment) => [
+                (int) ($assignment->option->sort_order ?? 999),
+                (string) ($assignment->option->key ?? ''),
+            ])
+            ->map(fn ($assignment) => [
+                'option_id' => $assignment->option_id,
+                'option_key' => $assignment->option->key,
+                'option_label' => $assignment->option->label,
+                'value_id' => $assignment->option_value_id,
+                'value' => $assignment->value->value,
+                'label' => $assignment->option->label . ': ' . $assignment->value->value,
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function variantGroupLabel(Variant $variant, array $options = []): string
+    {
+        foreach (['type', 'marque', 'format', 'couleur', 'taille'] as $priority) {
+            $match = collect($options)->firstWhere('option_key', $priority);
+            if ($match && !empty($match['value'])) {
+                return (string) $match['value'];
+            }
+        }
+
+        $fallback = trim((string) ($variant->variant1_fr ?: $variant->option1_fr ?: $variant->package ?: 'Variants'));
+        return $fallback !== '' ? $fallback : 'Variants';
+    }
+
+    private function variantDetailLabel(Variant $variant, array $options = []): string
+    {
+        if (!empty($options)) {
+            $parts = collect($options)
+                ->take(3)
+                ->pluck('value')
+                ->filter()
+                ->values()
+                ->all();
+            if (!empty($parts)) {
+                return implode(' ', $parts);
+            }
+        }
+
+        $fallback = trim((string) ($variant->variant2_fr ?: $variant->variant1_fr ?: $variant->barcode ?: 'Variant'));
+        return $fallback !== '' ? $fallback : 'Variant';
+    }
+
+    private function variantPriceHistory($variantId, ?string $distributorId): array
+    {
+        if (
+            !$distributorId ||
+            !Schema::hasTable('pricelist_item') ||
+            !Schema::hasTable('pricelist')
+        ) {
+            return [];
+        }
+
+        $select = [
+            'item.id',
+            'item.sku',
+            'item.price',
+            'item.updated_at',
+            'item.created_at',
+            'list.id as pricelist_id',
+            'list.name as pricelist_name',
+            'list.typepv_id',
+            'list.active',
+            'list.start_date',
+            'list.end_date',
+        ];
+        $select[] = Schema::hasColumn('pricelist', 'code')
+            ? 'list.code as pricelist_code'
+            : DB::raw('NULL as pricelist_code');
+
+        return DB::table('pricelist_item as item')
+            ->join('pricelist as list', 'list.id', '=', 'item.pricelist_id')
+            ->where('item.variant_id', $variantId)
+            ->where('list.distributor_id', $distributorId)
+            ->when(
+                Schema::hasColumn('pricelist_item', 'deleted_at'),
+                fn ($query) => $query->whereNull('item.deleted_at')
+            )
+            ->select($select)
+            ->orderByDesc('item.updated_at')
+            ->orderByDesc('item.created_at')
+            ->limit(20)
+            ->get()
+            ->map(function ($row) {
+                $periodStatus = $this->pricePeriodStatus($row->active, $row->start_date, $row->end_date);
+                $period = trim(
+                    $this->dateOnlyLabel($row->start_date) . ' -> ' . $this->dateOnlyLabel($row->end_date),
+                    ' ->'
+                );
+                $updatedAt = $this->dateLabel($row->updated_at ?: $row->created_at);
+
+                return [
+                    'id' => $row->id,
+                    'pricelist_id' => $row->pricelist_id,
+                    'title' => $row->pricelist_name ?: ($row->pricelist_code ?: 'Liste prix'),
+                    'subtitle' => trim(($period ?: 'Periode ouverte') . ' - SKU ' . ($row->sku ?: '-'), ' -'),
+                    'period_label' => $period ?: 'Periode ouverte',
+                    'updated_label' => $updatedAt ?: 'date inconnue',
+                    'price' => (float) $row->price,
+                    'price_label' => $this->money((float) $row->price),
+                    'sku' => $row->sku,
+                    'typepv_id' => $row->typepv_id,
+                    'is_active' => (bool) $row->active,
+                    'status' => $periodStatus,
+                    'period_status' => $periodStatus,
+                    'start_date' => $row->start_date,
+                    'end_date' => $row->end_date,
+                    'updated_at' => $row->updated_at,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function pricePeriodStatus($active, $startDate, $endDate): string
+    {
+        if ($active === false || (string) $active === '0') {
+            return 'Inactif';
+        }
+
+        $today = now()->startOfDay();
+        try {
+            $start = $startDate ? Carbon::parse($startDate)->startOfDay() : null;
+            $end = $endDate ? Carbon::parse($endDate)->endOfDay() : null;
+        } catch (Throwable) {
+            return 'Actif';
+        }
+
+        if ($start && $start->gt($today)) {
+            return 'Planifie';
+        }
+        if ($end && $end->lt($today)) {
+            return 'Expire';
+        }
+
+        return 'Actif';
+    }
+
+    private function activePriceFromHistory(array $history): ?float
+    {
+        foreach ($history as $row) {
+            if (($row['period_status'] ?? $row['status'] ?? null) === 'Actif' && isset($row['price'])) {
+                return (float) $row['price'];
+            }
+        }
+
+        return null;
+    }
+
+    private function variantOperationalHealth(?float $activePrice, array $warehouseStocks): array
+    {
+        $reasons = [];
+        if ($activePrice === null) {
+            $reasons[] = 'Aucun prix actif';
+        }
+
+        foreach ($warehouseStocks as $stock) {
+            $quantity = (int) ($stock['quantity'] ?? 0);
+            $expected = (int) ($stock['previsionnel'] ?? 0);
+            $warehouse = (string) ($stock['title'] ?? 'Depot');
+
+            if ($quantity <= 0) {
+                $reasons[] = $warehouse . ' en rupture';
+                continue;
+            }
+
+            if ($expected > 0 && $quantity < (int) ceil($expected * 0.8)) {
+                $delta = (int) round((($quantity - $expected) / max(1, $expected)) * 100);
+                $reasons[] = $warehouse . ' ' . $delta . '% vs objectif';
+            }
+        }
+
+        return [
+            'status' => empty($reasons) ? 'OK' : 'Alerte',
+            'label' => empty($reasons) ? 'OK' : 'Alerte',
+            'alert_count' => count($reasons),
+            'reasons' => array_values(array_unique($reasons)),
+        ];
+    }
+
+    private function variantStockTotals(array $variantIds, array $warehouseIds): array
+    {
+        if (empty($variantIds) || !Schema::hasTable('stock_quantity')) {
+            return [];
+        }
+
+        return StockQuantity::query()
+            ->whereIn('variant_id', $variantIds)
+            ->when(!empty($warehouseIds), fn ($query) => $query->whereIn('emplacement_id', $warehouseIds))
+            ->select('variant_id', DB::raw('SUM(quantity) as quantity'))
+            ->groupBy('variant_id')
+            ->pluck('quantity', 'variant_id')
+            ->map(fn ($quantity) => (int) $quantity)
+            ->all();
+    }
+
+    private function variantPriceHistoryMap(array $variantIds, ?string $distributorId): array
+    {
+        if (
+            empty($variantIds) ||
+            !$distributorId ||
+            !Schema::hasTable('pricelist_item') ||
+            !Schema::hasTable('pricelist')
+        ) {
+            return [];
+        }
+
+        $select = [
+            'item.id',
+            'item.variant_id',
+            'item.sku',
+            'item.price',
+            'item.updated_at',
+            'item.created_at',
+            'list.id as pricelist_id',
+            'list.name as pricelist_name',
+            'list.typepv_id',
+            'list.active',
+            'list.start_date',
+            'list.end_date',
+        ];
+        $select[] = Schema::hasColumn('pricelist', 'code')
+            ? 'list.code as pricelist_code'
+            : DB::raw('NULL as pricelist_code');
+
+        $rows = DB::table('pricelist_item as item')
+            ->join('pricelist as list', 'list.id', '=', 'item.pricelist_id')
+            ->whereIn('item.variant_id', $variantIds)
+            ->where('list.distributor_id', $distributorId)
+            ->when(
+                Schema::hasColumn('pricelist_item', 'deleted_at'),
+                fn ($query) => $query->whereNull('item.deleted_at')
+            )
+            ->select($select)
+            ->orderBy('item.variant_id')
+            ->orderByDesc('item.updated_at')
+            ->orderByDesc('item.created_at')
+            ->get();
+
+        $history = [];
+        foreach ($rows as $row) {
+            $variantId = (int) $row->variant_id;
+            if (count($history[$variantId] ?? []) >= 20) {
+                continue;
+            }
+
+            $periodStatus = $this->pricePeriodStatus($row->active, $row->start_date, $row->end_date);
+            $period = trim(
+                $this->dateOnlyLabel($row->start_date) . ' -> ' . $this->dateOnlyLabel($row->end_date),
+                ' ->'
+            );
+            $updatedAt = $this->dateLabel($row->updated_at ?: $row->created_at);
+
+            $history[$variantId][] = [
+                'id' => $row->id,
+                'pricelist_id' => $row->pricelist_id,
+                'title' => $row->pricelist_name ?: ($row->pricelist_code ?: 'Liste prix'),
+                'subtitle' => trim(($period ?: 'Periode ouverte') . ' - SKU ' . ($row->sku ?: '-'), ' -'),
+                'period_label' => $period ?: 'Periode ouverte',
+                'updated_label' => $updatedAt ?: 'date inconnue',
+                'price' => (float) $row->price,
+                'price_label' => $this->money((float) $row->price),
+                'sku' => $row->sku,
+                'typepv_id' => $row->typepv_id,
+                'is_active' => (bool) $row->active,
+                'status' => $periodStatus,
+                'period_status' => $periodStatus,
+                'start_date' => $row->start_date,
+                'end_date' => $row->end_date,
+                'updated_at' => $row->updated_at,
+            ];
+        }
+
+        return $history;
+    }
+
+    private function variantWarehouseStockMap(array $variantIds, array $warehouseIds): array
+    {
+        if (empty($variantIds) || empty($warehouseIds) || !Schema::hasTable('stock_quantity')) {
+            return [];
+        }
+
+        $warehouses = Warehouse::with(['address.City'])
+            ->whereIn('id', $warehouseIds)
+            ->orderBy('name')
+            ->get();
+
+        $stockQuery = StockQuantity::query()
+            ->whereIn('variant_id', $variantIds)
+            ->whereIn('emplacement_id', $warehouseIds)
+            ->select(
+                DB::raw('MAX(id) as stock_id'),
+                'variant_id',
+                'emplacement_id',
+                DB::raw('SUM(quantity) as quantity'),
+                DB::raw('SUM(previsionnel) as previsionnel'),
+                DB::raw('MAX(lastpurchaseprice) as lastpurchaseprice'),
+                DB::raw('SUM(stock_price) as stock_price')
+            )
+            ->groupBy('variant_id', 'emplacement_id');
+
+        if (Schema::hasColumn('stock_quantity', 'is_mobile')) {
+            $stockQuery->where(function ($query) {
+                $query->where('is_mobile', false)->orWhereNull('is_mobile');
+            });
+        }
+
+        $stocksByVariant = $stockQuery->get()
+            ->groupBy(fn ($stock) => (int) $stock->variant_id)
+            ->map(fn ($stocks) => $stocks->keyBy(fn ($stock) => (string) $stock->emplacement_id));
+
+        $result = [];
+        foreach ($variantIds as $variantId) {
+            $variantStocks = $stocksByVariant->get((int) $variantId, collect());
+            $result[(int) $variantId] = $warehouses->map(function ($warehouse) use ($variantStocks) {
+                $stock = $variantStocks->get((string) $warehouse->id);
+                $quantity = (int) optional($stock)->quantity;
+                $previsionnel = (int) optional($stock)->previsionnel;
+                $status = $quantity <= 0 ? 'Rupture' : ($quantity <= 10 ? 'Stock faible' : 'En stock');
+
+                return [
+                    'stock_id' => optional($stock)->stock_id,
+                    'warehouse_id' => $warehouse->id,
+                    'title' => $warehouse->name ?: ('Depot ' . $warehouse->id),
+                    'subtitle' => optional(optional($warehouse->address)->City)->name
+                        ?: optional($warehouse->address)->commune
+                        ?: ($warehouse->code ?: ''),
+                    'quantity' => $quantity,
+                    'previsionnel' => $previsionnel,
+                    'lastpurchaseprice' => optional($stock)->lastpurchaseprice,
+                    'stock_price' => optional($stock)->stock_price,
+                    'status' => $status,
+                    'amount' => $this->money((float) optional($stock)->stock_price),
+                ];
+            })->values()->all();
+        }
+
+        return $result;
+    }
+
+    private function variantWarehouseStock($variantId, array $warehouseIds): array
+    {
+        if (empty($warehouseIds) || !Schema::hasTable('stock_quantity')) {
+            return [];
+        }
+
+        $warehouses = Warehouse::with(['address.City'])
+            ->whereIn('id', $warehouseIds)
+            ->orderBy('name')
+            ->get();
+        $stocks = StockQuantity::where('variant_id', $variantId)
+            ->whereIn('emplacement_id', $warehouseIds)
+            ->where(function ($query) {
+                $query->where('is_mobile', false)->orWhereNull('is_mobile');
+            })
+            ->get()
+            ->keyBy('emplacement_id');
+
+        return $warehouses->map(function ($warehouse) use ($stocks) {
+            $stock = $stocks->get($warehouse->id);
+            $quantity = (int) optional($stock)->quantity;
+            $previsionnel = (int) optional($stock)->previsionnel;
+            $status = $quantity <= 0 ? 'Rupture' : ($quantity <= 10 ? 'Stock faible' : 'En stock');
+
+            return [
+                'stock_id' => optional($stock)->id,
+                'warehouse_id' => $warehouse->id,
+                'title' => $warehouse->name ?: ('Depot ' . $warehouse->id),
+                'subtitle' => optional(optional($warehouse->address)->City)->name
+                    ?: optional($warehouse->address)->commune
+                    ?: ($warehouse->code ?: ''),
+                'quantity' => $quantity,
+                'previsionnel' => $previsionnel,
+                'lastpurchaseprice' => optional($stock)->lastpurchaseprice,
+                'stock_price' => optional($stock)->stock_price,
+                'status' => $status,
+                'amount' => $this->money((float) optional($stock)->stock_price),
             ];
         })->values()->all();
     }
@@ -1808,6 +2765,10 @@ class WorkspaceMvpController extends Controller
 
         $query = PriceListItem::query()
             ->where('variant_id', $variantId)
+            ->when(
+                Schema::hasColumn('pricelist_item', 'deleted_at'),
+                fn ($query) => $query->whereNull('deleted_at')
+            )
             ->whereHas('pricelist', function ($priceList) use ($distributorId) {
                 $priceList->where('distributor_id', $distributorId);
                 if (Schema::hasColumn('pricelist', 'active')) {
@@ -1815,6 +2776,12 @@ class WorkspaceMvpController extends Controller
                         $q->where('active', true)->orWhereNull('active');
                     });
                 }
+                $priceList->where(function ($q) {
+                    $q->whereNull('start_date')->orWhereDate('start_date', '<=', now()->toDateString());
+                });
+                $priceList->where(function ($q) {
+                    $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->toDateString());
+                });
             })
             ->orderByDesc('updated_at');
 
@@ -1891,6 +2858,19 @@ class WorkspaceMvpController extends Controller
 
         try {
             return \Carbon\Carbon::parse($value)->format('Y-m-d H:i');
+        } catch (Throwable) {
+            return (string) $value;
+        }
+    }
+
+    private function dateOnlyLabel($value): string
+    {
+        if (!$value) {
+            return '';
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value)->format('Y-m-d');
         } catch (Throwable) {
             return (string) $value;
         }

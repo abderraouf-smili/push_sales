@@ -150,3 +150,42 @@
 - Flutter : formulaire variant moderne avec options facultatives, valeurs existantes, nouvelle valeur et apercu signature.
 - Flutter : affichage variants groupe par Type, Marque, Format, Couleur, Taille puis Autres; tap pour edition et swipe pour suppression defensive.
 - Validation : migration/seed/routes/API variants OK, analyse Flutter no-fatal OK, APK debug VPN OK, installation/lancement SM A165F OK.
+
+## 2026-05-20 - Produits distributeur variant Infos/Prix/Stock
+
+- Distributeur : l'onglet Produits filtre `Actifs` par defaut.
+- Backend : payload `/api/workspace/real` products enrichi avec options, `price_history` et `stock_by_warehouse` par variant.
+- Flutter : detail variant en bottom sheet moderne avec onglets centres `Infos`, `Prix`, `Stock`.
+- Flutter : boutons bas de fiche `Stock` et `Prix` pour les operations distributeur.
+- Compatibilite : correction defensive si `pricelist.code` n'existe pas dans la base reelle.
+- Validation : API workspace products OK, analyse Flutter no-fatal OK, APK debug VPN OK, installation/lancement SM A165F via `10.212.134.2:35065` OK.
+
+## 2026-05-20 - Corrections Prix/Stock distributeur
+
+- Backend : ajout de `/api/distributor/stock-context` et usage des contextes legers prix/stock pour accelerer les actions variant.
+- Backend : correction creation `pricelist`, `pricelist_item` et `stock_quantity` afin de respecter les IDs numeriques de la base reelle.
+- Backend : validation anti-chevauchement des periodes prix et suppression douce des entrees prix.
+- Flutter : formulaire prix avec date du jour par defaut, planification apres dernier prix, statut automatique `Expire/Actif/Planifie`, erreur rouge en cas de chevauchement et historique swipe-delete.
+- Flutter : formulaire stock sans champ variant quand le variant est deja selectionne, preview ancien/nouveau stock et variation en pourcentage.
+- Flutter : extraction des messages API pour ne plus afficher les exceptions Dio/HTTP 500 brutes.
+- Validation : API prix/stock OK, analyse Flutter no-fatal OK, APK debug VPN OK, installation/lancement SM A165F OK.
+
+## 2026-05-20 - Assortiment produits distributeur
+
+- Backend : ajout non destructif de `distributor_product_assortments`.
+- API : ajout de `/api/distributor/product-assortment` et `/api/distributor/product-assortment/save`.
+- Backend : filtrage du catalogue distributeur par variants selectionnes quand un assortiment existe.
+- Flutter : bouton compact `Assortiment` dans la toolbar Produits distributeur.
+- Flutter : bottom sheet de selection produit/variant avec recherche, checkbox produit, checkbox variant et validation API.
+- Validation : API contexte/sauvegarde OK, analyse Flutter no-fatal OK, APK debug VPN OK, installation/lancement SM A165F OK.
+
+## 2026-05-21 - Alertes operationnelles produits distributeur
+
+- Backend : ajout de `health_status`, `health_alert_count`, `health_reasons` sur variants/produits distributeur.
+- Backend : un variant est en alerte si aucun prix actif n'existe, si un depot est en rupture, ou si le stock d'un depot est inferieur de 20% a son objectif.
+- API : ajout de `/api/distributor/stock/{id}/delete` pour retirer une ligne stock scopee distributeur avec audit.
+- Flutter : filtre Produits remplace par `Tous / Alerte / OK`.
+- Flutter : cartes produits sans montant prix ni chevron, avec pastille iconisee `OK` ou `n alertes`.
+- Flutter : cartes variants avec badge `Actif` plus indicateur `OK/Alerte` et raisons principales.
+- Flutter : onglet `Variant > Stock` avec swipe gauche pour supprimer une ligne stock persistante.
+- Validation : API products OK, route suppression stock testee sans destruction, analyse Flutter no-fatal OK, APK debug VPN OK; installation smartphone bloquee car ADB non joignable.

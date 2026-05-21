@@ -189,3 +189,87 @@ Validation :
 - APK debug VPN OK.
 - Installation et lancement SM A165F OK.
 - Logcat cible sans `No Material widget found`, `DropdownButton` ou crash fatal.
+
+## Produits distributeur - detail variant 2026-05-20
+
+Objectif : rendre la fiche variant utile pour le manager distributeur, sans melanger les responsabilites SuperAdmin.
+
+Corrections UI :
+- Filtre statut `Actifs` applique par defaut dans l'onglet Produits.
+- Tap sur un variant ouvre une bottom sheet Material moderne.
+- Trois sous-onglets centres : `Infos`, `Prix`, `Stock`.
+- `Infos` affiche variant, SKU, groupe intelligent, conditionnement, signature options et statut.
+- `Prix` affiche l'historique de prix du plus recent au plus ancien, avec badge actif/inactif.
+- `Stock` affiche les depots autorises, quantite disponible, previsionnel, valeur et statut stock.
+- Deux boutons fixes en bas de la fiche : `Stock` et `Prix`.
+- Montants et metriques contraints en largeur pour eviter les overflows sur petit smartphone.
+
+Validation :
+- API workspace products OK avec payload `price_history` et `stock_by_warehouse`.
+- Analyse Flutter no-fatal OK.
+- APK debug VPN OK.
+- Installation et lancement smartphone OK via ADB `10.212.134.2:35065`.
+- Logcat cible sans `FlutterError`, `No Material widget found`, `DropdownButton` ou crash app.
+
+## Produits distributeur - actions prix/stock 2026-05-20
+
+Objectif : corriger les erreurs terrain observees sur `Enregistrer prix` et `Valider stock`, tout en rendant les formulaires plus rapides et plus lisibles.
+
+Corrections UI :
+- Le bouton `Prix` utilise un contexte leger et ne charge plus toute la page distributeur.
+- Le formulaire prix demarre avec la date du jour.
+- Le bouton `Planifier apres dernier prix` remplit automatiquement la periode suivante.
+- Le bouton `Tarif actif` est retire; l'etat est calcule automatiquement : `Expire`, `Actif`, `Planifie`.
+- Les chevauchements de dates sont signales en rouge avant l'envoi API.
+- L'historique prix est modernise et supporte le swipe suppression.
+- Le bouton `Stock` utilise un contexte leger.
+- Quand un variant est deja selectionne, le champ variant est masque.
+- Le formulaire stock montre ancien stock, nouveau stock et variation `% vs ancien`.
+- Les messages d'erreur techniques Dio/HTTP 500 ne sont plus affiches tels quels a l'utilisateur.
+
+Validation :
+- API `stock/adjust` OK sans erreur 500.
+- API creation prix OK en transaction rollback.
+- API chevauchement prix refuse proprement.
+- Analyse Flutter no-fatal OK.
+- APK debug VPN OK.
+- Installation/lancement smartphone OK sur `10.212.134.2:35065`.
+
+## Produits distributeur - assortiment 2026-05-20
+
+Objectif : donner au distributeur un controle reel sur les produits/variants qu'il vend, sans modifier le catalogue maitre SuperAdmin.
+
+Corrections UI :
+- Bouton compact `Assortiment` ajoute dans la meme ligne que les filtres Produits.
+- Bottom sheet moderne avec recherche, produit expandable et checkbox tri-state.
+- Selection d'un produit = selection de tous ses variants.
+- Expansion d'un produit = selection fine variant par variant.
+- Compteur variants selectionnes et bouton `Valider la selection`.
+- Apres validation, l'onglet Produits est rafraichi et limite au catalogue exploite par le distributeur.
+
+Validation :
+- API contexte assortiment OK.
+- Sauvegarde assortiment OK en rollback.
+- Analyse Flutter no-fatal OK.
+- APK debug VPN OK.
+- Installation/lancement smartphone OK.
+
+## Produits distributeur - alertes operationnelles 2026-05-21
+
+Objectif : permettre au manager distributeur d'identifier rapidement les produits/variants qui posent probleme sans lire des montants ou statuts techniques.
+
+Corrections UI :
+- Le filtre statut est remplace par `Tous / Alerte / OK`.
+- La carte produit ne montre plus le prix dans la liste.
+- Le gros chevron produit est retire; toute la carte reste cliquable.
+- Le badge produit devient une pastille iconisee `OK` ou `n alertes`.
+- Le label legacy `En stock` n'est plus utilise pour les produits distributeur.
+- La carte variant conserve le badge metier `Actif`, et ajoute une pastille `OK/Alerte`.
+- Les raisons principales d'alerte sont affichees sous le variant : prix actif manquant, rupture depot, ou stock inferieur de 20% a l'objectif.
+- `Variant > Stock` filtre les lignes sans stock reel et permet le swipe gauche `Supprimer` sur les lignes persistantes.
+
+Validation :
+- API products OK avec `health_status`, `health_reasons`, `stock_id`.
+- Analyse Flutter no-fatal OK.
+- APK debug VPN OK.
+- Test smartphone bloque uniquement par ADB non joignable sur le port precedent.

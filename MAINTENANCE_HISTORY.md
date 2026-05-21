@@ -1,5 +1,62 @@
 # MAINTENANCE_HISTORY
 
+## 2026-05-21 - Hotfix chargement produits distributeur
+
+Objectif :
+- Debloquer l'onglet Produits du profil Distributeur qui affichait "Impossible de charger cette page".
+
+Resume technique :
+- Backend : correction du payload `/api/workspace/real` section `products`; le comptage des variants utilise maintenant `count($variants)` apres conversion du payload en tableau.
+- Performance : les prix, stocks totaux et stocks par depot des variants visibles sont maintenant precharges par lots, au lieu d'executer des requetes par variant.
+- Cause : l'assortiment produits avait transforme la collection de variants en tableau JSON avant la construction du compteur, provoquant une erreur 500 Laravel.
+
+Commandes executees :
+- `php -l app/Http/Controllers/WorkspaceMvpController.php`
+- Test HTTP login manager distributeur
+- Test HTTP `POST /api/workspace/real` avec `section=products`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.2:35065`
+- `adb install -r build/app/outputs/flutter-apk/app-debug.apk`
+- `adb shell monkey -p com.softstarter.pushsale -c android.intent.category.LAUNCHER 1`
+- `adb logcat` cible erreurs Flutter/Android
+
+Resultats :
+- Endpoint produits retourne `SUCCESS` avec les produits reels du distributeur.
+- Temps local constate : environ 1,8 s pour 30 produits et le premier produit a 44 variants, contre plus de 10 s avant optimisation.
+- APK debug VPN genere, installe et lance sur SM A165F.
+- Logcat cible sans `FATAL EXCEPTION`, `FlutterError`, `No Material widget found`, `DropdownButton` ou erreur workspace au lancement.
+- Aucun changement destructif de base de donnees.
+
+## 2026-05-20 - Prix variant distributeur enrichi
+
+Objectif :
+- Rendre le bouton `Prix` de la fiche variant exploitable en conditions terrain, sans demander de re-selectionner le variant deja ouvert.
+
+Resume technique :
+- Flutter : formulaire `Prix variant` contextualise avec carte variant, nom de liste prix, type point de vente, date debut, date fin, prix, SKU/reference et switch tarif actif.
+- Backend : `/api/distributor/variants/{id}/price` accepte les dates, le nom de liste et `active`, cree une periode tarifaire non destructive dans `pricelist` puis le prix dans `pricelist_item`.
+- API : retour enrichi avec `price_history`, `price_label`, `pricelist` et audit `save_variant_price`.
+- Securite metier : route limitee au workspace distributeur connecte; le SuperAdmin ne gere pas prix/stock operationnels.
+
+Commandes executees :
+- `php -l app/Http/Controllers/WorkspaceMvpController.php`
+- `php artisan route:list --path=api/distributor`
+- Test HTTP login manager distributeur
+- Test HTTP validation `/api/distributor/variants/1/price` avec `price=0` refuse proprement
+- `dart format lib/views/signed/workspace/workspace_page.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.2:35065`
+- `adb install -r build/app/outputs/flutter-apk/app-debug.apk`
+- `adb shell monkey -p com.softstarter.pushsale -c android.intent.category.LAUNCHER 1`
+- `adb logcat` cible erreurs Flutter/Android
+
+Resultats :
+- APK debug VPN genere, installe et lance.
+- Aucun `FlutterError`, `No Material widget found`, `DropdownButton` ou crash app cible detecte au lancement.
+- Aucune ecriture de prix factice effectuee pendant le test automatique.
+
 ## 2026-05-19 - Actions Distributeur reelles et corrections Material
 
 Objectif :
@@ -1059,5 +1116,184 @@ Resultats :
 Risque :
 - Faible a moyen; schema additif et validations backend. Les variants existants peuvent etre progressivement enrichis avec options sans migration destructive.
 
+# 2026-05-20 - Produits distributeur variant Infos/Prix/Stock
+
+Fichiers modifies :
+- `push_sale-master/app/Http/Controllers/WorkspaceMvpController.php`
+- `push_sale_mobile-master/lib/views/signed/workspace/workspace_page.dart`
+- `PROJECT_HISTORY.md`
+- `MAINTENANCE_HISTORY.md`
+- `TEST_REAL_RESULTS.md`
+- `UI_AUDIT.md`
+- `BUTTONS_AUDIT.md`
+
+Commandes executees :
+- `php artisan migrate --force`
+- `php -l app/Http/Controllers/WorkspaceMvpController.php`
+- Test API login manager distributeur
+- Test API `POST /api/workspace/real` section `products`
+- `dart format lib/views/signed/workspace/workspace_page.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.2:35065`
+- `adb install -r build/app/outputs/flutter-apk/app-debug.apk`
+- `adb shell monkey -p com.softstarter.pushsale -c android.intent.category.LAUNCHER 1`
+- `adb logcat` cible erreurs Flutter/Android
+
+Resultats :
+- L'onglet Produits du profil Distributeur utilise le filtre `Actifs` par defaut.
+- Le detail variant affiche trois onglets centres : `Infos`, `Prix`, `Stock`.
+- L'onglet `Prix` lit l'historique de `pricelist_item/pricelist` du plus recent vers le plus ancien.
+- L'onglet `Stock` liste les depots autorises avec quantite disponible, previsionnel, valeur et statut.
+- Les boutons `Stock` et `Prix` restent visibles en bas de la sheet et ouvrent les actions distributeur existantes.
+- APK debug VPN genere, installe et lance sur SM A165F.
+- Logcat cible sans `FlutterError`, `No Material widget found`, `DropdownButton` ou crash app.
+
+Blocage device :
+- Port precedent `10.212.134.2:43903` refusait la connexion, mais le nouveau port `10.212.134.2:35065` est OK.
+
+Risque :
+- Faible; enrichissement lecture seule du payload workspace et UI defensive sans suppression ni changement de calcul metier.
+
 Risque :
 - Faible; corrections de mapping, scope et UI defensive sans operation destructive ni changement de workflow metier.
+
+# 2026-05-20 - Correction actions Prix/Stock distributeur
+
+Fichiers modifies :
+- `push_sale-master/app/Http/Controllers/WorkspaceMvpController.php`
+- `push_sale-master/app/Models/PriceListItem.php`
+- `push_sale-master/routes/api.php`
+- `push_sale-master/database/migrations/2026_05_20_000001_add_deleted_at_to_pricelist_item_table.php`
+- `push_sale_mobile-master/lib/api/call_api.dart`
+- `push_sale_mobile-master/lib/views/signed/workspace/workspace_page.dart`
+- documentation racine de validation.
+
+Commandes executees :
+- `php -l app/Http/Controllers/WorkspaceMvpController.php`
+- `php -l routes/api.php`
+- `php -l app/Models/PriceListItem.php`
+- `php artisan migrate --force`
+- `php artisan route:list --path=api/distributor`
+- Test API login manager distributeur
+- Test API `POST /api/distributor/price-context`
+- Test API `POST /api/distributor/stock-context`
+- Test API `POST /api/distributor/stock/adjust`
+- Test transaction rollback creation prix + rejet chevauchement
+- `dart format lib/api/call_api.dart lib/views/signed/workspace/workspace_page.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.2:35065`
+- `adb install -r build/app/outputs/flutter-apk/app-debug.apk`
+- `adb shell monkey -p com.softstarter.pushsale -c android.intent.category.LAUNCHER 1`
+- `adb logcat` cible erreurs Flutter/Dio.
+
+Resultats :
+- `Enregistrer prix` ne cree plus d'erreur 500 liee aux IDs legacy.
+- `Valider stock` ne cree plus d'erreur 500 liee a `stock_quantity.id`.
+- Les actions `Prix` et `Stock` utilisent des contextes legers quand le variant est deja selectionne, ce qui evite le chargement lourd de tout le contexte distributeur.
+- Les erreurs API ne remontent plus comme exception Dio brute avec texte technique; Flutter affiche le message backend ou un message court.
+- Le prix est planifie par date, avec statut automatique `Expire`, `Actif` ou `Planifie`; les chevauchements sont bloques cote UI et backend.
+- L'historique prix est triable naturellement du plus recent au plus ancien et supporte la suppression douce par glissement.
+- Le formulaire stock affiche depot, ancien stock, nouveau stock et variation en pourcentage, puis rafraichit la fiche variant.
+
+Risque :
+- Faible a moyen; corrections operationnelles sur prix/stock avec validations backend. Aucune commande destructive n'a ete executee.
+
+# 2026-05-20 - Assortiment distributeur produits/variants
+
+Fichiers modifies/ajoutes :
+- `push_sale-master/database/migrations/2026_05_20_000002_create_distributor_product_assortments_table.php`
+- `push_sale-master/app/Http/Controllers/WorkspaceMvpController.php`
+- `push_sale-master/routes/api.php`
+- `push_sale_mobile-master/lib/views/signed/workspace/workspace_page.dart`
+- documentation racine de validation.
+
+Commandes executees :
+- `php -l app/Http/Controllers/WorkspaceMvpController.php`
+- `php -l routes/api.php`
+- `php -l database/migrations/2026_05_20_000002_create_distributor_product_assortments_table.php`
+- `php artisan migrate --force`
+- `php artisan route:list --path=api/distributor/product-assortment`
+- Test API login manager distributeur
+- Test API `POST /api/distributor/product-assortment`
+- Test sauvegarde `saveDistributorProductAssortment` en transaction rollback
+- `dart format lib/views/signed/workspace/workspace_page.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb connect 10.212.134.2:35065`
+- `adb install -r build/app/outputs/flutter-apk/app-debug.apk`
+- `adb shell monkey -p com.softstarter.pushsale -c android.intent.category.LAUNCHER 1`
+- `adb logcat` cible erreurs Flutter/Android.
+
+Resultats :
+- Le manager distributeur dispose d'un bouton compact `Assortiment` dans la ligne de filtres Produits.
+- La selection produit coche tous ses variants; l'expansion permet de cocher seulement certains variants.
+- La sauvegarde est persistante dans `distributor_product_assortments`.
+- Quand un assortiment existe, l'onglet Produits distributeur ne retourne que les variants actifs selectionnes.
+- Si aucun assortiment n'est encore configure, le catalogue distributeur reste complet pour ne pas bloquer l'utilisation initiale.
+
+Risque :
+- Faible a moyen; nouvelle preference operationnelle par distributeur, sans suppression catalogue/prix/stock.
+
+# 2026-05-21 - Alertes Produits/Variants distributeur
+
+Fichiers modifies :
+- `push_sale-master/app/Http/Controllers/WorkspaceMvpController.php`
+- `push_sale-master/routes/api.php`
+- `push_sale_mobile-master/lib/views/signed/workspace/workspace_page.dart`
+- documentation racine de validation.
+
+Commandes executees :
+- `php -l app/Http/Controllers/WorkspaceMvpController.php`
+- `php -l routes/api.php`
+- `php artisan route:list --path=api/distributor`
+- Test API login manager distributeur
+- Test API `POST /api/workspace/real` section `products`
+- Test API `POST /api/distributor/stock/999999999/delete` pour validation route/message sans toucher aux donnees
+- `dart format lib/views/signed/workspace/workspace_page.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb devices`
+- `adb connect 10.212.134.2:35065` tente.
+
+Resultats :
+- Le filtre Produits distributeur n'utilise plus `Actif/Inactif`; il propose `Tous`, `Alerte`, `OK`.
+- La liste produits ne montre plus le prix ni le gros chevron.
+- Chaque produit affiche une pastille iconisee `OK` ou `n alertes`.
+- Chaque variant n'affiche plus le tag `Actif`; il affiche seulement la pastille operationnelle `OK/Alerte` avec raisons principales : prix actif manquant, rupture depot, ou stock inferieur de 20% a l'objectif.
+- Le payload backend fournit `health_status`, `health_alert_count`, `health_reasons` et `stock_id`.
+- L'onglet `Variant > Stock` supporte le swipe gauche pour supprimer une ligne stock existante via API auditee.
+- APK debug genere : `push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk`.
+- Installation smartphone OK : `adb connect 192.168.0.28:44039`, `adb install -r`, puis lancement `com.softstarter.pushsale` OK.
+
+Risque :
+- Faible a moyen; la suppression stock est une operation reelle, limitee aux depots du distributeur connecte et journalisee.
+
+# 2026-05-21 - Etat Depots selon variants selectionnes
+
+Fichiers modifies :
+- `push_sale-master/app/Http/Controllers/WorkspaceMvpController.php`
+- `push_sale_mobile-master/lib/views/signed/workspace/workspace_page.dart`
+- documentation racine de validation.
+
+Commandes executees :
+- `php -l app/Http/Controllers/WorkspaceMvpController.php`
+- `php artisan migrate --force`
+- Test API login manager distributeur
+- Test API `POST /api/workspace/real` section `warehouses`
+- `dart format lib/views/signed/workspace/workspace_page.dart`
+- `flutter analyze --no-fatal-infos --no-fatal-warnings`
+- `flutter build apk --debug --dart-define=APP_ENV=vpn --dart-define=API_BASE_URL=http://192.168.1.20:8000`
+- `adb devices`
+
+Resultats :
+- L'etat d'un depot distributeur est maintenant calcule uniquement sur les variants selectionnes dans l'assortiment actif du distributeur.
+- Les variants non selectionnes ne peuvent plus mettre un depot en `Alerte`.
+- Si aucun variant n'est selectionne, le depot reste `OK` avec le meta `0 variants selectionnes`.
+- Le statut `OK` est colore en vert dans Flutter.
+- APK debug genere : `push_sale_mobile-master/build/app/outputs/flutter-apk/app-debug.apk`.
+- Installation smartphone non executee : aucun device ADB liste au moment du test.
+
+Risque :
+- Faible; aucune modification destructive, calcul de lecture uniquement.

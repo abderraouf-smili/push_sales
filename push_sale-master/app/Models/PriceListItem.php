@@ -19,7 +19,7 @@ class PriceListItem extends Model
         "variant_id",
     ];
 
-    protected $hidden = [/*"pricelist_id",  */ "variant_id", "created_at", "updated_at"];
+    protected $hidden = [/*"pricelist_id",  */ "variant_id", "created_at", "updated_at", "deleted_at"];
 
     public function scopeForDistributor($query, $distributorId)
     {

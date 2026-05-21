@@ -161,7 +161,13 @@ Route::middleware('auth:api')->group(function () {
         Route::post("coupons", [WorkspaceMvpController::class, "createDistributorCoupon"]);
         Route::post("promotions", [WorkspaceMvpController::class, "createDistributorPromotion"]);
         Route::post("stock/adjust", [WorkspaceMvpController::class, "adjustDistributorStock"]);
+        Route::post("stock/{id}/delete", [WorkspaceMvpController::class, "deleteDistributorStock"]);
+        Route::post("price-context", [WorkspaceMvpController::class, "distributorPriceContext"]);
+        Route::post("stock-context", [WorkspaceMvpController::class, "distributorStockContext"]);
+        Route::post("product-assortment", [WorkspaceMvpController::class, "distributorProductAssortment"]);
+        Route::post("product-assortment/save", [WorkspaceMvpController::class, "saveDistributorProductAssortment"]);
         Route::post("variants/{id}/price", [WorkspaceMvpController::class, "saveDistributorVariantPrice"]);
+        Route::post("prices/{id}/delete", [WorkspaceMvpController::class, "deleteDistributorVariantPrice"]);
     });
 
     // SuperAdmin workspace operations

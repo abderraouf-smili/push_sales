@@ -1,5 +1,27 @@
 # PROJECT_HISTORY
 
+## 2026-05-21 - Correction chargement onglet Produits distributeur
+
+- Zone modifiee : backend Laravel `WorkspaceMvpController`, payload workspace reel section `products`.
+- Objectif : corriger l'erreur "Impossible de charger cette page" observee dans l'onglet Produits du profil Distributeur apres l'ajout de l'assortiment produits/variants.
+- Resume : correction du comptage des variants apres conversion en tableau JSON (`count($variants)`), puis optimisation du payload produits en prechargeant prix/stock/stock par depot par lots au lieu de requeter chaque variant individuellement.
+- Risque : faible, changement strictement correctif sans migration ni modification de donnees.
+- Impact logique metier : logique conservee; le distributeur voit toujours le catalogue exploitable et l'assortiment selectionne quand il existe.
+- Tests effectues : `php -l WorkspaceMvpController.php` OK, login manager distributeur OK, `POST /api/workspace/real` section `products` OK avec 30 produits, premier produit 44 variants, temps local environ 1,8 s, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN OK, installation/lancement SM A165F via ADB `10.212.134.2:35065` OK, logcat cible sans crash.
+- Tests a faire : rafraichir l'onglet Produits sur smartphone pour confirmer visuellement le chargement via le serveur API reel.
+- Prochaine etape : confirmer visuellement sur smartphone et poursuivre les optimisations similaires sur commandes/livraisons si une page riche montre la meme lenteur.
+
+## 2026-05-20 - Formulaire prix variant distributeur enrichi
+
+- Zone modifiee : workspace Flutter Distributeur, API Laravel `distributor/variants/{id}/price`, documentation de validation.
+- Objectif : remplacer l'ancien formulaire prix trop simple par une edition contextualisee du variant selectionne, avec periode tarifaire et sauvegarde reelle.
+- Resume : le bouton `Prix` depuis la fiche variant ouvre maintenant une sheet sans dropdown variant, affiche le variant courant, puis propose nom liste prix, type point de vente, date debut, date fin, prix, SKU/reference et activation du tarif. Le backend cree ou met a jour une `pricelist` datee et son `pricelist_item`, retourne l'historique actualise et ecrit l'audit distributeur.
+- Risque : faible, car l'ajout reste dans le perimetre distributeur et ne transfere pas la gestion prix au SuperAdmin; aucune suppression ni migration destructive.
+- Impact logique metier : logique conservee; SuperAdmin structure les variants, le distributeur definit les prix et periodes commerciales.
+- Tests effectues : `php -l WorkspaceMvpController.php` OK, `route:list --path=api/distributor` OK, login manager OK, route prix testee en validation sans ecriture (`price=0` refuse proprement), `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN OK, installation/lancement SM A165F via `10.212.134.2:35065` OK, logcat cible sans crash.
+- Tests a faire : validation tactile utilisateur du formulaire prix avec une vraie valeur metier sur un variant reel.
+- Prochaine etape : enrichir si besoin la selection type point de vente avec des libelles commerciaux/prix par segments clients.
+
 ## 2026-05-19 - Stabilisation actions reelles Distributeur et UI Plus
 
 - Zone modifiee : workspace Flutter Distributeur, formulaires promotions/stock, enveloppes Material des sheets workspace, documentation de validation.
@@ -354,3 +376,64 @@
 - Tests effectues : `php -l` nouveaux fichiers OK, `composer dump-autoload` OK, `php artisan route:list --path=api/superadmin` OK, `php artisan migrate --force` OK, `php artisan db:seed --class=VariantOptionsSeeder --force` OK, API login SuperAdmin OK, options variants OK, creation variant avec options OK, doublon refuse OK, nettoyage du variant temporaire OK, `flutter clean`, `flutter pub get`, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN OK, installation/lancement sur SM A165F `10.212.134.2:43903` OK, logcat sans crash cible.
 - Tests a faire : validation tactile longue de l'edition/swipe variants sur plusieurs produits reels et migration progressive des variants legacy vers options structurees si souhaite metier.
 - Prochaine etape : appliquer la meme finesse aux ecrans distributeur prix/stock par depot en lisant ces variants structures.
+
+## 2026-05-20 - Detail variant distributeur prix et stock reels
+
+- Zone modifiee : API workspace produits Laravel et UI Flutter profil Distributeur.
+- Objectif : rendre l'onglet Produits distributeur plus operationnel en affichant par variant ses informations, son historique prix et son stock par depot.
+- Resume : le filtre statut de l'onglet Produits passe maintenant sur `Actifs` par defaut. Le detail variant ouvre une sheet moderne avec trois onglets centres `Infos`, `Prix`, `Stock`, deux actions en bas `Stock` et `Prix`, et des donnees reelles alimentees par `price_history` et `stock_by_warehouse`.
+- Backend : le payload `/api/workspace/real` section `products` enrichit chaque variant avec options, signature, prix courant, historique de prix trie du plus recent au plus ancien et stock par depot autorise. La selection pricelist est defensive si la colonne legacy `code` n'existe pas.
+- Risque : faible, car ajout de champs JSON compatibles et lecture seule; les actions prix/stock existantes restent celles du distributeur.
+- Impact logique metier : confirme la separation metier; SuperAdmin structure le catalogue, distributeur gere prix et stock par depot.
+- Tests effectues : `php artisan migrate --force` OK, `php -l WorkspaceMvpController.php` OK, login manager distributeur OK, `POST /api/workspace/real` products OK, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN OK, installation/lancement sur SM A165F via `10.212.134.2:35065` OK, logcat cible sans `FlutterError`, `No Material widget found`, `DropdownButton` ou crash app.
+- Tests a faire : validation tactile utilisateur du changement d'onglet variant et des boutons `Stock`/`Prix` sur plusieurs variants reels.
+- Prochaine etape : relier les formulaires `Stock` et `Prix` a des editions plus riches par depot/type point de vente si besoin metier.
+
+## 2026-05-20 - Prix et stock distributeur rapides et operationnels
+
+- Zone modifiee : backend Laravel distributeur, client API Flutter, formulaires Prix/Stock du detail variant, documentation de validation.
+- Objectif : corriger les erreurs 500 sur `Enregistrer prix` et `Valider stock`, accelerer l'ouverture des actions variant, et remplacer les messages techniques Dio par des messages utilisateur clairs.
+- Resume : ajout du contexte leger `POST /api/distributor/stock-context`, reutilisation du contexte leger prix, correction des creations `pricelist`, `pricelist_item` et `stock_quantity` pour laisser la base gerer les IDs numeriques, ajout suppression douce d'entrees prix, validation anti-chevauchement UI/backend, et rafraichissement immediat de la fiche variant apres sauvegarde.
+- UI : le formulaire prix demarre a la date du jour, propose la planification apres le dernier prix, retire le bouton `Tarif actif`, calcule les statuts `Expire`, `Actif` et `Planifie`, signale en rouge les periodes chevauchees, et l'historique prix supporte le swipe suppression. Le formulaire stock masque le champ variant quand il est deja selectionne, affiche ancien/nouveau stock et variation `% vs ancien`.
+- Risque : faible a moyen, car les corrections touchent des actions operationnelles prix/stock; les routes restent scopees distributeur et les migrations sont non destructives.
+- Impact logique metier : logique conservee; le distributeur reste responsable des prix et stocks, avec validation backend comme source de verite.
+- Tests effectues : `php -l`, `php artisan migrate --force`, `route:list --path=api/distributor`, login manager, `price-context`, `stock-context`, `workspace/real products`, ajustement stock OK, creation prix OK en transaction rollback, chevauchement prix refuse proprement, `dart format`, `flutter analyze --no-fatal-infos --no-fatal-warnings`, APK debug VPN OK, installation/lancement SM A165F `10.212.134.2:35065` OK, logcat cible sans erreur Flutter/Dio 500 brute.
+- Tests a faire : retest tactile utilisateur sur plusieurs variants reels pour verifier les dates/prix/stock apres saisie terrain.
+- Prochaine etape : poursuivre le meme niveau de fiabilisation sur commandes, preparation depot et livraison livreur.
+
+## 2026-05-20 - Assortiment produits/variants distributeur
+
+- Zone modifiee : backend Laravel distributeur, migration non destructive, UI Flutter toolbar Produits distributeur, documentation de validation.
+- Objectif : permettre a un distributeur de choisir les produits et variants qu'il exploite reellement afin que son onglet Produits n'affiche que son assortiment.
+- Resume : ajout de la table `distributor_product_assortments`, des routes `/api/distributor/product-assortment` et `/api/distributor/product-assortment/save`, filtrage du payload produits distributeur quand un assortiment existe, et ajout d'un petit bouton `Assortiment` dans la ligne recherche/filtres de l'onglet Produits.
+- UI : la bottom sheet affiche les produits avec checkbox tri-state, expansion par produit, selection fine par variant, recherche produit/variant, compteur variants selectionnes et validation connectee API.
+- Risque : faible a moyen; la migration est additive et aucune donnee catalogue/stock/prix n'est supprimee. La selection modifie uniquement la preference d'assortiment du distributeur connecte.
+- Impact logique metier : conforme a la separation metier; SuperAdmin cree le catalogue global, distributeur choisit les articles/variants qu'il vend, puis gere prix et stock sur cette selection.
+- Tests effectues : `php -l`, `php artisan migrate --force`, `route:list --path=api/distributor/product-assortment`, login manager OK, contexte assortiment OK, sauvegarde assortiment OK en transaction rollback, `flutter analyze --no-fatal-infos --no-fatal-warnings`, APK debug VPN OK, installation/lancement SM A165F `10.212.134.2:35065` OK, logcat cible sans erreur.
+- Tests a faire : validation tactile de la selection multi-produits/variants sur base reelle et verification visuelle que les produits non selectionnes disparaissent bien apres sauvegarde.
+- Prochaine etape : appliquer la meme logique d'assortiment aux catalogues Commercial et Point de Vente si ces profils doivent voir uniquement les variants actifs du distributeur.
+
+## 2026-05-21 - Produits distributeur alertes operationnelles
+
+- Zone modifiee : backend Laravel payload produits distributeur, route stock distributeur, UI Flutter onglet Produits/variants/stock, documentation de validation.
+- Objectif : remplacer la lecture `Actif/Inactif` par un pilotage `OK/Alerte` utile au manager distributeur.
+- Resume : chaque variant porte maintenant une sante operationnelle calculee depuis le prix actif et le stock par depot. Un variant passe en `Alerte` si aucun prix actif n'existe, si un depot est en rupture, ou si son stock est inferieur de 20% a l'objectif/previsionnel. Le produit agrege les alertes de ses variants.
+- UI : le filtre Produits distributeur devient `Tous / Alerte / OK`; les cartes produits ne montrent plus le montant ni le chevron, et affichent une pastille iconisee `OK` ou `n alertes`. Les cartes variants n'affichent plus le tag `Actif`; elles gardent seulement la pastille operationnelle `OK/Alerte` avec les raisons principales.
+- Stock : ajout de `POST /api/distributor/stock/{id}/delete` scope distributeur et audite; l'onglet `Variant > Stock` permet le swipe gauche pour supprimer une ligne stock existante.
+- Risque : faible a moyen; suppression de ligne stock autorisee uniquement sur les depots du distributeur connecte et auditee. Aucune migration destructive ni seeder demo.
+- Impact logique metier : le distributeur reste responsable du prix/stock; l'UI detecte les variants qui ne sont pas exploitables commercialement.
+- Tests effectues : `php -l` controller/routes OK, `route:list --path=api/distributor` OK, login manager OK, `/api/workspace/real` products OK avec `health_status`, `health_reasons`, `stock_id`, route suppression stock testee sur ID inexistant OK avec message propre, `dart format`, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN OK, installation/lancement ADB `192.168.0.28:44039` OK.
+- Tests a faire : retest tactile du filtre `Alerte/OK` et du swipe suppression stock sur smartphone apres navigation utilisateur dans les donnees terrain.
+- Prochaine etape : appliquer la meme notion d'alertes operationnelles aux commandes/preparations et au dashboard distributeur.
+
+## 2026-05-21 - Etat Depots base sur assortiment distributeur
+
+- Zone modifiee : backend Laravel `warehouseItems`, helper assortiment variants, couleur statut Flutter.
+- Objectif : eviter que l'onglet Depots passe en alerte a cause de variants non selectionnes par le distributeur.
+- Resume : l'etat `OK/Alerte` d'un depot distributeur est calcule uniquement sur les variants actifs dans `distributor_product_assortments`. Si aucun variant n'est selectionne, le depot reste `OK` avec `0 variants selectionnes`.
+- UI : le statut `OK` est maintenant colore en vert via `_statusColor`, ce qui rend les cartes depot coherentes avec les produits/variants.
+- Risque : faible; aucune donnee modifiee, uniquement calcul de lecture du payload workspace.
+- Impact logique metier : conforme au principe d'assortiment; un distributeur ne pilote les alertes depot que sur les articles qu'il a choisi d'exploiter.
+- Tests effectues : `php -l WorkspaceMvpController.php` OK, `php artisan migrate --force` OK sans migration, API login manager OK, `/api/workspace/real` section `warehouses` OK avec `status=OK` et `0 variants selectionnes` sur base testee, `flutter analyze --no-fatal-infos --no-fatal-warnings` OK, APK debug VPN OK.
+- Tests a faire : installation smartphone avec nouveau port ADB actif et validation visuelle de l'onglet Depots.
+- Prochaine etape : afficher si besoin un detail des raisons d'alerte depot quand des variants selectionnes ont prix/stock manquants.

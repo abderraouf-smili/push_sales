@@ -40,6 +40,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
   @override
   void initState() {
     super.initState();
+    _statusFilter = _defaultStatusFilter(widget.section);
     _future = _load();
   }
 
@@ -51,10 +52,14 @@ class _WorkspacePageState extends State<WorkspacePage> {
       _deliveryWarehouseFilter = 'all';
       _dashboardDistributorFilter = 'all';
       _searchQuery = '';
-      _statusFilter = 'all';
+      _statusFilter = _defaultStatusFilter(widget.section);
       _categoryFilter = 'all';
       _future = _load();
     }
+  }
+
+  String _defaultStatusFilter(String section) {
+    return 'all';
   }
 
   Future<ResponseHttpRequest> _load() {
@@ -188,6 +193,11 @@ class _WorkspacePageState extends State<WorkspacePage> {
                                       _statusFilter = value;
                                     });
                                   },
+                                  showAssortmentButton:
+                                      _workspaceType == 'distributeur' &&
+                                          widget.section == 'products',
+                                  onAssortmentPressed:
+                                      _showDistributorAssortmentSheet,
                                 ),
                                 SizedBox(
                                     height: compact
@@ -2436,77 +2446,353 @@ class _WorkspacePageState extends State<WorkspacePage> {
     );
   }
 
+  void _showDistributorAssortmentSheet() {
+    Get.bottomSheet(
+      SafeArea(
+        top: false,
+        child: FutureBuilder<ResponseHttpRequest>(
+          future: _superAdminRequest('distributor/product-assortment'),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const _FormSheet(
+                title: 'Assortiment produits',
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(AppSpacing.xl),
+                    child: AppLoadingState(message: 'Chargement catalogue...'),
+                  ),
+                ],
+              );
+            }
+
+            final response = snapshot.data;
+            if (response == null || response.status != 'SUCCESS') {
+              return _FormSheet(
+                title: 'Assortiment produits',
+                children: [
+                  AppErrorState(
+                    title: 'Catalogue indisponible',
+                    message: response?.message?.toString() ??
+                        'Impossible de charger les produits.',
+                  ),
+                ],
+              );
+            }
+
+            final data = _asMap(response.data);
+            return _DistributorAssortmentSheet(
+              products: _asList(data['products']),
+              onSave: (variantIds) async {
+                final saveResponse = await _superAdminRequest(
+                  'distributor/product-assortment/save',
+                  data: {'variant_ids': variantIds.toList()},
+                );
+                if (saveResponse.status == 'SUCCESS') {
+                  Get.back();
+                  _showSnack(
+                    'Assortiment enregistre',
+                    saveResponse.message?.toString() ??
+                        'La liste produits a ete mise a jour.',
+                  );
+                  _refresh();
+                  return;
+                }
+                _showSnack(
+                  'Assortiment',
+                  saveResponse.message?.toString() ??
+                      'Selection invalide. Verifiez les produits.',
+                );
+              },
+            );
+          },
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
   void _showDistributorVariantSheet({
     required Map<String, dynamic> product,
     required Map<String, dynamic> variant,
   }) {
-    final title = _variantDetail(variant);
+    var currentVariant = Map<String, dynamic>.from(variant);
+    var variantInitialTab = 0;
+
     Get.bottomSheet(
       SafeArea(
         top: false,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 680),
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.lg,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppSpacing.radiusLg),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: 680,
+              maxHeight: MediaQuery.sizeOf(context).height * 0.90,
             ),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.title.copyWith(
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w900,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(AppSpacing.radiusLg),
+              ),
+            ),
+            child: StatefulBuilder(
+              builder: (context, setVariantSheetState) {
+                final title = _variantDetail(currentVariant);
+                final subtitle =
+                    product['title']?.toString() ?? 'Produit distributeur';
+                final status = currentVariant['status']?.toString() ??
+                    (currentVariant['is_active'] == false
+                        ? 'Inactif'
+                        : 'Actif');
+                final priceHistory = _asList(currentVariant['price_history']);
+                final warehouseStock =
+                    _asList(currentVariant['stock_by_warehouse']);
+
+                return DefaultTabController(
+                  key: ValueKey(
+                    'distributor-variant-tabs-${currentVariant['id']}-$variantInitialTab-${currentVariant['price_label']}',
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  product['title']?.toString() ?? 'Produit distributeur',
-                  style: AppTextStyles.caption,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _KeyValueList(values: {
-                  'SKU': _variantSku(variant),
-                  'Groupe': _variantGroup(variant),
-                  'Conditionnement': _variantPackageLabel(variant),
-                  'Stock depots': variant['stock_label'] ??
-                      '${variant['stock_quantity'] ?? 0} unites',
-                  'Prix': variant['price_label'] ?? 'A definir',
-                }),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () =>
-                            _showDistributorPriceForm(variant: variant),
-                        icon: const Icon(Icons.price_change_rounded),
-                        label: const Text('Prix'),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () =>
-                            _showDistributorStockForm(variant: variant),
-                        icon: const Icon(Icons.inventory_rounded),
-                        label: const Text('Stock'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  length: 3,
+                  initialIndex: variantInitialTab,
+                  child: Builder(builder: (context) {
+                    final compact = MediaQuery.sizeOf(context).width < 430;
+                    final tabHeight =
+                        (MediaQuery.sizeOf(context).height * 0.44).clamp(
+                      compact ? 300.0 : 340.0,
+                      compact ? 430.0 : 500.0,
+                    );
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 44,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: AppColors.line,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(
+                              radius: compact ? 24 : 28,
+                              backgroundColor: AppColors.softBlue,
+                              child: Text(
+                                _initial(title),
+                                style: AppTextStyles.title.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: compact ? 16 : 18,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTextStyles.title.copyWith(
+                                      color: AppColors.primaryDark,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: compact ? 19 : 22,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  Text(
+                                    subtitle,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTextStyles.caption,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            AppStatusChip(
+                              label: status,
+                              color: _statusColor(status),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        const TabBar(
+                          labelColor: AppColors.primary,
+                          unselectedLabelColor: AppColors.muted,
+                          indicatorColor: AppColors.primary,
+                          tabs: [
+                            Tab(text: 'Infos'),
+                            Tab(text: 'Prix'),
+                            Tab(text: 'Stock'),
+                          ],
+                        ),
+                        SizedBox(
+                          height: tabHeight.toDouble(),
+                          child: TabBarView(
+                            children: [
+                              _DistributorVariantInfoTab(
+                                product: product,
+                                variant: currentVariant,
+                              ),
+                              _DistributorVariantPriceTab(
+                                prices: priceHistory,
+                                onDelete: (price) async {
+                                  final confirmed = await _confirmAction(
+                                    'Retirer ce prix ?',
+                                    'Cette periode sera retiree de l historique actif du variant. L action sera auditee.',
+                                  );
+                                  if (!confirmed) return false;
+                                  final priceId = _dropdownId(price['id']);
+                                  if (priceId == null || priceId.isEmpty) {
+                                    _showSnack(
+                                      'Prix introuvable',
+                                      'Impossible d identifier cette entree.',
+                                    );
+                                    return false;
+                                  }
+                                  final response = await _superAdminRequest(
+                                    'distributor/prices/$priceId/delete',
+                                  );
+                                  if (response.status != 'SUCCESS') {
+                                    _showSnack(
+                                      'Suppression impossible',
+                                      response.message?.toString() ??
+                                          'Le prix n a pas ete retire.',
+                                    );
+                                    return false;
+                                  }
+                                  final responseData = _asMap(response.data);
+                                  setVariantSheetState(() {
+                                    currentVariant = {
+                                      ...currentVariant,
+                                      'price_history': _asList(
+                                          responseData['price_history']),
+                                      'price': responseData['price'],
+                                      'price_label':
+                                          responseData['price_label'] ??
+                                              'Prix a definir',
+                                    };
+                                    variantInitialTab = 1;
+                                  });
+                                  _showSnack(
+                                    'Prix retire',
+                                    response.message?.toString() ??
+                                        'Historique mis a jour.',
+                                  );
+                                  _refresh();
+                                  return true;
+                                },
+                              ),
+                              _DistributorVariantStockTab(
+                                stocks: warehouseStock,
+                                onDelete: (stock) async {
+                                  final confirmed = await _confirmAction(
+                                    'Supprimer cette ligne stock ?',
+                                    'Le depot sera retire de la fiche stock du variant. L action est auditee.',
+                                  );
+                                  if (!confirmed) return false;
+                                  final stockId =
+                                      _dropdownId(stock['stock_id']);
+                                  if (stockId == null || stockId.isEmpty) {
+                                    _showSnack(
+                                      'Stock introuvable',
+                                      'Cette ligne ne peut pas etre supprimee car elle n existe pas encore en base.',
+                                    );
+                                    return false;
+                                  }
+                                  final response = await _superAdminRequest(
+                                    'distributor/stock/$stockId/delete',
+                                  );
+                                  if (response.status != 'SUCCESS') {
+                                    _showSnack(
+                                      'Suppression impossible',
+                                      response.message?.toString() ??
+                                          'La ligne stock n a pas ete supprimee.',
+                                    );
+                                    return false;
+                                  }
+                                  final responseData = _asMap(response.data);
+                                  setVariantSheetState(() {
+                                    currentVariant = {
+                                      ...currentVariant,
+                                      'stock_by_warehouse': _asList(
+                                        responseData['stock_by_warehouse'],
+                                      ),
+                                      'stock_quantity':
+                                          responseData['stock_quantity'] ??
+                                              currentVariant['stock_quantity'],
+                                      'stock_label':
+                                          '${responseData['stock_quantity'] ?? currentVariant['stock_quantity'] ?? 0} stock',
+                                    };
+                                    variantInitialTab = 2;
+                                  });
+                                  _showSnack(
+                                    'Stock supprime',
+                                    response.message?.toString() ??
+                                        'La ligne stock a ete retiree.',
+                                  );
+                                  _refresh();
+                                  return true;
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => _showDistributorStockForm(
+                                  variant: currentVariant,
+                                  onSaved: (updatedVariant) {
+                                    setVariantSheetState(() {
+                                      currentVariant = updatedVariant;
+                                      variantInitialTab = 2;
+                                    });
+                                  },
+                                ),
+                                icon: const Icon(Icons.inventory_2_outlined),
+                                label: const Text('Stock'),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () => _showDistributorPriceForm(
+                                  variant: currentVariant,
+                                  onSaved: (updatedVariant) {
+                                    setVariantSheetState(() {
+                                      currentVariant = updatedVariant;
+                                      variantInitialTab = 1;
+                                    });
+                                  },
+                                ),
+                                icon: const Icon(Icons.price_change_rounded),
+                                label: const Text('Prix'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  }),
+                );
+              },
             ),
           ),
         ),
@@ -2518,13 +2804,14 @@ class _WorkspacePageState extends State<WorkspacePage> {
 
   void _showDistributorContextSheet({
     required String title,
+    String route = 'distributor/context',
     required Widget Function(Map<String, dynamic> contextData) builder,
   }) {
     Get.bottomSheet(
       SafeArea(
         top: false,
         child: FutureBuilder<ResponseHttpRequest>(
-          future: _superAdminRequest('distributor/context'),
+          future: _superAdminRequest(route),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const _FormSheet(
@@ -3092,90 +3379,493 @@ class _WorkspacePageState extends State<WorkspacePage> {
     );
   }
 
-  void _showDistributorPriceForm({Map<String, dynamic>? variant}) {
+  void _showDistributorPriceForm({
+    Map<String, dynamic>? variant,
+    ValueChanged<Map<String, dynamic>>? onSaved,
+  }) {
+    final lockedVariant =
+        variant == null ? null : Map<String, dynamic>.from(variant);
+    final priceHistory = _asList(lockedVariant?['price_history']);
+    final latestPrice =
+        priceHistory.isNotEmpty ? priceHistory.first : <String, dynamic>{};
     final price = TextEditingController(
-      text: variant?['price']?.toString() ?? '',
+      text: _textValue(
+        latestPrice,
+        ['price'],
+        fallback: lockedVariant?['price']?.toString() ?? '',
+      ),
     );
-    final sku = TextEditingController(text: _variantSku(variant ?? {}));
-    String? variantId = _dropdownId(variant?['id']);
-    String? typePvId;
+    final sku = TextEditingController(
+      text: _textValue(
+        latestPrice,
+        ['sku'],
+        fallback: _variantSku(lockedVariant ?? const <String, dynamic>{}),
+      ),
+    );
+    final name = TextEditingController(
+      text: _textValue(
+        latestPrice,
+        ['title'],
+        fallback: lockedVariant == null
+            ? 'Tarif distributeur'
+            : 'Tarif ${_variantDetail(lockedVariant)}',
+      ),
+    );
+    String dateOnly(dynamic value) {
+      final text = value?.toString().trim() ?? '';
+      if (text.isEmpty || text.toLowerCase() == 'null') return '';
+      final normalized = text.replaceAll('T', ' ');
+      return normalized.split(' ').first;
+    }
+
+    DateTime? parseDateOnly(dynamic value) {
+      final text = dateOnly(value);
+      if (text.isEmpty) return null;
+      return DateTime.tryParse(text);
+    }
+
+    String formatDateOnly(DateTime value) {
+      return '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+    }
+
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+    final defaultStart = formatDateOnly(todayOnly);
+    final defaultEndDate = DateTime(today.year + 1, today.month, today.day);
+    final defaultEnd = formatDateOnly(defaultEndDate);
+    final latestEndDate = priceHistory
+        .map((entry) => parseDateOnly(entry['end_date']))
+        .whereType<DateTime>()
+        .fold<DateTime?>(null, (latest, date) {
+      if (latest == null || date.isAfter(latest)) return date;
+      return latest;
+    });
+    final plannedStartDate = latestEndDate == null
+        ? todayOnly
+        : latestEndDate.add(const Duration(days: 1));
+    final startDate = TextEditingController(text: defaultStart);
+    final endDate = TextEditingController(text: defaultEnd);
+    String? variantId = _dropdownId(lockedVariant?['id']);
+    String? typePvId = _dropdownId(latestPrice['typepv_id']);
+
+    String? overlapMessage() {
+      final start = parseDateOnly(startDate.text);
+      final end = parseDateOnly(endDate.text);
+      if (start == null) return null;
+      if (end != null && end.isBefore(start)) {
+        return 'La date fin doit etre apres la date debut.';
+      }
+      final selectedType = typePvId?.toString();
+      for (final entry in priceHistory) {
+        final existingType = _dropdownId(entry['typepv_id']);
+        if (selectedType != existingType) continue;
+        final existingStart = parseDateOnly(entry['start_date']);
+        final existingEnd = parseDateOnly(entry['end_date']);
+        final startsBeforeEnd =
+            end == null || existingStart == null || !existingStart.isAfter(end);
+        final endsAfterStart =
+            existingEnd == null || !existingEnd.isBefore(start);
+        if (startsBeforeEnd && endsAfterStart) {
+          final period = entry['period_label']?.toString() ??
+              [
+                if (entry['start_date'] != null) 'debut ${entry['start_date']}',
+                if (entry['end_date'] != null) 'fin ${entry['end_date']}',
+              ].join(' - ');
+          return 'Chevauchement avec ${entry['title'] ?? 'un prix existant'}${period.isEmpty ? '' : ' ($period)'}.';
+        }
+      }
+      return null;
+    }
+
+    Future<void> pickDate(
+      BuildContext context,
+      TextEditingController controller,
+    ) async {
+      final initialDate = DateTime.tryParse(controller.text) ?? DateTime.now();
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: initialDate,
+        firstDate: DateTime(2020),
+        lastDate: DateTime(2100),
+      );
+      if (picked == null) return;
+      controller.text =
+          '${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+    }
 
     _showDistributorContextSheet(
-      title: 'Definir prix',
+      title: 'Prix variant',
+      route: lockedVariant == null
+          ? 'distributor/context'
+          : 'distributor/price-context',
       builder: (contextData) {
         final variantItems = _contextDropdownItems(contextData, 'variants');
         final typeItems = _contextDropdownItems(contextData, 'type_pv');
-        variantId = _safeRequiredDropdownValue(
-          variantId ?? _firstDropdownValue(variantItems) ?? '',
-          variantItems,
-          _firstDropdownValue(variantItems) ?? '',
-        );
-        typePvId = _safeRequiredDropdownValue(
-          typePvId ?? _firstDropdownValue(typeItems) ?? '',
-          typeItems,
-          _firstDropdownValue(typeItems) ?? '',
-        );
+        if (lockedVariant == null && variantItems.isNotEmpty) {
+          variantId = _safeRequiredDropdownValue(
+            variantId ?? _firstDropdownValue(variantItems) ?? '',
+            variantItems,
+            _firstDropdownValue(variantItems) ?? '',
+          );
+        }
+        if (typeItems.isNotEmpty) {
+          typePvId = _safeRequiredDropdownValue(
+            typePvId ?? _firstDropdownValue(typeItems) ?? '',
+            typeItems,
+            _firstDropdownValue(typeItems) ?? '',
+          );
+        } else {
+          typePvId = null;
+        }
         return StatefulBuilder(
-          builder: (context, setSheetState) => _FormSheet(
-            title: 'Definir prix variant',
-            children: [
-              DropdownButtonFormField<String>(
-                value: variantId,
-                decoration: _fieldDecoration('Variant', Icons.inventory_2),
-                items: variantItems,
-                onChanged: (value) => setSheetState(() => variantId = value),
-              ),
-              DropdownButtonFormField<String>(
-                value: typePvId,
-                decoration:
-                    _fieldDecoration('Type point de vente', Icons.store),
-                items: typeItems,
-                onChanged: (value) => setSheetState(() => typePvId = value),
-              ),
-              TextField(
-                controller: price,
-                keyboardType: TextInputType.number,
-                decoration:
-                    _fieldDecoration('Prix de vente', Icons.price_change),
-              ),
-              TextField(
-                controller: sku,
-                decoration: _fieldDecoration('SKU', Icons.qr_code),
-              ),
-              _FormSubmitButton(
-                label: 'Enregistrer prix',
-                onPressed: () {
-                  final id = variantId;
-                  if (id == null || id.isEmpty) {
-                    _showSnack('Variant requis', 'Selectionnez un variant.');
-                    return;
-                  }
-                  _submitDistributorOperation(
-                    'distributor/variants/$id/price',
-                    {
-                      'typepv_id': typePvId,
-                      'price': double.tryParse(price.text) ?? 0,
-                      'sku': sku.text.trim(),
-                    },
-                    'Prix enregistre.',
-                  );
-                },
-              ),
-            ],
-          ),
+          builder: (context, setSheetState) {
+            final overlap = overlapMessage();
+            return _FormSheet(
+              title: lockedVariant == null
+                  ? 'Definir prix variant'
+                  : 'Prix ${_variantDetail(lockedVariant)}',
+              children: [
+                if (lockedVariant != null)
+                  AppCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: AppColors.softBlue,
+                              child: Text(
+                                _initial(_variantDetail(lockedVariant)),
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _variantDetail(lockedVariant),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTextStyles.body.copyWith(
+                                      color: AppColors.primaryDark,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  Text(
+                                    [
+                                      if (_variantSku(lockedVariant).isNotEmpty)
+                                        'SKU ${_variantSku(lockedVariant)}',
+                                      _variantGroup(lockedVariant),
+                                    ].join(' - '),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTextStyles.caption,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            AppStatusChip(
+                              label: lockedVariant['price_label']?.toString() ??
+                                  'Prix a definir',
+                              color: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Wrap(
+                          spacing: AppSpacing.xs,
+                          runSpacing: AppSpacing.xs,
+                          children: _variantOptionList(lockedVariant)
+                              .map(
+                                (option) => AppStatusChip(
+                                  label: option['label']?.toString() ??
+                                      '${option['option_label']}: ${option['value']}',
+                                  color: AppColors.info,
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  DropdownButtonFormField<String>(
+                    initialValue: variantId,
+                    decoration: _fieldDecoration('Variant', Icons.inventory_2),
+                    items: variantItems,
+                    onChanged: (value) =>
+                        setSheetState(() => variantId = value),
+                  ),
+                TextField(
+                  controller: name,
+                  decoration: _fieldDecoration(
+                    'Nom de la liste prix',
+                    Icons.sell_outlined,
+                  ),
+                ),
+                if (typeItems.isNotEmpty)
+                  DropdownButtonFormField<String>(
+                    initialValue: typePvId,
+                    decoration:
+                        _fieldDecoration('Type point de vente', Icons.store),
+                    items: typeItems,
+                    onChanged: (value) => setSheetState(() => typePvId = value),
+                  )
+                else
+                  AppStatusChip(
+                    label: 'Type point de vente par defaut',
+                    color: AppColors.info,
+                    icon: Icons.store_outlined,
+                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: startDate,
+                        readOnly: true,
+                        decoration: _fieldDecoration(
+                                'Date debut', Icons.event_available)
+                            .copyWith(errorText: overlap),
+                        onTap: () async {
+                          await pickDate(context, startDate);
+                          setSheetState(() {});
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: TextField(
+                        controller: endDate,
+                        readOnly: true,
+                        decoration: _fieldDecoration(
+                          'Date fin',
+                          Icons.event_busy,
+                        ),
+                        onTap: () async {
+                          await pickDate(context, endDate);
+                          setSheetState(() {});
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                if (latestEndDate != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => setSheetState(() {
+                        startDate.text = formatDateOnly(plannedStartDate);
+                        endDate.text = formatDateOnly(
+                          DateTime(
+                            plannedStartDate.year + 1,
+                            plannedStartDate.month,
+                            plannedStartDate.day,
+                          ),
+                        );
+                      }),
+                      icon: const Icon(Icons.event_repeat_rounded),
+                      label: Text(
+                        'Planifier apres dernier prix (${formatDateOnly(plannedStartDate)})',
+                      ),
+                    ),
+                  ),
+                TextField(
+                  controller: price,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration:
+                      _fieldDecoration('Prix de vente', Icons.price_change),
+                ),
+                TextField(
+                  controller: sku,
+                  decoration:
+                      _fieldDecoration('SKU / reference tarif', Icons.qr_code),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: overlap == null
+                        ? AppColors.softBlue
+                        : AppColors.softRed,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        overlap == null
+                            ? Icons.info_outline
+                            : Icons.warning_amber_rounded,
+                        color: overlap == null
+                            ? AppColors.primary
+                            : AppColors.danger,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          overlap ??
+                              (lockedVariant == null
+                                  ? 'Selectionnez un variant puis enregistrez une periode tarifaire reelle.'
+                                  : 'Le statut du prix est calcule automatiquement : expire, actif ou planifie selon la periode.'),
+                          style: AppTextStyles.caption.copyWith(
+                            color: overlap == null
+                                ? AppColors.primaryDark
+                                : AppColors.danger,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _FormSubmitButton(
+                  label: 'Enregistrer prix',
+                  onPressed: () {
+                    final id = variantId ?? _dropdownId(lockedVariant?['id']);
+                    if (id == null || id.isEmpty) {
+                      _showSnack('Variant requis', 'Selectionnez un variant.');
+                      return;
+                    }
+                    final normalizedPrice =
+                        double.tryParse(price.text.replaceAll(',', '.')) ?? 0;
+                    if (normalizedPrice <= 0) {
+                      _showSnack(
+                        'Prix invalide',
+                        'Saisissez un prix de vente superieur a 0.',
+                      );
+                      return;
+                    }
+                    final start = startDate.text.trim();
+                    final end = endDate.text.trim();
+                    final overlap = overlapMessage();
+                    if (overlap != null) {
+                      _showSnack('Periode invalide', overlap);
+                      return;
+                    }
+                    if (start.isNotEmpty &&
+                        end.isNotEmpty &&
+                        (DateTime.tryParse(end)?.isBefore(
+                                DateTime.tryParse(start) ?? DateTime.now()) ??
+                            false)) {
+                      _showSnack(
+                        'Periode invalide',
+                        'La date fin doit etre apres la date debut.',
+                      );
+                      return;
+                    }
+                    () async {
+                      final response = await _superAdminRequest(
+                        'distributor/variants/$id/price',
+                        data: {
+                          'typepv_id': typePvId,
+                          'name': name.text.trim(),
+                          'price': normalizedPrice,
+                          'sku': sku.text.trim(),
+                          'start_date': start.isEmpty ? null : start,
+                          'end_date': end.isEmpty ? null : end,
+                        },
+                      );
+                      if (response.status != 'SUCCESS') {
+                        _showSnack(
+                          'Action impossible',
+                          response.message?.toString() ??
+                              'Le prix n a pas ete enregistre.',
+                        );
+                        return;
+                      }
+
+                      final responseData = _asMap(response.data);
+                      final history = _asList(responseData['price_history']);
+                      final latest =
+                          history.isNotEmpty ? history.first : responseData;
+                      final updatedVariant = <String, dynamic>{
+                        ...?lockedVariant,
+                        'price_history': history,
+                        'price': latest['price'] ?? normalizedPrice,
+                        'price_label': responseData['price_label'] ??
+                            latest['price_label'] ??
+                            normalizedPrice.toStringAsFixed(2),
+                        'sku': sku.text.trim().isEmpty
+                            ? (lockedVariant ??
+                                const <String, dynamic>{})['sku']
+                            : sku.text.trim(),
+                      };
+                      onSaved?.call(updatedVariant);
+                      Get.back();
+                      _showSnack(
+                        'Prix enregistre',
+                        response.message?.toString() ??
+                            'Historique prix mis a jour.',
+                      );
+                      _refresh();
+                    }();
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  void _showDistributorStockForm({Map<String, dynamic>? variant}) {
+  void _showDistributorStockForm({
+    Map<String, dynamic>? variant,
+    ValueChanged<Map<String, dynamic>>? onSaved,
+  }) {
+    final lockedVariant =
+        variant == null ? null : Map<String, dynamic>.from(variant);
     final quantity = TextEditingController();
-    String? variantId = _dropdownId(variant?['id']);
+    String? variantId = _dropdownId(lockedVariant?['id']);
     String? warehouseId;
     var mode = 'set';
 
+    int asInt(dynamic value) {
+      if (value is num) return value.round();
+      return int.tryParse(value?.toString() ?? '') ?? 0;
+    }
+
+    int currentWarehouseQuantity(String? selectedWarehouseId) {
+      if (selectedWarehouseId == null || lockedVariant == null) return 0;
+      final rows = _asList(lockedVariant['stock_by_warehouse']);
+      final row = rows.firstWhere(
+        (item) => _dropdownId(item['warehouse_id']) == selectedWarehouseId,
+        orElse: () => <String, dynamic>{},
+      );
+      return asInt(row['quantity']);
+    }
+
+    int previewQuantity(int oldQuantity) {
+      final input = int.tryParse(quantity.text.trim()) ?? 0;
+      return switch (mode) {
+        'add' => oldQuantity + input,
+        'sub' => (oldQuantity - input).clamp(0, 1 << 31).toInt(),
+        _ => input.clamp(0, 1 << 31).toInt(),
+      };
+    }
+
+    String variationLabel(int oldQuantity, int newQuantity) {
+      final delta = newQuantity - oldQuantity;
+      if (oldQuantity == 0) {
+        if (newQuantity == 0) return '0% vs ancien';
+        return '+100% nouveau stock';
+      }
+      final percent = (delta / oldQuantity) * 100;
+      final sign = percent >= 0 ? '+' : '';
+      return '$sign${percent.toStringAsFixed(1)}% vs ancien';
+    }
+
     _showDistributorContextSheet(
       title: 'Ajuster stock',
+      route: lockedVariant == null
+          ? 'distributor/context'
+          : 'distributor/stock-context',
       builder: (contextData) {
         final variantItems = _contextDropdownItems(contextData, 'variants');
         final warehouseItems = _contextDropdownItems(contextData, 'warehouses');
@@ -3200,7 +3890,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
             ],
           );
         }
-        if (variantItems.isEmpty) {
+        if (lockedVariant == null && variantItems.isEmpty) {
           return const _FormSheet(
             title: 'Ajuster stock depot',
             children: [
@@ -3213,69 +3903,219 @@ class _WorkspacePageState extends State<WorkspacePage> {
             ],
           );
         }
-        variantId = _safeRequiredDropdownValue(
-          variantId ?? _firstDropdownValue(variantItems) ?? '',
-          variantItems,
-          _firstDropdownValue(variantItems) ?? '',
-        );
+        if (lockedVariant == null) {
+          variantId = _safeRequiredDropdownValue(
+            variantId ?? _firstDropdownValue(variantItems) ?? '',
+            variantItems,
+            _firstDropdownValue(variantItems) ?? '',
+          );
+        }
         warehouseId = _safeRequiredDropdownValue(
           warehouseId ?? _firstDropdownValue(warehouseItems) ?? '',
           warehouseItems,
           _firstDropdownValue(warehouseItems) ?? '',
         );
         return StatefulBuilder(
-          builder: (context, setSheetState) => _FormSheet(
-            title: 'Ajuster stock depot',
-            children: [
-              DropdownButtonFormField<String>(
-                value: warehouseId,
-                decoration: _fieldDecoration('Depot', Icons.warehouse),
-                items: warehouseItems,
-                onChanged: (value) => setSheetState(() => warehouseId = value),
-              ),
-              DropdownButtonFormField<String>(
-                value: variantId,
-                decoration: _fieldDecoration('Variant', Icons.inventory_2),
-                items: variantItems,
-                onChanged: (value) => setSheetState(() => variantId = value),
-              ),
-              DropdownButtonFormField<String>(
-                value: mode,
-                decoration: _fieldDecoration('Mode', Icons.tune),
-                items: const [
-                  DropdownMenuItem(value: 'set', child: Text('Fixer quantite')),
-                  DropdownMenuItem(value: 'add', child: Text('Ajouter')),
-                  DropdownMenuItem(value: 'sub', child: Text('Retirer')),
-                ],
-                onChanged: (value) =>
-                    setSheetState(() => mode = value ?? 'set'),
-              ),
-              TextField(
-                controller: quantity,
-                keyboardType: TextInputType.number,
-                decoration: _fieldDecoration('Quantite', Icons.numbers),
-              ),
-              _FormSubmitButton(
-                label: 'Valider stock',
-                onPressed: () {
-                  if (warehouseId == null || variantId == null) {
-                    _showSnack('Stock', 'Depot et variant sont obligatoires.');
-                    return;
-                  }
-                  _submitDistributorOperation(
-                    'distributor/stock/adjust',
-                    {
-                      'warehouse_id': warehouseId,
-                      'variant_id': variantId,
-                      'mode': mode,
-                      'quantity': int.tryParse(quantity.text) ?? 0,
-                    },
-                    'Stock ajuste.',
-                  );
-                },
-              ),
-            ],
-          ),
+          builder: (context, setSheetState) {
+            final oldQuantity = currentWarehouseQuantity(warehouseId);
+            final newQuantity = previewQuantity(oldQuantity);
+            final delta = newQuantity - oldQuantity;
+            final deltaColor = delta < 0
+                ? AppColors.danger
+                : delta > 0
+                    ? AppColors.secondary
+                    : AppColors.muted;
+            return _FormSheet(
+              title: lockedVariant == null
+                  ? 'Ajuster stock depot'
+                  : 'Stock ${_variantDetail(lockedVariant)}',
+              children: [
+                if (lockedVariant != null)
+                  AppCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: AppColors.softGreen,
+                          child: Text(
+                            _initial(_variantDetail(lockedVariant)),
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.secondary,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _variantDetail(lockedVariant),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.body.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              Text(
+                                _variantSku(lockedVariant).isEmpty
+                                    ? 'Variant selectionne'
+                                    : 'SKU ${_variantSku(lockedVariant)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.caption,
+                              ),
+                            ],
+                          ),
+                        ),
+                        AppStatusChip(
+                          label: lockedVariant['stock_label']?.toString() ??
+                              '${lockedVariant['stock_quantity'] ?? 0} stock',
+                          color: AppColors.secondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                DropdownButtonFormField<String>(
+                  value: warehouseId,
+                  decoration: _fieldDecoration('Depot', Icons.warehouse),
+                  items: warehouseItems,
+                  onChanged: (value) =>
+                      setSheetState(() => warehouseId = value),
+                ),
+                if (lockedVariant == null)
+                  DropdownButtonFormField<String>(
+                    value: variantId,
+                    decoration: _fieldDecoration('Variant', Icons.inventory_2),
+                    items: variantItems,
+                    onChanged: (value) =>
+                        setSheetState(() => variantId = value),
+                  ),
+                DropdownButtonFormField<String>(
+                  value: mode,
+                  decoration: _fieldDecoration('Mode', Icons.tune),
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'set', child: Text('Fixer quantite')),
+                    DropdownMenuItem(value: 'add', child: Text('Ajouter')),
+                    DropdownMenuItem(value: 'sub', child: Text('Retirer')),
+                  ],
+                  onChanged: (value) =>
+                      setSheetState(() => mode = value ?? 'set'),
+                ),
+                TextField(
+                  controller: quantity,
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) => setSheetState(() {}),
+                  decoration: _fieldDecoration('Quantite', Icons.numbers),
+                ),
+                AppCard(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Apercu stock depot',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _VariantMiniMetric(
+                              icon: Icons.history_rounded,
+                              label: 'Ancien',
+                              value: '$oldQuantity',
+                              color: AppColors.muted,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: _VariantMiniMetric(
+                              icon: delta >= 0
+                                  ? Icons.trending_up_rounded
+                                  : Icons.trending_down_rounded,
+                              label: 'Nouveau',
+                              value: '$newQuantity',
+                              color: deltaColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      AppStatusChip(
+                        label: variationLabel(oldQuantity, newQuantity),
+                        color: deltaColor,
+                        icon: Icons.percent_rounded,
+                      ),
+                    ],
+                  ),
+                ),
+                _FormSubmitButton(
+                  label: 'Valider stock',
+                  onPressed: () {
+                    if (warehouseId == null || variantId == null) {
+                      _showSnack(
+                          'Stock', 'Depot et variant sont obligatoires.');
+                      return;
+                    }
+                    final inputQuantity = int.tryParse(quantity.text) ?? 0;
+                    if (inputQuantity < 0) {
+                      _showSnack(
+                        'Quantite invalide',
+                        'Saisissez une quantite positive.',
+                      );
+                      return;
+                    }
+                    () async {
+                      final response = await _superAdminRequest(
+                        'distributor/stock/adjust',
+                        data: {
+                          'warehouse_id': warehouseId,
+                          'variant_id': variantId,
+                          'mode': mode,
+                          'quantity': inputQuantity,
+                        },
+                      );
+                      if (response.status != 'SUCCESS') {
+                        _showSnack(
+                          'Stock non enregistre',
+                          response.message?.toString() ??
+                              'Impossible de modifier le stock.',
+                        );
+                        return;
+                      }
+                      final responseData = _asMap(response.data);
+                      if (lockedVariant != null) {
+                        final updatedQuantity =
+                            asInt(responseData['stock_quantity']);
+                        final updatedVariant = <String, dynamic>{
+                          ...lockedVariant,
+                          'stock_by_warehouse':
+                              _asList(responseData['stock_by_warehouse']),
+                          'stock_quantity': updatedQuantity,
+                          'stock_label': '$updatedQuantity stock',
+                        };
+                        onSaved?.call(updatedVariant);
+                      }
+                      Get.back();
+                      _showSnack(
+                        'Stock enregistre',
+                        response.message?.toString() ??
+                            'Stock depot mis a jour.',
+                      );
+                      _refresh();
+                    }();
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -4200,6 +5040,8 @@ class _SuperAdminToolbar extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onCategoryChanged;
   final ValueChanged<String> onStatusChanged;
+  final bool showAssortmentButton;
+  final VoidCallback? onAssortmentPressed;
 
   const _SuperAdminToolbar({
     required this.section,
@@ -4210,11 +5052,21 @@ class _SuperAdminToolbar extends StatelessWidget {
     required this.onSearchChanged,
     required this.onCategoryChanged,
     required this.onStatusChanged,
+    this.showAssortmentButton = false,
+    this.onAssortmentPressed,
   });
 
   @override
   Widget build(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).width < 430;
+    final useHealthFilter = section == 'products' && showAssortmentButton;
+    final safeStatusValue = useHealthFilter
+        ? (const {'all', 'alert', 'ok'}.contains(statusFilter)
+            ? statusFilter
+            : 'all')
+        : (const {'all', 'active', 'inactive'}.contains(statusFilter)
+            ? statusFilter
+            : 'all');
     return Container(
       padding: EdgeInsets.all(compact ? AppSpacing.xs : AppSpacing.sm),
       decoration: BoxDecoration(
@@ -4296,18 +5148,28 @@ class _SuperAdminToolbar extends StatelessWidget {
             width: compact ? 142 : 170,
             height: 44,
             child: DropdownButtonFormField<String>(
-              initialValue: statusFilter,
+              key: ValueKey('status-filter-$section-$safeStatusValue'),
+              initialValue: safeStatusValue,
               decoration: const InputDecoration(
                 isDense: true,
                 contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                 prefixIcon: Icon(Icons.filter_alt_outlined, size: 18),
                 prefixIconConstraints: BoxConstraints(minWidth: 36),
               ),
-              items: const [
-                DropdownMenuItem(value: 'all', child: Text('Tous')),
-                DropdownMenuItem(value: 'active', child: Text('Actifs')),
-                DropdownMenuItem(value: 'inactive', child: Text('Inactifs')),
-              ],
+              items: useHealthFilter
+                  ? const [
+                      DropdownMenuItem(value: 'all', child: Text('Tous')),
+                      DropdownMenuItem(value: 'alert', child: Text('Alerte')),
+                      DropdownMenuItem(value: 'ok', child: Text('OK')),
+                    ]
+                  : const [
+                      DropdownMenuItem(value: 'all', child: Text('Tous')),
+                      DropdownMenuItem(value: 'active', child: Text('Actifs')),
+                      DropdownMenuItem(
+                        value: 'inactive',
+                        child: Text('Inactifs'),
+                      ),
+                    ],
               onChanged: (value) {
                 if (value != null) {
                   onStatusChanged(value);
@@ -4315,8 +5177,283 @@ class _SuperAdminToolbar extends StatelessWidget {
               },
             ),
           ),
+          if (showAssortmentButton)
+            SizedBox(
+              width: compact ? 50 : 170,
+              height: 44,
+              child: compact
+                  ? OutlinedButton(
+                      onPressed: onAssortmentPressed,
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: const Icon(Icons.playlist_add_check_rounded),
+                    )
+                  : OutlinedButton.icon(
+                      onPressed: onAssortmentPressed,
+                      icon: const Icon(Icons.playlist_add_check_rounded),
+                      label: const Text('Assortiment'),
+                    ),
+            ),
         ],
       ),
+    );
+  }
+}
+
+class _DistributorAssortmentSheet extends StatefulWidget {
+  final List<Map<String, dynamic>> products;
+  final Future<void> Function(Set<String> variantIds) onSave;
+
+  const _DistributorAssortmentSheet({
+    required this.products,
+    required this.onSave,
+  });
+
+  @override
+  State<_DistributorAssortmentSheet> createState() =>
+      _DistributorAssortmentSheetState();
+}
+
+class _DistributorAssortmentSheetState
+    extends State<_DistributorAssortmentSheet> {
+  final Set<String> _selectedVariantIds = <String>{};
+  final TextEditingController _search = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    for (final product in widget.products) {
+      for (final variant in _WorkspacePageState._asList(product['variants'])) {
+        final id = variant['id']?.toString();
+        if (id != null && id.isNotEmpty && variant['selected'] == true) {
+          _selectedVariantIds.add(id);
+        }
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 430;
+    final query = _search.text.trim().toLowerCase();
+    final products = query.isEmpty
+        ? widget.products
+        : widget.products.where((product) {
+            final productText = [
+              product['title'],
+              product['subtitle'],
+              product['category_label'],
+              ..._WorkspacePageState._asList(product['variants'])
+                  .expand((variant) => [
+                        variant['title'],
+                        variant['subtitle'],
+                        variant['group_label'],
+                        variant['sku'],
+                      ]),
+            ].whereType<Object>().join(' ').toLowerCase();
+            return productText.contains(query);
+          }).toList();
+
+    return _FormSheet(
+      title: 'Assortiment produits',
+      children: [
+        TextField(
+          controller: _search,
+          onChanged: (_) => setState(() {}),
+          decoration: const InputDecoration(
+            labelText: 'Rechercher produit ou variant',
+            prefixIcon: Icon(Icons.search_rounded),
+            isDense: true,
+          ),
+        ),
+        AppCard(
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: AppColors.softBlue,
+                child: Text(
+                  _selectedVariantIds.length.toString(),
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  'Selectionnez les produits et variants que ce distributeur vend reellement. Les autres seront masques de son catalogue operationnel.',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (products.isEmpty)
+          const AppEmptyState(
+            title: 'Aucun produit',
+            message: 'Aucun article ne correspond a cette recherche.',
+          )
+        else
+          SizedBox(
+            height: compact ? 430 : 520,
+            child: ListView.separated(
+              itemCount: products.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: AppSpacing.sm),
+              itemBuilder: (context, index) {
+                final product = products[index];
+                final variants =
+                    _WorkspacePageState._asList(product['variants']);
+                final variantIds = variants
+                    .map((variant) => variant['id']?.toString())
+                    .whereType<String>()
+                    .where((id) => id.isNotEmpty)
+                    .toList();
+                final selectedCount = variantIds
+                    .where((id) => _selectedVariantIds.contains(id))
+                    .length;
+                final allSelected =
+                    variantIds.isNotEmpty && selectedCount == variantIds.length;
+                final anySelected = selectedCount > 0;
+
+                return AppCard(
+                  padding: EdgeInsets.zero,
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      dividerColor: Colors.transparent,
+                    ),
+                    child: ExpansionTile(
+                      initiallyExpanded: anySelected,
+                      leading: Checkbox(
+                        tristate: true,
+                        value:
+                            allSelected ? true : (anySelected ? null : false),
+                        onChanged: variantIds.isEmpty
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  if (value == true) {
+                                    _selectedVariantIds.addAll(variantIds);
+                                  } else {
+                                    _selectedVariantIds.removeAll(variantIds);
+                                  }
+                                });
+                              },
+                      ),
+                      title: Text(
+                        product['title']?.toString() ?? 'Produit',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${product['subtitle'] ?? 'Catalogue'} - $selectedCount/${variantIds.length} variants',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption,
+                      ),
+                      children: variants.map((variant) {
+                        final id = variant['id']?.toString() ?? '';
+                        final selected = _selectedVariantIds.contains(id);
+                        final options =
+                            _WorkspacePageState._asList(variant['options']);
+                        return CheckboxListTile(
+                          dense: true,
+                          value: selected,
+                          onChanged: id.isEmpty
+                              ? null
+                              : (value) {
+                                  setState(() {
+                                    if (value == true) {
+                                      _selectedVariantIds.add(id);
+                                    } else {
+                                      _selectedVariantIds.remove(id);
+                                    }
+                                  });
+                                },
+                          title: Text(
+                            variant['title']?.toString() ??
+                                _variantDetail(variant),
+                            style: AppTextStyles.body.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          subtitle: Wrap(
+                            spacing: AppSpacing.xs,
+                            runSpacing: AppSpacing.xs,
+                            children: [
+                              if ((variant['sku']?.toString() ?? '').isNotEmpty)
+                                AppStatusChip(
+                                  label: 'SKU ${variant['sku']}',
+                                  color: AppColors.primary,
+                                ),
+                              ...options.take(4).map(
+                                    (option) => AppStatusChip(
+                                      label:
+                                          '${option['option_label'] ?? option['option_key']}: ${option['value_label'] ?? option['value']}',
+                                      color: AppColors.info,
+                                    ),
+                                  ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _saving
+                ? null
+                : () async {
+                    if (_selectedVariantIds.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('Selectionnez au moins un variant produit.'),
+                        ),
+                      );
+                      return;
+                    }
+                    setState(() => _saving = true);
+                    await widget.onSave(Set<String>.from(_selectedVariantIds));
+                    if (mounted) {
+                      setState(() => _saving = false);
+                    }
+                  },
+            icon: _saving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.check_rounded),
+            label: Text(
+              _saving
+                  ? 'Enregistrement...'
+                  : 'Valider la selection (${_selectedVariantIds.length})',
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -4878,6 +6015,559 @@ class _VariantOptionRowEditor extends StatelessWidget {
   }
 }
 
+class _DistributorVariantInfoTab extends StatelessWidget {
+  final Map<String, dynamic> product;
+  final Map<String, dynamic> variant;
+
+  const _DistributorVariantInfoTab({
+    required this.product,
+    required this.variant,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final title = _variantDetail(variant);
+    final sku = _variantSku(variant);
+    final group = _variantGroup(variant);
+    final packageLabel = _variantPackageLabel(variant);
+    final options = _variantOptionList(variant);
+    final priceLabel = variant['price_label']?.toString().trim();
+    final stockLabel = variant['stock_label']?.toString().trim();
+    final signature = variant['option_signature']?.toString().trim();
+    final compact = MediaQuery.sizeOf(context).width < 430;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _VariantMiniMetric(
+                  icon: Icons.price_change_rounded,
+                  label: 'Prix actuel',
+                  value: (priceLabel == null || priceLabel.isEmpty)
+                      ? 'A definir'
+                      : priceLabel,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _VariantMiniMetric(
+                  icon: Icons.inventory_2_outlined,
+                  label: 'Stock depots',
+                  value: (stockLabel == null || stockLabel.isEmpty)
+                      ? '${variant['stock_quantity'] ?? 0} stock'
+                      : stockLabel,
+                  color: AppColors.secondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppCard(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.title.copyWith(
+                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w900,
+                    fontSize: compact ? 18 : 20,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  product['title']?.toString() ?? 'Produit distributeur',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption,
+                ),
+                if (options.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: options.map((option) {
+                      final label = option['label']?.toString() ??
+                          '${option['option_label']}: ${option['value']}';
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.softBlue,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: AppColors.line),
+                        ),
+                        child: Text(
+                          label,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _KeyValueList(values: {
+            'SKU': sku.isEmpty ? 'Non renseigne' : sku,
+            'Groupe intelligent': group,
+            'Conditionnement':
+                packageLabel.isEmpty ? 'Non renseigne' : packageLabel,
+            'Categorie': product['category_label'] ??
+                product['subtitle'] ??
+                'Catalogue distributeur',
+            'Signature': signature == null || signature.isEmpty
+                ? 'Options libres'
+                : signature,
+            'Statut': variant['status'] ??
+                (variant['is_active'] == false ? 'Inactif' : 'Actif'),
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _DistributorVariantPriceTab extends StatelessWidget {
+  final List<Map<String, dynamic>> prices;
+  final Future<bool> Function(Map<String, dynamic> price)? onDelete;
+
+  const _DistributorVariantPriceTab({
+    required this.prices,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (prices.isEmpty) {
+      return const SingleChildScrollView(
+        padding: EdgeInsets.only(top: AppSpacing.md),
+        child: AppEmptyState(
+          icon: Icons.price_change_outlined,
+          title: 'Aucun historique prix',
+          message:
+              'Definissez un prix pour ce variant. Les changements apparaitront ici du plus recent au plus ancien.',
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: Column(
+        children: prices.asMap().entries.map((entry) {
+          final index = entry.key;
+          final price = entry.value;
+          final status = price['period_status']?.toString() ??
+              price['status']?.toString() ??
+              (price['is_active'] == false ? 'Inactif' : 'Actif');
+          final color = _statusColor(status);
+          final label = price['price_label']?.toString() ??
+              (price['price'] == null ? 'Prix' : '${price['price']}');
+          final period = price['period_label']?.toString() ??
+              [
+                if (price['start_date'] != null) 'Debut ${price['start_date']}',
+                if (price['end_date'] != null) 'Fin ${price['end_date']}',
+              ].join(' - ');
+          final updated = price['updated_label']?.toString() ??
+              price['updated_at']?.toString() ??
+              '';
+          final card = AppCard(
+            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: color.withValues(alpha: 0.12),
+                      child: Icon(
+                        Icons.payments_outlined,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            price['title']?.toString() ?? 'Liste prix',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.primaryDark,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            price['subtitle']?.toString() ?? 'Historique prix',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    SizedBox(
+                      width: MediaQuery.sizeOf(context).width < 430 ? 106 : 132,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.title.copyWith(
+                              color: AppColors.primaryDark,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 17,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          AppStatusChip(
+                            label: status,
+                            color: color,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    AppStatusChip(
+                      label: period.isEmpty ? 'Periode ouverte' : period,
+                      color: AppColors.info,
+                      icon: Icons.event_available_rounded,
+                    ),
+                    if (updated.isNotEmpty)
+                      AppStatusChip(
+                        label: 'MAJ $updated',
+                        color: AppColors.primary,
+                        icon: Icons.history_rounded,
+                      ),
+                    if ((price['sku']?.toString().trim() ?? '').isNotEmpty)
+                      AppStatusChip(
+                        label: 'SKU ${price['sku']}',
+                        color: AppColors.muted,
+                        icon: Icons.qr_code_rounded,
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          );
+          if (onDelete == null) {
+            return card;
+          }
+          return Dismissible(
+            key: ValueKey('variant-price-${price['id'] ?? index}'),
+            direction: DismissDirection.endToStart,
+            confirmDismiss: (_) => onDelete!(price),
+            background: Container(
+              margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              alignment: Alignment.centerRight,
+              decoration: BoxDecoration(
+                color: AppColors.danger.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                border: Border.all(
+                  color: AppColors.danger.withValues(alpha: 0.18),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColors.danger,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    'Retirer',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.danger,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            child: card,
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _DistributorVariantStockTab extends StatelessWidget {
+  final List<Map<String, dynamic>> stocks;
+  final Future<bool> Function(Map<String, dynamic> stock)? onDelete;
+
+  const _DistributorVariantStockTab({
+    required this.stocks,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleStocks = stocks.where((stock) {
+      final stockId = stock['stock_id']?.toString();
+      return (stockId != null && stockId.isNotEmpty && stockId != 'null') ||
+          _intValue(stock['quantity']) != 0 ||
+          _intValue(stock['previsionnel']) != 0;
+    }).toList();
+
+    if (visibleStocks.isEmpty) {
+      return const SingleChildScrollView(
+        padding: EdgeInsets.only(top: AppSpacing.md),
+        child: AppEmptyState(
+          icon: Icons.warehouse_outlined,
+          title: 'Aucun depot rattache',
+          message:
+              'Ce variant n a pas encore de stock visible pour les depots du distributeur connecte.',
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: Column(
+        children: visibleStocks.map((stock) {
+          final status = stock['status']?.toString() ?? 'Stock';
+          final quantity = stock['quantity']?.toString() ?? '0';
+          final previsionnel = stock['previsionnel']?.toString() ?? '0';
+          final stockId = stock['stock_id']?.toString();
+          final canDelete = onDelete != null &&
+              stockId != null &&
+              stockId.isNotEmpty &&
+              stockId != 'null';
+          final card = AppCard(
+            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor:
+                          _statusColor(status).withValues(alpha: 0.12),
+                      child: Icon(
+                        Icons.warehouse_rounded,
+                        color: _statusColor(status),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            stock['title']?.toString() ?? 'Depot',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.primaryDark,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          Text(
+                            stock['subtitle']?.toString() ??
+                                'Stock distributeur',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    AppStatusChip(
+                      label: status,
+                      color: _statusColor(status),
+                    ),
+                  ],
+                ),
+                const Divider(height: AppSpacing.xl),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _InlineMetric(
+                        label: 'Disponible',
+                        value: quantity,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                    Expanded(
+                      child: _InlineMetric(
+                        label: 'Previsionnel',
+                        value: previsionnel,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+
+          if (!canDelete) return card;
+
+          return Dismissible(
+            key: ValueKey('variant-stock-$stockId'),
+            direction: DismissDirection.endToStart,
+            confirmDismiss: (_) async => await onDelete!.call(stock),
+            background: const SizedBox.shrink(),
+            secondaryBackground: Container(
+              margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.danger.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColors.danger,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    'Supprimer',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.danger,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            child: card,
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _VariantMiniMetric extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _VariantMiniMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: color.withValues(alpha: 0.12),
+            child: Icon(icon, color: color, size: 19),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.caption,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.primaryDark,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InlineMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _InlineMetric({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(right: AppSpacing.xs),
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.caption.copyWith(fontSize: 11),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.caption.copyWith(
+              color: color,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _VariantList extends StatelessWidget {
   final List<Map<String, dynamic>> variants;
   final ValueChanged<Map<String, dynamic>> onEdit;
@@ -4998,8 +6688,9 @@ class _VariantTile extends StatelessWidget {
     final sku = _variantSku(variant);
     final packageLabel = _variantPackageLabel(variant);
     final options = _variantOptionList(variant);
-    final status = variant['status']?.toString() ??
-        (variant['is_active'] == false ? 'Inactif' : 'Actif');
+    final alertReasons = _variantOperationalAlerts(variant);
+    final hasAlert = alertReasons.isNotEmpty;
+    final healthColor = hasAlert ? AppColors.warning : AppColors.secondary;
 
     final tile = AppCard(
       padding: const EdgeInsets.all(AppSpacing.sm),
@@ -5012,11 +6703,11 @@ class _VariantTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: AppColors.softGreen,
+                backgroundColor: healthColor.withValues(alpha: 0.12),
                 child: Text(
                   _initial(detail),
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.secondary,
+                    color: healthColor,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -5049,15 +6740,9 @@ class _VariantTile extends StatelessWidget {
                   ],
                 ),
               ),
-              AppStatusChip(
-                label: status,
-                color: _statusColor(status),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.primaryDark,
-                size: 20,
+              _OperationalHealthChip(
+                alert: hasAlert,
+                count: alertReasons.length,
               ),
             ],
           ),
@@ -5087,6 +6772,29 @@ class _VariantTile extends StatelessWidget {
                   ),
                 );
               }).toList(),
+            ),
+          ],
+          if (hasAlert) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              ),
+              child: Text(
+                alertReasons.take(2).join(' - '),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.warning,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
           ],
         ],
@@ -5418,6 +7126,14 @@ class _ListSection extends StatelessWidget {
       }).toList();
     }
 
+    final isProductList = title.toLowerCase().contains('produit');
+    if (isProductList && (statusFilter == 'alert' || statusFilter == 'ok')) {
+      return filtered.where((item) {
+        final hasAlert = _productHasOperationalAlert(item);
+        return statusFilter == 'alert' ? hasAlert : !hasAlert;
+      }).toList();
+    }
+
     if (statusFilter == 'all') {
       return filtered;
     }
@@ -5457,6 +7173,8 @@ class _ListSection extends StatelessWidget {
     }
     if (lower.contains('produit')) {
       return switch (statusFilter) {
+        'alert' => 'Produits en alerte',
+        'ok' => 'Produits OK',
         'active' => 'Produits actifs',
         'inactive' => 'Produits inactifs',
         _ => 'Produits disponibles',
@@ -5476,6 +7194,53 @@ class _ListSection extends StatelessWidget {
   }
 }
 
+class _OperationalHealthChip extends StatelessWidget {
+  final bool alert;
+  final int count;
+
+  const _OperationalHealthChip({
+    required this.alert,
+    this.count = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = alert ? AppColors.warning : AppColors.secondary;
+    final label = alert
+        ? (count > 0 ? '$count alerte${count > 1 ? 's' : ''}' : 'Alerte')
+        : 'OK';
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            alert ? Icons.warning_amber_rounded : Icons.check_circle_rounded,
+            color: color,
+            size: 16,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: color,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _WorkspaceListItem extends StatelessWidget {
   final Map<String, dynamic> item;
   final String workspaceType;
@@ -5489,20 +7254,29 @@ class _WorkspaceListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _statusColor(item['status']?.toString());
     final kind = item['kind']?.toString() ?? '';
-    final showChevron = const {
-      'actor',
-      'product',
-      'distributor',
-      'audit',
-      'setting',
-      'warehouse',
-      'order',
-      'purchase_order',
-      'client',
-      'route',
-    }.contains(kind);
+    final isDistributorProduct =
+        workspaceType == 'distributeur' && kind == 'product';
+    final hasOperationalAlert =
+        isDistributorProduct ? _productHasOperationalAlert(item) : false;
+    final color = isDistributorProduct
+        ? (hasOperationalAlert ? AppColors.warning : AppColors.secondary)
+        : _statusColor(item['status']?.toString());
+    final showChevron = !isDistributorProduct &&
+        const {
+          'actor',
+          'product',
+          'distributor',
+          'audit',
+          'setting',
+          'warehouse',
+          'order',
+          'purchase_order',
+          'client',
+          'route',
+        }.contains(kind);
+    final productAlertCount =
+        isDistributorProduct ? _productOperationalAlertCount(item) : 0;
 
     return AppCard(
       padding: EdgeInsets.all(
@@ -5571,11 +7345,18 @@ class _WorkspaceListItem extends StatelessWidget {
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.xs,
             children: [
-              AppStatusChip(
-                label: item['status']?.toString() ?? 'OK',
-                color: color,
-              ),
-              if ((item['amount']?.toString().isNotEmpty ?? false))
+              if (isDistributorProduct)
+                _OperationalHealthChip(
+                  alert: hasOperationalAlert,
+                  count: productAlertCount,
+                )
+              else
+                AppStatusChip(
+                  label: item['status']?.toString() ?? 'OK',
+                  color: color,
+                ),
+              if (!isDistributorProduct &&
+                  (item['amount']?.toString().isNotEmpty ?? false))
                 Text(
                   item['amount'].toString(),
                   style: AppTextStyles.title.copyWith(
@@ -5968,6 +7749,98 @@ List<Map<String, dynamic>> _variantOptionList(Map<String, dynamic> variant) {
   return _WorkspacePageState._asList(variant['options']);
 }
 
+int _intValue(dynamic value) {
+  if (value is num) return value.round();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+double? _doubleValue(dynamic value) {
+  if (value is num) return value.toDouble();
+  final text = value?.toString().replaceAll(',', '.').trim() ?? '';
+  if (text.isEmpty) return null;
+  return double.tryParse(text);
+}
+
+bool _stockRowIsAlert(Map<String, dynamic> stock) {
+  final quantity = _intValue(stock['quantity']);
+  final expected = _intValue(stock['previsionnel']);
+  if (quantity <= 0) return true;
+  if (expected > 0 && quantity < (expected * 0.8).ceil()) return true;
+  final status = stock['status']?.toString().toLowerCase() ?? '';
+  return status.contains('rupture') ||
+      status.contains('faible') ||
+      status.contains('alerte');
+}
+
+bool _variantHasActivePrice(Map<String, dynamic> variant) {
+  if (_doubleValue(variant['price']) != null) return true;
+  return _WorkspacePageState._asList(variant['price_history']).any((price) {
+    final status = price['period_status']?.toString().toLowerCase() ??
+        price['status']?.toString().toLowerCase() ??
+        '';
+    return status.contains('actif') && _doubleValue(price['price']) != null;
+  });
+}
+
+List<String> _variantOperationalAlerts(Map<String, dynamic> variant) {
+  final rawBackendReasons = variant['health_reasons'];
+  final backendReasons = rawBackendReasons is List
+      ? rawBackendReasons
+          .map((item) => item.toString().trim())
+          .where((reason) => reason.isNotEmpty && reason != 'null')
+          .toList()
+      : <String>[];
+  final reasons = <String>[...backendReasons];
+
+  if (!_variantHasActivePrice(variant)) {
+    reasons.add('Prix actif manquant');
+  }
+
+  for (final stock
+      in _WorkspacePageState._asList(variant['stock_by_warehouse'])) {
+    if (_stockRowIsAlert(stock)) {
+      final title = stock['title']?.toString() ?? 'Depot';
+      final quantity = _intValue(stock['quantity']);
+      final expected = _intValue(stock['previsionnel']);
+      if (quantity <= 0) {
+        reasons.add('$title en rupture');
+      } else if (expected > 0) {
+        final delta = ((quantity - expected) / expected * 100).round();
+        reasons.add('$title $delta% vs objectif');
+      } else {
+        reasons.add('$title en alerte stock');
+      }
+    }
+  }
+
+  return reasons.toSet().toList();
+}
+
+bool _variantHasOperationalAlert(Map<String, dynamic> variant) {
+  final health = variant['health_status']?.toString().toLowerCase() ??
+      variant['health_label']?.toString().toLowerCase() ??
+      '';
+  if (health.contains('alerte') || health.contains('alert')) return true;
+  return _variantOperationalAlerts(variant).isNotEmpty;
+}
+
+bool _productHasOperationalAlert(Map<String, dynamic> product) {
+  final health = product['health_status']?.toString().toLowerCase() ??
+      product['status']?.toString().toLowerCase() ??
+      '';
+  if (health.contains('alerte') || health.contains('alert')) return true;
+  return _WorkspacePageState._asList(product['variants'])
+      .any(_variantHasOperationalAlert);
+}
+
+int _productOperationalAlertCount(Map<String, dynamic> product) {
+  final backendCount = _intValue(product['health_alert_count']);
+  if (backendCount > 0) return backendCount;
+  return _WorkspacePageState._asList(product['variants'])
+      .where(_variantHasOperationalAlert)
+      .length;
+}
+
 String _variantPackageLabel(Map<String, dynamic> variant) {
   final value = variant['package'] ??
       variant['conditioning'] ??
@@ -5986,7 +7859,9 @@ Color _statusColor(String? status) {
       normalized.contains('désactiv') ||
       normalized.contains('bloque') ||
       normalized.contains('bloqué') ||
-      normalized.contains('suspend')) {
+      normalized.contains('suspend') ||
+      normalized.contains('expire') ||
+      normalized.contains('expir')) {
     return AppColors.danger;
   }
   if (normalized.contains('retard') ||
@@ -5995,13 +7870,19 @@ Color _statusColor(String? status) {
     return AppColors.danger;
   }
   if (normalized.contains('faible') ||
+      normalized.contains('alerte') ||
+      normalized.contains('alert') ||
       normalized.contains('attention') ||
       normalized.contains('nouveau') ||
-      normalized.contains('prepar')) {
+      normalized.contains('prepar') ||
+      normalized.contains('planifie') ||
+      normalized.contains('planifi')) {
     return AppColors.warning;
   }
   if (normalized.contains('livre') ||
       normalized.contains('paye') ||
+      normalized == 'ok' ||
+      normalized.contains('bonne') ||
       normalized.contains('actif') ||
       normalized.contains('stock') ||
       normalized.contains('sante')) {

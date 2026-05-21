@@ -229,6 +229,94 @@ Regles backend :
 - Les routes `POST /api/superadmin/categories/query`, `POST /api/superadmin/distributors/query`, `POST /api/superadmin/products/query` et `POST /api/superadmin/products/{id}/variants/query` sont disponibles pour les dropdowns Flutter.
 - Toutes les actions sensibles SuperAdmin doivent ecrire dans `audit_logs` : creation/modification distributeur, acteur, produit, categorie, variant, activation/desactivation et reset acces.
 
+### Workspace produits distributeur
+
+`POST /api/workspace/real` avec `section=products` retourne les produits exploitables par le distributeur connecte. Les produits restent compatibles avec l'ancien payload, mais chaque variant peut maintenant inclure :
+
+- `options` : chips `Option: Valeur` si le variant est structure;
+- `option_signature` : signature normalisee de combinaison;
+- `group_label` et `detail_label` : labels intelligents UI;
+- `price_history` : historique `pricelist_item/pricelist` du plus recent au plus ancien;
+- `price_label` et `price` : prix courant si disponible;
+- `stock_by_warehouse` : stock par depot autorise du distributeur;
+- `stock_label` et `stock_quantity` : resume stock total.
+
+Le distributeur lit ces champs pour afficher les onglets variant `Infos`, `Prix` et `Stock`. La modification effective des prix et stocks reste dans les actions metier distributeur existantes.
+
+### Actions prix et stock distributeur
+
+Ces endpoints sont utilises par la fiche variant distributeur en mode reel. Ils sont scopes au distributeur connecte.
+
+| Methode | Endpoint | Usage |
+| --- | --- | --- |
+| POST | `/api/distributor/price-context` | Contexte leger pour ouvrir rapidement le formulaire prix d'un variant |
+| POST | `/api/distributor/stock-context` | Contexte leger depots pour ouvrir rapidement le formulaire stock d'un variant |
+| POST | `/api/distributor/variants/{id}/price` | Cree un prix pour un variant avec periode et type point de vente optionnel |
+| POST | `/api/distributor/prices/{id}/delete` | Supprime defensivement une entree prix, avec soft delete si disponible |
+| POST | `/api/distributor/stock/adjust` | Ajuste le stock d'un variant dans un depot du distributeur |
+| POST | `/api/distributor/stock/{id}/delete` | Supprime une ligne stock du variant/depot, limitee au distributeur connecte et auditee |
+| POST | `/api/distributor/product-assortment` | Charge le catalogue global selectionnable par le distributeur |
+| POST | `/api/distributor/product-assortment/save` | Enregistre les variants exploites par le distributeur |
+
+Payload prix :
+
+```json
+{
+  "price": 148,
+  "typepv_id": null,
+  "start_date": "2026-05-20",
+  "end_date": "2026-12-31",
+  "label": "Tarif boutique"
+}
+```
+
+Regles prix :
+- `start_date` et `end_date` definissent l'etat calcule : expire, actif ou planifie;
+- les periodes ne peuvent pas se chevaucher pour un meme variant, distributeur et type point de vente;
+- l'historique exclut les lignes soft-deleted;
+- le statut operationnel n'est pas saisi par Flutter, il est derive cote backend et UI.
+
+Payload stock :
+
+```json
+{
+  "warehouse_id": "WH-DEMO-CENTRAL",
+  "variant_id": 1,
+  "mode": "set",
+  "quantity": 24,
+  "unit_price": 0,
+  "reason": "Ajustement inventaire"
+}
+```
+
+Regles stock :
+- le depot doit appartenir au distributeur connecte;
+- `mode` peut etre `set`, `add` ou `sub`;
+- la reponse retourne `old_quantity`, `new_quantity`, `stock_by_warehouse` et `stock_quantity` pour rafraichir la fiche variant;
+- la suppression d'une ligne stock exige un `stock_id` retourne par `stock_by_warehouse`, refuse les depots hors scope et ecrit un audit log `delete_stock_row`.
+
+Sante operationnelle produits distributeur :
+- `/api/workspace/real` section `products` ajoute `health_status`, `health_label`, `health_alert_count` et `health_reasons`;
+- un variant est en alerte si aucun prix actif n'existe, si un depot est en rupture, ou si le stock d'un depot est inferieur de 20% a son objectif/previsionnel;
+- un produit est en alerte si au moins un de ses variants est en alerte;
+- en workspace Distributeur, le montant prix n'est pas expose comme information principale dans la liste produit.
+
+Payload assortiment :
+
+```json
+{
+  "variant_ids": [84, 85, 91]
+}
+```
+
+Regles assortiment :
+- le distributeur ne peut selectionner que des produits globaux ou rattaches a son propre `distributor_id`;
+- une selection est enregistree au niveau variant dans `distributor_product_assortments`;
+- selectionner un produit dans Flutter coche tous ses variants;
+- si aucun assortiment n'est configure, le catalogue distributeur reste complet;
+- si un assortiment existe, `/api/workspace/real` section `products` ne retourne que les variants selectionnes;
+- l'action est auditee via `update_product_assortment` quand `audit_logs` existe.
+
 ## Compatibilite
 
 - Ne pas supprimer les endpoints historiques tant que Flutter les consomme.

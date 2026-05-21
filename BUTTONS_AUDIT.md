@@ -127,3 +127,51 @@ Objectif : verifier que les boutons visibles des workspaces ont une action clair
 | Liste variants | Tap variant | Ouvre modification du variant | OK |
 | Liste variants | Swipe droite | Edition rapide du variant | OK |
 | Liste variants | Swipe gauche | Confirmation puis suppression defensive via API | OK |
+
+## Addendum produits distributeur variant 2026-05-20
+
+| Page | Bouton / geste | Action | Statut |
+| --- | --- | --- | --- |
+| Distributeur > Produits | Filtre statut | `Actifs` selectionne par defaut, filtre local sur `is_active/status` | OK |
+| Distributeur > Produits | Carte produit | Ouvre detail produit avec variants reels | OK |
+| Detail produit > Variants | Tap variant | Ouvre fiche variant `Infos / Prix / Stock` | OK |
+| Fiche variant | Onglet Infos | Affiche SKU, groupe, conditionnement, signature options, statut | OK |
+| Fiche variant | Onglet Prix | Affiche `price_history` depuis `pricelist_item/pricelist` du plus recent au plus ancien | OK |
+| Fiche variant | Onglet Stock | Affiche `stock_by_warehouse` par depot autorise | OK |
+| Fiche variant | Stock | Ouvre l'action distributeur d'ajustement stock pour le variant | OK |
+| Fiche variant | Prix | Ouvre l'action distributeur de gestion prix pour le variant | OK |
+
+## Addendum actions prix/stock distributeur 2026-05-20
+
+| Page | Bouton / geste | Action | Statut |
+| --- | --- | --- | --- |
+| Fiche variant distributeur | Prix | Ouvre le formulaire prix rapide via `/api/distributor/price-context` | OK |
+| Formulaire prix | Planifier apres dernier prix | Calcule debut = derniere date fin + 1 jour | OK |
+| Formulaire prix | Enregistrer prix | Appelle `POST /api/distributor/variants/{id}/price`, bloque chevauchement UI/backend | OK |
+| Onglet prix variant | Swipe gauche prix | Confirmation puis `POST /api/distributor/prices/{id}/delete` | OK |
+| Fiche variant distributeur | Stock | Ouvre le formulaire stock rapide via `/api/distributor/stock-context` | OK |
+| Formulaire stock | Valider stock | Appelle `POST /api/distributor/stock/adjust` et rafraichit la fiche variant | OK |
+| Formulaire stock | Variation stock | Affiche ancien stock, nouveau stock et pourcentage de variation | OK |
+| Erreurs API | Dialogue/toast erreur | Affiche le message backend lisible, sans exception Dio brute | OK |
+
+## Addendum assortiment distributeur 2026-05-20
+
+| Page | Bouton / geste | Action | Statut |
+| --- | --- | --- | --- |
+| Distributeur > Produits | Assortiment | Ouvre `/api/distributor/product-assortment` dans une bottom sheet de selection | OK |
+| Assortiment | Checkbox produit | Selectionne ou retire tous les variants du produit | OK |
+| Assortiment | Expansion produit | Affiche les variants selectionnables | OK |
+| Assortiment | Checkbox variant | Selection fine d'un variant exploite par le distributeur | OK |
+| Assortiment | Valider la selection | `POST /api/distributor/product-assortment/save` puis refresh Produits | OK |
+| Distributeur > Produits | Liste produits apres validation | Affiche seulement les variants selectionnes quand l'assortiment est configure | OK |
+
+## Addendum alertes produits distributeur 2026-05-21
+
+| Page | Bouton / geste | Action | Statut |
+| --- | --- | --- | --- |
+| Distributeur > Produits | Filtre `Alerte` | Filtre local les produits dont au moins un variant a une alerte prix/stock | OK |
+| Distributeur > Produits | Filtre `OK` | Filtre local les produits sans alerte operationnelle | OK |
+| Distributeur > Produits | Carte produit | Ouvre detail produit sans afficher prix ni chevron | OK |
+| Detail produit > Variants | Tap variant | Ouvre fiche variant avec badge `Actif` + indicateur `OK/Alerte` | OK |
+| Fiche variant > Stock | Swipe gauche ligne stock | Confirmation puis `POST /api/distributor/stock/{id}/delete` | OK API/build |
+| Fiche variant > Stock | Ligne sans `stock_id` | Non supprimable, evite une action impossible sur donnees non persistantes | OK |

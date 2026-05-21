@@ -37,6 +37,7 @@ class CallApi {
       baseUrl: AppConfig.apiRootUrl,
       responseType: ResponseType.json,
       contentType: ContentType.json.toString(),
+      validateStatus: (status) => status != null && status < 600,
     ));
     if (kDebugMode) {
       debugPrint("=====> Call API : $method $route");
@@ -69,10 +70,14 @@ class CallApi {
           );
         }
       } else {
+        final payload = response.data;
+        final message = payload is Map<String, dynamic>
+            ? (payload["message"] ?? payload["error"] ?? response.statusMessage)
+            : response.statusMessage;
         return ResponseHttpRequest.fromMap({
           "status": "error",
           "code": response.statusCode,
-          "message": response.statusMessage,
+          "message": message ?? "Erreur serveur. Reessayez.",
         });
       }
     } catch (e) {
@@ -80,10 +85,14 @@ class CallApi {
         if (kDebugMode) {
           debugPrint("=====> Response API $route ERROR : ${e.message}");
         }
+        final payload = e.response?.data;
+        final message = payload is Map<String, dynamic>
+            ? (payload["message"] ?? payload["error"] ?? e.message)
+            : e.message;
         return ResponseHttpRequest.fromMap({
           "status": "error",
           "code": "${e.response?.statusCode}",
-          "message": e.message
+          "message": message ?? "Erreur reseau. Reessayez."
         });
       } else {
         if (kDebugMode) {
